@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalogo de Funciones - Control de Medicamentos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #0F0C1E; color: #E0E0E0; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1A1535, #2A1F5E); padding: 40px 30px 30px; border-bottom: 3px solid #7C4DFF; }
+  header h1 { font-size: 2em; color: #fff; }
+  header p { color: #B0B0C0; margin-top: 8px; font-size: 1.05em; }
+  .contenedor { max-width: 960px; margin: 0 auto; padding: 30px 20px 60px; }
+  .indice { background: #1A1535; border-radius: 12px; padding: 28px 32px; margin-bottom: 40px; border: 1px solid #2E2755; }
+  .indice h2 { color: #7C4DFF; margin-bottom: 18px; font-size: 1.3em; }
+  .indice ol { padding-left: 20px; }
+  .indice li { margin: 8px 0; }
+  .indice a { color: #82B1FF; text-decoration: none; font-size: 1em; transition: color 0.2s; }
+  .indice a:hover { color: #fff; text-decoration: underline; }
+  .seccion { background: #1A1535; border-radius: 12px; padding: 30px; margin-bottom: 24px; border-left: 5px solid #7C4DFF; scroll-margin-top: 20px; }
+  .seccion h2 { color: #C5B3FF; font-size: 1.3em; margin-bottom: 6px; }
+  .etiqueta { display: inline-block; background: #2E2755; color: #82B1FF; font-size: 0.78em; padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; }
+  .bloque { background: #120F26; border-radius: 8px; padding: 16px 20px; margin-top: 14px; }
+  .bloque p { margin-bottom: 8px; }
+  .bloque p:last-child { margin-bottom: 0; }
+  strong { color: #C5B3FF; }
+  .volver { display: inline-block; margin-top: 18px; color: #7C4DFF; font-size: 0.88em; cursor: pointer; text-decoration: none; }
+  .volver:hover { color: #fff; }
+  .num { display: inline-block; background: #7C4DFF; color: #fff; border-radius: 50%; width: 26px; height: 26px; text-align: center; line-height: 26px; font-size: 0.85em; margin-right: 8px; flex-shrink: 0; }
+  h2 span { display: flex; align-items: center; }
+  footer { text-align: center; color: #555; font-size: 0.85em; padding: 20px; }
+  .tts-bar { background: #1A1535; border: 1px solid #2E2755; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .tts-bar label { color: #82B1FF; font-size: 0.9em; }
+  .tts-bar select { background: #120F26; color: #F3FBFF; border: 1px solid #2E2755; border-radius: 6px; padding: 6px; font-size: 0.9em; }
+  .tts-bar button { background: #7C4DFF; color: #fff; border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-size: 0.9em; }
+  .tts-bar button:hover { background: #9575FF; }
+  .tts-bar button:disabled { background: #2E2755; color: #888; cursor: not-allowed; }
+  .tts-bar .status { color: #B0B0C0; font-size: 0.85em; margin-left: auto; }
+  .tts-btn { background: transparent; border: 1px solid #7C4DFF; color: #7C4DFF; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 0.85em; margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; }
+  .tts-btn:hover { background: #7C4DFF; color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="max-width:960px;margin:0 auto;">
+    <h1>&#128137; Catalogo de Funciones</h1>
+    <p>Control de Medicamentos &mdash; Guia completa.</p>
+  </div>
+</header>
+
+<div class="contenedor">
+
+  <!-- TTS -->
+  <div class="tts-bar" id="ttsBar">
+    <label for="ttsVoice">Voz:</label>
+    <select id="ttsVoice"><option value="">Predeterminada</option></select>
+    <button type="button" id="btnPlay" onclick="leerTodo()">▶ Leer catálogo</button>
+    <button type="button" id="btnPause" onclick="pausarTTS()">⏸ Pausar</button>
+    <button type="button" id="btnResume" onclick="reanudarTTS()">▶ Reanudar</button>
+    <button type="button" id="btnStop" onclick="detenerTTS()">⏹ Detener</button>
+    <span class="status" id="ttsStatus">Listo</span>
+  </div>
+
+  <!-- INDICE -->
+  <div class="indice" id="inicio">
+    <h2>&#128196; Indice Interactivo</h2>
+    <ol>
+      <li><a href="#perfiles">Perfiles de Usuario &mdash; Cada quien su espacio</a></li>
+      <li><a href="#inventario">Inventario &mdash; Tu botiquin digital</a></li>
+      <li><a href="#alarmas">Alarmas &mdash; El recordatorio que nunca olvida</a></li>
+      <li><a href="#tomas">Registro de Tomas &mdash; El diario de lo que tomaste</a></li>
+      <li><a href="#verificador">Verificador de Tomas Pasadas &mdash; Corrige lo que olvidaste</a></li>
+      <li><a href="#suspendidos">Medicamentos Suspendidos &mdash; Pausar sin borrar</a></li>
+      <li><a href="#agenda">Agenda &mdash; Tus citas y eventos de salud</a></li>
+      <li><a href="#reportes">Reportes &mdash; Todo en un documento</a></li>
+      <li><a href="#metricas">Metricas Diarias &mdash; Tu cuerpo en numeros</a></li>
+      <li><a href="#gestacion">Gestacion &mdash; Seguimiento del embarazo</a></li>
+      <li><a href="#ciclo">Ciclo Menstrual &mdash; Tu calendario femenino</a></li>
+      <li><a href="#infantil">Modulo Infantil &mdash; El crecimiento de tus hijos</a></li>
+      <li><a href="#compras">Lista de Compras &mdash; Para que no te falte nada</a></li>
+      <li><a href="#diario">Diario Personal &mdash; Escribe lo que sientes</a></li>
+      <li><a href="#caidas">Alerta de Caidas &mdash; Tu angel de la guarda</a></li>
+      <li><a href="#hidratacion">Hidratacion &mdash; El vaso que no debes olvidar</a></li>
+      <li><a href="#actividad">Actividad Fisica &mdash; Tus pasos cuentan</a></li>
+      <li><a href="#anticonceptivos">Anticonceptivos &mdash; Sin sustos ni olvidos</a></li>
+      <li><a href="#vacunas">Vacunas &mdash; Tu historial de inmunizacion</a></li>
+      <li><a href="#estadisticas">Estadisticas &mdash; Como vas con tus tratamientos</a></li>
+      <li><a href="#backup">Copia de Seguridad &mdash; Tu informacion siempre a salvo</a></li>
+      <li><a href="#asistente">Asistente IA &mdash; Tu guia dentro de la app</a></li>
+      <li><a href="#dental">Modulo Dental &mdash; Tu sonrisa bajo control</a></li>
+      <li><a href="#sedentarismo">Sedentarismo &mdash; Alertas de inactividad</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. PERFILES -->
+  <div class="seccion" id="perfiles">
+    <h2><span><span class="num">1</span> Perfiles de Usuario</span></h2>
+    <span class="etiqueta">Para quien es: toda la familia</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> La app puede usarse para varias personas al mismo tiempo. Cada persona tiene su propio espacio con sus propios medicamentos, historial y datos. Como si cada uno tuviera su propio cajoncito.</p>
+      <p><strong>Que puedes hacer:</strong> Crear perfiles con nombre, foto, edad, peso, estatura, pais y moneda. Cambiar entre perfiles con un toque. Editar o eliminar cualquier perfil cuando quieras.</p>
+      <p><strong>En la vida real:</strong> El abuelo tiene su perfil con sus medicamentos para la presion. La mama tiene el suyo con los del tiroides. Y el bebe tiene el suyo con sus vacunas. Todo separado, todo ordenado.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 2. INVENTARIO -->
+  <div class="seccion" id="inventario">
+    <h2><span><span class="num">2</span> Inventario (Botiquin Digital)</span></h2>
+    <span class="etiqueta">El corazon de la app</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Aqui guardas todos los medicamentos o cualquier articulo de salud que uses. Es como un botiquin digital donde ves de un vistazo lo que tienes.</p>
+      <p><strong>Que puedes guardar:</strong> Nombre del medicamento, presentacion (pastillas, jarabe, inyeccion...), cantidad que tienes en casa, foto del empaque, dosis que te toca por toma y cada cuanto lo tomas.</p>
+      <p><strong>Alerta de stock:</strong> Si las pastillas se estan acabando, la app te avisa para que no te quedes sin ellas en el momento menos oportuno.</p>
+      <p><strong>En la vida real:</strong> Entras al inventario, ves la Metformina con foto de la caja, cuantas pastillas quedan y a que hora toca la siguiente. Sin buscar en el cajun.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 3. ALARMAS -->
+  <div class="seccion" id="alarmas">
+    <h2><span><span class="num">3</span> Alarmas y Recordatorios</span></h2>
+    <span class="etiqueta">El que nunca olvida</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Configuras a que hora quieres que el telefono te avise de tomar un medicamento. Llega la hora y pam, suena la alarma con el nombre del medicamento y la cantidad exacta que te toca en esa toma.</p>
+      <p><strong>Modos de repeticion:</strong> Cada cierto numero de horas, a horas fijas del dia, cada X dias, solo ciertos dias de la semana, o una sola vez. Tu decides.</p>
+      <p><strong>La notificacion te dice:</strong> &quot;Tomar 1 pastilla de Enalapril&quot; &mdash; no el total del dia, sino lo que te toca en ese momento puntual. Asi no hay confusion.</p>
+      <p><strong>Puedes:</strong> Activar o desactivar alarmas individualmente sin borrarlas, cambiar el horario cuando el medico te lo cambie, poner varias alarmas para el mismo medicamento.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 4. TOMAS -->
+  <div class="seccion" id="tomas">
+    <h2><span><span class="num">4</span> Registro de Tomas</span></h2>
+    <span class="etiqueta">El diario que no miente</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Cada vez que tomas un medicamento, queda anotado con fecha y hora exactas. Esto crea un historial medico real que el doctor puede revisar.</p>
+      <p><strong>Lo mas importante:</strong> Si cambias el horario de un medicamento para el futuro, el historial del pasado NO cambia. Lo que tomaste ayer a las 2pm sigue registrado a las 2pm aunque ahora lo tomes a las 6pm. Eso es un registro honesto.</p>
+      <p><strong>Puedes ver:</strong> Todo lo que tomaste filtrado por fecha, por medicamento o por periodo. Y exportarlo si lo necesitas.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 5. VERIFICADOR -->
+  <div class="seccion" id="verificador">
+    <h2><span><span class="num">5</span> Verificador de Tomas Pasadas</span></h2>
+    <span class="etiqueta">Para los olvidos del pasado</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> A veces suena la alarma y no puedes registrar la toma en ese momento. Este verificador te muestra todas las tomas de los ultimos 30 dias que no fueron confirmadas para que las puedas completar despues.</p>
+      <p><strong>Como se accede:</strong> Manteniendo presionado el icono de estadisticas en el menu. Se abre una lista con las tomas pendientes.</p>
+      <p><strong>Que puedes hacer con cada una:</strong> Marcarla como tomada (con la hora real en que la tomaste), marcarla como no tomada, u omitirla si no recuerdas.</p>
+      <p><strong>Por que es importante:</strong> Para que el historial medico sea completo y real, no lleno de huecos.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 6. SUSPENDIDOS -->
+  <div class="seccion" id="suspendidos">
+    <h2><span><span class="num">6</span> Medicamentos Suspendidos</span></h2>
+    <span class="etiqueta">Pausa sin borrar</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Cuando el medico te dice que dejes de tomar algo por un tiempo, puedes &quot;suspender&quot; ese medicamento. Desaparece del escritorio principal y no genera mas alarmas, pero el historial y toda la informacion se conservan.</p>
+      <p><strong>Ventaja:</strong> No tienes que borrarlo y volver a crearlo desde cero cuando tengas que retomarlo. Con un toque lo reactivas y vuelve como si nada.</p>
+      <p><strong>Donde se ven:</strong> Solo aparecen en la seccion de Inventario, para que el escritorio principal quede limpio con solo lo que estas tomando actualmente.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 7. AGENDA -->
+  <div class="seccion" id="agenda">
+    <h2><span><span class="num">7</span> Agenda de Citas</span></h2>
+    <span class="etiqueta">Nunca faltes al medico</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Guardar citas medicas, controles, estudios o cualquier evento de salud con fecha, hora y lugar. La app te manda un recordatorio antes para que no se te pase.</p>
+      <p><strong>Que puedes guardar:</strong> Nombre del evento, fecha y hora, lugar o consultorio, notas adicionales (cosas que quieres preguntarle al doctor, por ejemplo).</p>
+      <p><strong>En la vida real:</strong> &quot;Consulta con el cardiologo el martes a las 10am, llevar los resultados del electrocardiograma.&quot; Queda guardado y te avisa el dia anterior.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 8. REPORTES -->
+  <div class="seccion" id="reportes">
+    <h2><span><span class="num">8</span> Reportes y Resumenes</span></h2>
+    <span class="etiqueta">Para llevarle al medico</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Generar un documento en Word (.docx) con el historial completo de un paciente: medicamentos, tomas realizadas, metricas, citas y mas. Listo para imprimir o mandar por correo.</p>
+      <p><strong>Que incluye el reporte:</strong> Datos del perfil, lista de medicamentos actuales, historial de tomas con fechas, estadisticas de cumplimiento (cuantos dias tomaste el medicamento correctamente), graficos y observaciones.</p>
+      <p><strong>Para que lo uses:</strong> Llevarlo a la cita medica para que el doctor vea el historial completo sin tener que recordar nada de memoria. O mandarselo a un familiar que cuida al paciente.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 9. METRICAS -->
+  <div class="seccion" id="metricas">
+    <h2><span><span class="num">9</span> Metricas Diarias (Signos Vitales)</span></h2>
+    <span class="etiqueta">Tu cuerpo en numeros</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Llevar un registro diario de valores de salud como presion arterial, frecuencia cardiaca, temperatura, glucosa, peso u otros que el medico te pida vigilar.</p>
+      <p><strong>Lo que ves:</strong> Un grafico que muestra como han evolucionado esos valores en el tiempo. Si la presion estuvo alta toda la semana pasada, lo puedes ver de un vistazo en la grafica.</p>
+      <p><strong>Alertas:</strong> Si un valor registrado esta fuera del rango normal, la app te lo marca para que estes pendiente.</p>
+      <p><strong>En la vida real:</strong> El hipertenso anota su presion cada manana. En la proxima cita el doctor ve la grafica del mes completo en lugar de que el paciente intente recordar &quot;creo que estuve bien casi todos los dias&quot;.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 10. GESTACION -->
+  <div class="seccion" id="gestacion">
+    <h2><span><span class="num">10</span> Seguimiento de Gestacion</span></h2>
+    <span class="etiqueta">Para las futuras mamas</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Un seguimiento semana a semana del embarazo. Registra controles prenatales, peso, valores de laboratorio y fechas importantes.</p>
+      <p><strong>Funciones especiales:</strong> Calcula la fecha probable de parto, lleva la cuenta de las semanas de gestacion y te avisa cuando se acercan los controles programados.</p>
+      <p><strong>Al terminar el embarazo:</strong> La app puede crear automaticamente el perfil del bebe recien nacido con los datos de nacimiento, para que el seguimiento continue sin perder nada.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 11. CICLO -->
+  <div class="seccion" id="ciclo">
+    <h2><span><span class="num">11</span> Ciclo Menstrual</span></h2>
+    <span class="etiqueta">Sin sorpresas</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Llevar el control del ciclo: cuando empieza, cuando termina, como fue (suave, intenso), y sintomas que tuviste (dolor, cambios de animo, etc.).</p>
+      <p><strong>Lo que calcula solo:</strong> La duracion de cada ciclo, cuando probablemente empieza el siguiente y estadisticas de regularidad.</p>
+      <p><strong>Para que sirve en la vida real:</strong> Planificar con anticipacion, detectar irregularidades y tener informacion precisa para el ginecologo sin tener que recordar de memoria.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 12. INFANTIL -->
+  <div class="seccion" id="infantil">
+    <h2><span><span class="num">12</span> Modulo Infantil</span></h2>
+    <span class="etiqueta">Para el crecimiento de los ninos</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Registrar el crecimiento de un nino desde el nacimiento: peso, estatura, perimetro cefalico y como va evolucionando con el tiempo.</p>
+      <p><strong>Calendario de vacunacion:</strong> Muestra que vacunas le corresponden segun la edad y cuales ya se pusieron. Para no llegar al pediatra con las manos vacias.</p>
+      <p><strong>Controles:</strong> Lleva la cuenta de las consultas pediatricas y te avisa cuando toca la siguiente revision.</p>
+      <p><strong>Graficas de crecimiento:</strong> Puedes ver si el nino esta creciendo bien comparado con los rangos normales para su edad.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 13. COMPRAS -->
+  <div class="seccion" id="compras">
+    <h2><span><span class="num">13</span> Lista de Compras</span></h2>
+    <span class="etiqueta">Para que no te quedes sin pastillas</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Cuando se acaba un medicamento o articulo del inventario, lo agregas a la lista de compras pendientes. Cuando lo compras, lo marcas y vuelve al inventario con la cantidad nueva.</p>
+      <p><strong>Tambien puedes:</strong> Guardar donde compraste y a que precio, para comparar en el futuro si vale la pena cambiar de farmacia.</p>
+      <p><strong>Historial de gastos:</strong> Ves cuanto has gastado en medicamentos por mes, util para presupuestar o para declarar gastos medicos.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 14. DIARIO -->
+  <div class="seccion" id="diario">
+    <h2><span><span class="num">14</span> Diario Personal</span></h2>
+    <span class="etiqueta">Escribe como te sientes</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Un espacio para escribir notas personales de salud: como te sentiste un dia, si tuviste un efecto secundario raro, si dormiste mal, lo que sea que quieras recordar.</p>
+      <p><strong>Puedes agregar fotos:</strong> Por ejemplo una foto de una reaccion en la piel para mostrarle al medico exactamente como se veia.</p>
+      <p><strong>Buscador:</strong> Si quieres encontrar una anotacion de hace meses, buscas una palabra clave y aparece.</p>
+      <p><strong>Se respalda:</strong> Todo el diario, incluyendo las fotos, queda guardado en la copia de seguridad.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 15. CAIDAS -->
+  <div class="seccion" id="caidas">
+    <h2><span><span class="num">15</span> Alerta de Caidas (SOS)</span></h2>
+    <span class="etiqueta">Tu angel de la guarda</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Si el usuario sufre una caida o un golpe fuerte, el telefono lo detecta automaticamente, lanza una alarma sonora y &mdash;si nadie responde&mdash; manda mensajes de emergencia a los contactos que eligio.</p>
+      <p><strong>Como lo detecta:</strong> Los sensores del telefono sienten el movimiento. El sistema busca la secuencia exacta de una caida real: primero el momento en que el cuerpo cae (el telefono queda casi sin peso), luego el impacto fuerte contra el suelo, y finalmente la quietud de la persona que no se mueve. Solo cuando ocurren las tres cosas en orden, la alerta se activa. Por eso dejar el telefono en una mesa no lo dispara.</p>
+      <p><strong>Que pasa cuando se activa:</strong> La pantalla se pone en modo alerta, vibra y hace ruido. La persona tiene unos segundos para tocar el boton &quot;Estoy bien&quot;. Si no lo toca, el telefono manda automaticamente un SMS con la ubicacion GPS a los contactos de emergencia.</p>
+      <p><strong>Sensibilidad ajustable:</strong> Si el usuario es muy activo y hay muchas falsas alarmas, puede bajar la sensibilidad. Si es una persona mayor que necesita mas proteccion, puede subirla.</p>
+      <p><strong>Calibrado por persona:</strong> El sistema toma en cuenta la edad y la estatura del perfil para ajustar que tan fuerte tiene que ser el impacto para considerarse una caida real.</p>
+      <p><strong>Consejo:</strong> Si se activa al poner el telefono en una mesa, bajar la sensibilidad al 30-40% en la configuracion de Alerta de Caidas lo resuelve.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 16. HIDRATACION -->
+  <div class="seccion" id="hidratacion">
+    <h2><span><span class="num">16</span> Control de Hidratacion</span></h2>
+    <span class="etiqueta">El vaso que no debes olvidar</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Llevar la cuenta de cuanta agua o liquidos bebes durante el dia y asegurarte de llegar a tu meta diaria.</p>
+      <p><strong>Como funciona:</strong> Cada vez que tomas un vaso, una botella o cualquier cantidad de liquido, lo registras con un toque. La app va sumando y te muestra una barra de progreso: &quot;Llevas 1.2 litros de 2 que necesitas&quot;.</p>
+      <p><strong>Recordatorios:</strong> Si llevas mucho tiempo sin registrar nada, la app te manda un toque para que no te olvides de hidratarte.</p>
+      <p><strong>Especialmente util para:</strong> Personas mayores que a veces no sienten sed, pacientes con indicacion medica de controlar liquidos (riñon, corazon), o cualquier persona que quiera crear el habito de tomar mas agua.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 17. ACTIVIDAD -->
+  <div class="seccion" id="actividad">
+    <h2><span><span class="num">17</span> Actividad Fisica (Podometro)</span></h2>
+    <span class="etiqueta">Tus pasos cuentan</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Registrar la actividad fisica del dia: pasos caminados, distancia recorrida, calorias aproximadas quemadas y tiempo activo.</p>
+      <p><strong>Como funciona:</strong> Usa el sensor de movimiento del telefono para contar los pasos automaticamente mientras lo llevas contigo. Tambien puedes registrar sesiones de ejercicio (correr, bicicleta, caminar rapido) con duracion y tipo de actividad.</p>
+      <p><strong>Meta diaria:</strong> Puedes poner tu meta de pasos (por ejemplo 8,000 al dia) y ver si la cumpliste. Historial semanal para ver tus dias mas y menos activos.</p>
+      <p><strong>Para que sirve en salud:</strong> Muchos medicos recomiendan actividad minima diaria. Con este modulo tienes el dato exacto para reportarle al doctor sin tener que adivinar.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 18. ANTICONCEPTIVOS -->
+  <div class="seccion" id="anticonceptivos">
+    <h2><span><span class="num">18</span> Control de Anticonceptivos</span></h2>
+    <span class="etiqueta">Sin sustos ni olvidos</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Llevar el control de la toma de anticonceptivos orales (pastillas) con alarma diaria y registro de si se tomo o no en cada dia del ciclo del blister.</p>
+      <p><strong>Lo especial:</strong> Sabe en que pastilla del blister estas (dia 1, dia 2... dia 21) y te indica cual toca hoy. Si olvidaste una, te lo marca y te explica que hacer segun las indicaciones generales.</p>
+      <p><strong>Historial de olvidos:</strong> Guarda los dias en que no se tomo la pastilla, informacion importante para el ginecologo o para evaluar la efectividad del metodo.</p>
+      <p><strong>Discrecion:</strong> Todo queda protegido en el perfil personal, separado del resto de usuarios de la app.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 19. VACUNAS -->
+  <div class="seccion" id="vacunas">
+    <h2><span><span class="num">19</span> Historial de Vacunas</span></h2>
+    <span class="etiqueta">Tu carnet de vacunacion digital</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Guardar todas las vacunas que se han aplicado: nombre de la vacuna, fecha, dosis (primera, segunda, refuerzo), laboratorio y quien la aplico.</p>
+      <p><strong>Recordatorios:</strong> Si una vacuna necesita segunda dosis o refuerzo en cierta fecha, la app te avisa cuando se acerca el momento.</p>
+      <p><strong>Para toda la familia:</strong> Cada perfil tiene su propio historial de vacunas. El carnet del bebe separado del de los adultos.</p>
+      <p><strong>En la vida real:</strong> Sin tener que buscar el carnet fisico de cartulina que siempre se pierde, en dos segundos ves si ya tienes la vacuna de la influenza de este ano o si te falta el refuerzo del tetanos.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 20. ESTADISTICAS -->
+  <div class="seccion" id="estadisticas">
+    <h2><span><span class="num">20</span> Estadisticas de Uso</span></h2>
+    <span class="etiqueta">Para saber como vas</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Ver graficas y resumenes de que tan bien estas siguiendo tus tratamientos: cuantos dias tomaste cada medicamento a tiempo, cuantos te saltaste y en que momentos del dia suelen ocurrir los olvidos.</p>
+      <p><strong>Lo que muestra:</strong> Porcentaje de cumplimiento por medicamento, dias con y sin toma, graficas por semana o por mes, y tendencias de uso.</p>
+      <p><strong>Para que sirve en la vida real:</strong> El medico puede ver que el paciente solo tomo el medicamento el 60% de los dias y eso explica por que no esta respondiendo bien al tratamiento. O el paciente puede darse cuenta el mismo de que siempre olvida la toma de las noches.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 21. BACKUP -->
+  <div class="seccion" id="backup">
+    <h2><span><span class="num">21</span> Copia de Seguridad</span></h2>
+    <span class="etiqueta">Tu informacion siempre a salvo</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Guardar toda la informacion de la app en un archivo para que no se pierda si cambias de telefono, si el telefono se daña o si desinstalas la app por accidente.</p>
+      <p><strong>Que guarda:</strong> TODO. Perfiles con sus fotos, todos los medicamentos, el historial completo de tomas, citas de la agenda, metricas, diario con imagenes, vacunas, historial de caidas, copias de seguridad sincronizadas. Absolutamente todo.</p>
+      <p><strong>El archivo se llama .cmed</strong> y lo puedes guardar en Google Drive, mandarlo por WhatsApp, guardarlo en una USB o donde prefieras.</p>
+      <p><strong>Para restaurar:</strong> En el nuevo telefono instalas la app, vas a Copia de Seguridad, seleccionas el archivo .cmed y en segundos todo vuelve a estar como estaba.</p>
+      <p><strong>Recomendacion:</strong> Hacer una copia de seguridad una vez a la semana o antes de cambiar de telefono.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 22. ASISTENTE -->
+  <div class="seccion" id="asistente">
+    <h2><span><span class="num">22</span> Asistente IA (Guia dentro de la app)</span></h2>
+    <span class="etiqueta">Tu guia personal</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Un asistente de chat dentro de la app que te explica como funciona cada modulo, responde preguntas frecuentes y te guia si no sabes como hacer algo.</p>
+      <p><strong>El directorio:</strong> Muestra todos los modulos de la app como tarjetas. Tocas cualquiera y te da una explicacion detallada de como usarlo.</p>
+      <p><strong>El chat:</strong> Puedes escribir preguntas como &quot;como configuro una alarma?&quot; o &quot;para que sirve el modulo infantil?&quot; y el asistente te responde.</p>
+      <p><strong>Voz:</strong> Las respuestas se pueden escuchar en voz alta, util si tienes las manos ocupadas o tienes dificultad para leer en pantalla.</p>
+      <p><strong>No necesita internet:</strong> El asistente funciona completamente sin conexion a internet. Todo esta guardado dentro de la app.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 23. DENTAL -->
+  <div class="seccion" id="dental">
+    <h2><span><span class="num">23</span> Modulo Dental</span></h2>
+    <span class="etiqueta">Tu sonrisa bajo control</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Llevar el control completo de la salud bucal del paciente en un solo lugar: citas, odontograma, ortodoncia, seguimiento de la sonrisa y gastos dentales.</p>
+      <p><strong>Panel:</strong> Resumen con las proximas citas, pendientes y dentistas registrados.</p>
+      <p><strong>Citas:</strong> Agenda visitas al dentista con fecha, motivo, estado y notas. Recibe recordatorios para no olvidar las revisiones.</p>
+      <p><strong>Odontograma:</strong> Mapa interactivo de los dientes. Toca cada diente para registrar su estado (sano, en tratamiento, requiere tratamiento, tratamiento finalizado, en observacion) y ver su historial.</p>
+      <p><strong>Ortodoncia:</strong> Registra tratamientos de ortodoncia, ajustes, incidencias (dolor, brackets sueltos) y elasticos. Lleva el seguimiento semana a semana.</p>
+      <p><strong>Sonrisa:</strong> Diario de fotos del antes y despues de tu tratamiento. Compara el progreso y guarda etapas clave del proceso.</p>
+      <p><strong>Finanzas:</strong> Controla los ingresos y gastos dentales por paciente, con saldo y exportacion a PDF.</p>
+      <p><strong>Directorio:</strong> Guarda los datos de los dentistas y especialistas que atienden al paciente: nombre, especialidad, telefono y notas.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+  <!-- 24. SEDENTARISMO -->
+  <div class="seccion" id="sedentarismo">
+    <h2><span><span class="num">24</span> Sedentarismo</span></h2>
+    <span class="etiqueta">Alertas de inactividad</span>
+    <div class="bloque">
+      <p><strong>Para que sirve:</strong> Detectar cuando llevas mucho tiempo sin moverte y avisarte para que te levantes, camines o estires un rato. Ideal si pasas muchas horas sentado o trabajando frente al telefono.</p>
+      <p><strong>Como funciona:</strong> La app monitorea tu actividad basica del dispositivo. Si no detecta movimiento durante el tiempo que configures, te envia una alerta para que actives el cuerpo.</p>
+      <p><strong>Configuracion:</strong> Puedes elegir cuantos minutos de inactividad deben pasar antes de la alerta, el horario de monitoreo (por ejemplo, de 7:00 a 22:00) y los dias de la semana en los que quieres que este activo.</p>
+      <p><strong>Registro de eventos:</strong> Guarda un historial con movimientos, alertas de inactividad y notas. Asi puedes ver patrones y mejorar tus habitos.</p>
+      <p><strong>En la vida real:</strong> Llevas dos horas sentado viendo videos. La app te avisa: &quot;Llevas mucho tiempo inactivo, camina unos minutos&quot;. Te levantas, caminas y la app registra el movimiento.</p>
+    </div>
+    <a class="volver" href="#inicio">&#8593; Volver al indice</a>
+  </div>
+
+</div>
+
+<footer>
+  <p>Control de Medicamentos &mdash; Catalogo de Funciones &mdash; Documento de referencia</p>
+</footer>
+
+<script>
+(function() {
+  const synth = window.speechSynthesis;
+  const voiceSelect = document.getElementById('ttsVoice');
+  const statusEl = document.getElementById('ttsStatus');
+  let voices = [];
+  let queue = [];
+  let currentIndex = 0;
+  let isPaused = false;
+
+  function populateVoices() {
+    if (!synth) return;
+    voices = synth.getVoices().filter(v => v.lang.startsWith('es'));
+    while (voiceSelect.options.length > 1) voiceSelect.remove(1);
+    voices.forEach((v, i) => {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = v.name + ' (' + v.lang + ')';
+      voiceSelect.appendChild(option);
+    });
+  }
+
+  if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoices;
+  }
+  populateVoices();
+
+  function getSelectedVoice() {
+    if (voiceSelect.value === '') return null;
+    return voices[parseInt(voiceSelect.value)];
+  }
+
+  function updateStatus(text) { statusEl.textContent = text; }
+
+  function getTextForSection(id) {
+    const section = document.getElementById(id);
+    if (!section) return '';
+    const clone = section.cloneNode(true);
+    clone.querySelectorAll('button').forEach(b => b.remove());
+    clone.querySelectorAll('.volver').forEach(a => a.remove());
+    return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function speakNext() {
+    if (currentIndex >= queue.length) {
+      updateStatus('Finalizado');
+      currentIndex = 0;
+      isPaused = false;
+      return;
+    }
+    if (synth.paused) return;
+    const u = new SpeechSynthesisUtterance(queue[currentIndex]);
+    const v = getSelectedVoice();
+    if (v) u.voice = v;
+    u.lang = 'es-ES';
+    u.rate = 0.95;
+    u.onstart = () => { updateStatus('Leyendo (' + (currentIndex + 1) + '/' + queue.length + ')'); isPaused = false; };
+    u.onend = () => { if (!isPaused) { currentIndex++; speakNext(); } };
+    u.onerror = (e) => { console.error(e); if (!isPaused) { currentIndex++; speakNext(); } };
+    synth.speak(u);
+  }
+
+  function leerTexto(text) {
+    if (!synth) { updateStatus('TTS no soportado'); return; }
+    detenerTTS();
+    queue = text.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    currentIndex = 0;
+    if (queue.length) { updateStatus('Leyendo...'); isPaused = false; speakNext(); }
+    else { updateStatus('Sin contenido'); }
+  }
+
+  window.leerTodo = function() {
+    const sections = document.querySelectorAll('.seccion');
+    const fullText = Array.from(sections).map(s => getTextForSection(s.id)).join('. ');
+    leerTexto(fullText);
+  };
+
+  window.leerSeccion = function(id) { leerTexto(getTextForSection(id)); };
+  window.pausarTTS = function() { if (synth && synth.speaking && !synth.paused) { synth.pause(); isPaused = true; updateStatus('Pausado'); } };
+  window.reanudarTTS = function() { if (synth && synth.paused) { isPaused = false; synth.resume(); updateStatus('Reanudando...'); } };
+  window.detenerTTS = function() { if (synth) { synth.cancel(); currentIndex = 0; queue = []; isPaused = false; updateStatus('Detenido'); } };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    populateVoices();
+    document.querySelectorAll('.seccion').forEach(section => {
+      const btn = document.createElement('button');
+      btn.className = 'tts-btn';
+      btn.type = 'button';
+      btn.innerHTML = '🔊 Escuchar';
+      btn.onclick = function(e) { e.preventDefault(); leerSeccion(section.id); return false; };
+      section.appendChild(btn);
+    });
+  });
+})();
+</script>
+</body>
+</html>

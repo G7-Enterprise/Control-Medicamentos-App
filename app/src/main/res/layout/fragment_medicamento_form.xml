@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#090B1A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#1C2150"
+        android:layout_margin="12dp"
+        android:clipToPadding="false">
+
+        <EditText
+            android:id="@+id/etNombre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nombre del medicamento"
+            android:backgroundTint="#E1E1F5"
+            android:textColor="#FFFFFF"
+            android:padding="12dp" />
+
+        <EditText
+            android:id="@+id/etDosis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Dosis"
+            android:backgroundTint="#E1E1F5"
+            android:textColor="#FFFFFF"
+            android:padding="12dp" />
+
+        <EditText
+            android:id="@+id/etHoraToma"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Hora de toma (ej: 08:00)"
+            android:inputType="time"
+            android:backgroundTint="#E1E1F5"
+            android:textColor="#FFFFFF"
+            android:padding="12dp" />
+
+        <EditText
+            android:id="@+id/etFrecuencia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Frecuencia (horas)"
+            android:inputType="number"
+            android:backgroundTint="#E1E1F5"
+            android:textColor="#FFFFFF"
+            android:padding="12dp" />
+
+        <CheckBox
+            android:id="@+id/cbCicloCorto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="¿Es ciclo corto?"
+            android:textColor="#FFFFFF" />
+
+        <CheckBox
+            android:id="@+id/cbActivo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="¿Activo?"
+            android:textColor="#FFFFFF"
+            android:checked="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Fecha de inicio"
+            android:textColor="#FFFFFF" />
+        <DatePicker
+            android:id="@+id/dpInicio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Fecha de fin"
+            android:textColor="#FFFFFF" />
+        <DatePicker
+            android:id="@+id/dpFin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnGuardar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Guardar" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        ".\\gradlew": true,
+        "adb": true,
+        "&": true,
+        "winget": true,
+        "sqlite3": true,
+        "ForEach-Object": true,
+        "5246..5879": true,
+        "5246..5875": true
+    }
+}

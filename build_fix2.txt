@@ -1,0 +1,117 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+
+> Task :sync-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :sync-core:compileKotlin UP-TO-DATE
+> Task :sync-core:compileJava NO-SOURCE
+> Task :sync-core:processResources NO-SOURCE
+> Task :sync-core:classes UP-TO-DATE
+> Task :sync-core:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+.\gradlew.bat : e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:1451:8 Cannot access 'fun applyPersistedBirthdayFallback(context: Context, 
+profile: PatientProfile?): PatientProfile?': it is private in file.
+En línea: 1 Carácter: 1
++ .\gradlew.bat :app:compileDebugKotlin --no-daemon 2>&1 | Out-File "bu ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///D:/C...rivate in file.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:1483:18 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2165:67 Cannot access 'fun formatDashboardDate(timestamp: Long): String': it is private in 
+file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2166:78 Cannot access 'fun formatDashboardDateSummary(timestamp: Long): String': it is private 
+in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2174:39 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2429:99 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2570:58 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2580:23 Cannot access 'fun duplicateSignature(medication: Medication): String': it is private 
+in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2663:39 Cannot access 'fun deleteAttachmentFile(path: String): Unit': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2667:46 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2668:55 Cannot access 'fun savePersistedBirthday(context: Context, patientId: Int, birthDate: 
+Long): Unit': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2669:51 Cannot access 'fun loadPersistedBirthday(context: Context, patientId: Int): Long?': it 
+is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2681:29 Cannot access 'fun formatHour(timestamp: Long): String': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:69:35 Unresolved reference 'snapping'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:610:24 Argument type mismatch: actual type is 'MedicamentoFormState?', but 
+'MedicamentoFormState' was expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:870:47 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2809:17 Unresolved reference 'first'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3263:24 Unresolved reference 'rememberSnapFlingBehavior'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3274:17 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3274:43 Unresolved reference 'abs'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3289:56 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3349:56 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowRight: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3377:13 Unresolved reference 'zIndex'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3428:42 Unresolved reference 'abs'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3977:47 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5130:27 Unresolved reference 'delay'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5150:27 Unresolved reference 'delay'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5597:76 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5677:47 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5769:76 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5847:76 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5893:77 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+
+> Task :app:compileDebugKotlin FAILED
+
+[Incubating] Problems report is available at: file:///D:/Controlmedicamentos/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+
+> Run with --info or --debug option to get more log output.
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+10 actionable tasks: 3 executed, 7 up-to-date
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 56s

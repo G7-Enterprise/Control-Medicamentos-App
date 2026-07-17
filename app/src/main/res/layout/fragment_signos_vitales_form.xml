@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etSistolica"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Presión sistólica"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/etDiastolica"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Presión diastólica"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/etLatidos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Latidos por minuto"
+        android:inputType="number" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fecha de registro" />
+    <DatePicker
+        android:id="@+id/dpFechaRegistro"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/btnGuardarSignos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Guardar" />
+</LinearLayout>

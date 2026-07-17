@@ -1,0 +1,96 @@
+package com.carlos.controlmedicamentos
+
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.carlos.controlmedicamentos.data.local.*
+import com.carlos.controlmedicamentos.data.remote.VademecumMedication
+import kotlinx.coroutines.CoroutineScope
+
+@Composable
+internal fun MedicamentoFormBodyPaneles(
+    s: MedicamentoFormState,
+    callbacks: MedicamentoFormCallbacks,
+    launchers: FormLaunchers,
+    pacienteActivo: PatientProfile?,
+    perfilesPacientes: List<PatientProfile>,
+    insumosGuardados: List<Medication>,
+    carritoItems: List<CarritoItem>,
+    monedaActiva: String,
+    profesionalesHabituales: List<MedicalPractitioner>,
+    reportesSalud: List<MedicalReport>,
+    citasMedicas: List<MedicalAppointment>,
+    signosVitales: List<SignosVitales>,
+    edadCalculadaPaciente: String,
+    ultimoBackupAutomatico: java.io.File?,
+    sugerencias: List<VademecumMedication>,
+    signosVitalesSeleccionados: List<SignosVitales>,
+    mesesExpandidosSignos: SnapshotStateList<String>,
+    registrosSignosSeleccionados: SnapshotStateList<Int>,
+    opcionesFrecuenciaBackup: List<String>,
+    opcionesHoraBackup: List<String>,
+    opcionesReintentoCritico: List<Int>,
+    opcionesIntentosCriticos: List<Int>,
+    frecuenciaBackupSeleccionada: String,
+    horaBackupSeleccionada: Int,
+    minutoBackupSeleccionado: Int,
+    expandedHoraBackup: Boolean,
+    urlServicioIa: String,
+    modeloServicioIa: String,
+    recordatorioSignosActivo: Boolean,
+    recordatorioSignosHora: Int,
+    recordatorioSignosMinuto: Int,
+    mostrarTimePickerSignos: Boolean,
+    mostrarListadoSignosPanel: Boolean,
+    mostrarListadoSignosGuardados: Boolean,
+    exportandoTomasState: MutableState<Boolean>,
+    periodoExportacionPendienteState: MutableState<IntakeExportPeriod?>,
+    database: AppDatabase,
+    coroutineScope: CoroutineScope,
+    panelInternoScrollState: ScrollState,
+    inventarioLazyRowState: LazyListState
+) {
+    MedicamentoFormPanelSecundarios(
+        s = s,
+        callbacks = callbacks,
+        launchers = launchers,
+        pacienteActivo = pacienteActivo,
+        perfilesPacientes = perfilesPacientes,
+        insumosGuardados = insumosGuardados,
+        carritoItems = carritoItems,
+        monedaActiva = monedaActiva,
+        profesionalesHabituales = profesionalesHabituales,
+        reportesSalud = reportesSalud,
+        citasMedicas = citasMedicas,
+        signosVitales = signosVitales,
+        edadCalculadaPaciente = edadCalculadaPaciente,
+        ultimoBackupAutomatico = ultimoBackupAutomatico,
+        sugerencias = sugerencias,
+        signosVitalesSeleccionados = signosVitalesSeleccionados,
+        mesesExpandidosSignos = mesesExpandidosSignos,
+        registrosSignosSeleccionados = registrosSignosSeleccionados,
+        opcionesFrecuenciaBackup = opcionesFrecuenciaBackup,
+        opcionesHoraBackup = opcionesHoraBackup,
+        opcionesReintentoCritico = opcionesReintentoCritico,
+        opcionesIntentosCriticos = opcionesIntentosCriticos,
+        frecuenciaBackupSeleccionada = frecuenciaBackupSeleccionada,
+        horaBackupSeleccionada = horaBackupSeleccionada,
+        minutoBackupSeleccionado = minutoBackupSeleccionado,
+        expandedHoraBackup = expandedHoraBackup,
+        urlServicioIa = urlServicioIa,
+        modeloServicioIa = modeloServicioIa,
+        recordatorioSignosActivo = recordatorioSignosActivo,
+        recordatorioSignosHora = recordatorioSignosHora,
+        recordatorioSignosMinuto = recordatorioSignosMinuto,
+        mostrarTimePickerSignos = mostrarTimePickerSignos,
+        mostrarListadoSignosPanel = mostrarListadoSignosPanel,
+        mostrarListadoSignosGuardados = mostrarListadoSignosGuardados,
+        exportandoTomasState = exportandoTomasState,
+        periodoExportacionPendienteState = periodoExportacionPendienteState,
+        database = database,
+        coroutineScope = coroutineScope,
+        panelInternoScrollState = panelInternoScrollState,
+        inventarioLazyRowState = inventarioLazyRowState
+    )
+}

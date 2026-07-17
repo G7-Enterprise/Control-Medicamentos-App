@@ -1,0 +1,70 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+
+> Task :sync-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :sync-core:compileKotlin UP-TO-DATE
+> Task :sync-core:compileJava NO-SOURCE
+> Task :sync-core:processResources NO-SOURCE
+> Task :sync-core:classes UP-TO-DATE
+> Task :sync-core:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+
+> Task :app:kspDebugKotlin
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+
+> Task :app:compileDebugKotlin
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:316:48 'static field FLAG_SHOW_WHEN_LOCKED: Int' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:317:48 'static field FLAG_TURN_SCREEN_ON: Int' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:323:48 'static field FLAG_SHOW_WHEN_LOCKED: Int' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:324:48 'static field FLAG_TURN_SCREEN_ON: Int' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:1850:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:3436:79 'val Icons.Filled.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:3514:79 'val Icons.Filled.DirectionsRun: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.DirectionsRun.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:3653:79 'val Icons.Filled.Note: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Note.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:4693:53 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:7125:37 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:7171:41 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:7280:37 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:7453:49 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:7648:31 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:8275:41 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:8472:55 'val Icons.Filled.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:8530:55 'val Icons.Filled.DirectionsRun: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.DirectionsRun.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:8605:55 'val Icons.Filled.Note: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Note.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:8943:57 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:9278:64 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:9579:61 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:10554:71 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:11559:33 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:12206:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:12253:69 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:12424:49 'fun Modifier.menuAnchor(): Modifier' is deprecated. Use overload that takes MenuAnchorType and enabled parameters.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:12546:36 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:13641:25 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:14042:35 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:14142:47 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+
+[Incubating] Problems report is available at: file:///D:/Controlmedicamentos/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 47s
+10 actionable tasks: 3 executed, 7 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

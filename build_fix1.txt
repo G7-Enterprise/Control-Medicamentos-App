@@ -1,0 +1,433 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+
+> Task :sync-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :sync-core:compileKotlin UP-TO-DATE
+> Task :sync-core:compileJava NO-SOURCE
+> Task :sync-core:processResources NO-SOURCE
+> Task :sync-core:classes UP-TO-DATE
+> Task :sync-core:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+
+> Task :app:compileDebugKotlin
+.\gradlew.bat : e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:1451:8 Cannot access 'fun applyPersistedBirthdayFallback(context: Context, 
+profile: PatientProfile?): PatientProfile?': it is private in file.
+En línea: 1 Carácter: 1
++ .\gradlew.bat :app:compileDebugKotlin --no-daemon 2>&1 | Out-File "bu ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///D:/C...rivate in file.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:1483:18 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2165:67 Cannot access 'fun formatDashboardDate(timestamp: Long): String': it is private in 
+file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2166:78 Cannot access 'fun formatDashboardDateSummary(timestamp: Long): String': it is private 
+in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2174:39 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2429:99 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2570:58 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2580:23 Cannot access 'fun duplicateSignature(medication: Medication): String': it is private 
+in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2663:39 Cannot access 'fun deleteAttachmentFile(path: String): Unit': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2667:46 Cannot access 'fun calcularEdadDesdeNacimiento(fechaNacimiento: Long, referencia: Long 
+= ...): Int': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2668:55 Cannot access 'fun savePersistedBirthday(context: Context, patientId: Int, birthDate: 
+Long): Unit': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2669:51 Cannot access 'fun loadPersistedBirthday(context: Context, patientId: Int): Long?': it 
+is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MainActivity.kt:2681:29 Cannot access 'fun formatHour(timestamp: Long): String': it is private in file.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:569:24 Argument type mismatch: actual type is 'MedicamentoFormState?', but 
+'MedicamentoFormState' was expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:829:47 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:964:16 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:965:20 None of the following candidates is applicable:
+fun <T> LazyListScope.items(items: Array<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+fun <T> LazyListScope.items(items: List<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:965:47 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:983:24 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1189:4 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1190:8 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1193:34 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1212:32 Unresolved reference 'TextStyle'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1220:32 Unresolved reference 'TextStyle'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1276:4 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1277:8 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1282:34 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1456:32 Unresolved reference 'graphicsLayer'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1456:48 Unresolved reference 'alpha'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1601:8 Unresolved reference 'AutoBackupScheduler'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1602:8 Unresolved reference 'AutoBackupScheduler'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1687:8 Unresolved reference 'ContextCompat'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1689:12 Unresolved reference 'Manifest'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1690:13 Unresolved reference 'PackageManager'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1698:79 Unresolved reference 'AlarmManager'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1699:22 Unresolved reference 'canScheduleExactAlarms'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1747:27 Unresolved reference 'NotificacionHelper'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1763:27 Unresolved reference 'NotificacionHelper'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1787:11 Unresolved reference 'ContextCompat'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1789:8 Unresolved reference 'Manifest'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1790:9 Unresolved reference 'PackageManager'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1810:12 Argument type mismatch: actual type is 'R? (of fun <T : Closeable?, R> T.use)', 
+but 'K? (of fun <K> ELVIS_CALL)' was expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1810:64 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1811:16 Unresolved reference 'FileOutputStream'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1811:39 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1811:45 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1814:17 Argument type mismatch: actual type is 'Nothing', but 'K (of fun <K> ELVIS_CALL)' 
+was expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1825:25 Unresolved reference 'ImageDecoder'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1826:12 Unresolved reference 'ImageDecoder'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1826:48 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1826:57 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1826:63 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1827:45 Function invocation 'size(...)' expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1827:50 Function invocation 'width(...)' expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1827:62 Function invocation 'size(...)' expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1827:67 Function invocation 'height(...)' expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1829:24 Unresolved reference 'setTargetSampleSize'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1830:24 Unresolved reference 'isMutableRequired'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1843:8 Unresolved reference 'FileOutputStream'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1843:31 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1843:37 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1858:24 Unresolved reference 'MimeTypeMap'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1860:29 Unresolved reference 'lowercase'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1908:17 Unresolved reference 'MessageDigest'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1909:49 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1968:34 Unresolved reference 'asImageBitmap'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1997:4 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:1999:21 Unresolved reference 'DialogProperties'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2001:8 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2011:21 Unresolved reference 'pointerInput'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2012:24 Unresolved reference 'detectTransformGestures'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2012:50 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2012:53 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2012:58 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2012:64 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2019:47 Unresolved reference 'x'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2020:47 Unresolved reference 'y'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2304:4 Unresolved reference 'ZipOutputStream'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2304:28 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2304:34 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2306:16 Unresolved reference 'putNextEntry'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2306:29 Unresolved reference 'ZipEntry'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2307:16 Unresolved reference 'write'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2308:16 Unresolved reference 'closeEntry'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2768:17 Unresolved reference 'first'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2859:40 Unresolved reference 'MedicationScheduler'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2878:24 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:2882:28 'fun <T> LazyListScope.items(items: List<T>, noinline key: ((@ParameterName(...) 
+T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: @Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit' 
+cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3029:16 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3033:20 'fun item(key: Any? = ..., contentType: Any? = ..., content: @Composable() 
+ComposableFunction1<LazyItemScope, Unit>): Unit' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3151:17 Unresolved reference 'animateFloatAsState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3153:24 Unresolved reference 'spring'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3159:25 Unresolved reference 'rememberInfiniteTransition'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3163:24 Unresolved reference 'infiniteRepeatable'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3164:24 Unresolved reference 'tween'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3164:61 Unresolved reference 'FastOutSlowInEasing'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3165:25 Unresolved reference 'RepeatMode'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3174:28 Unresolved reference 'graphicsLayer'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3175:12 Unresolved reference 'scaleX'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3176:12 Unresolved reference 'scaleY'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3178:16 Unresolved reference 'TextStyle'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3180:16 Unresolved reference 'Shadow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3185:16 Unresolved reference 'Shadow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3221:20 Unresolved reference 'rememberLazyListState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3222:24 Unresolved reference 'rememberSnapFlingBehavior'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3233:31 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3233:43 Unresolved reference 'abs'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3233:57 Function invocation 'offset(...)' expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3233:64 Unresolved reference 'plus' for operator '+'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3233:75 Function invocation 'size(...)' expected.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3234:18 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3234:18 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+fun <T, R> T.let(block: (T) -> R): R
+    [R|Contract description]
+     <
+        CallsInPlace(block, EXACTLY_ONCE)
+    >
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3234:24 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3234:68 Unresolved reference 'index'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3236:64 Unresolved reference 'timestamp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3237:41 Unresolved reference 'timestamp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3248:56 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3255:17 Unresolved reference 'graphicsLayer'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3256:20 Unresolved reference 'compositingStrategy'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3256:42 Unresolved reference 'CompositingStrategy'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3272:40 Unresolved reference 'BlendMode'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3280:12 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3289:28 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3289:39 Unresolved reference 'timestamp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3290:20 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3292:20 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3295:54 Unresolved reference 'timestamp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3296:32 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3299:56 Unresolved reference 'timestamp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3301:53 Unresolved reference 'timestamp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3308:56 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowRight: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3318:15 Unresolved reference 'Dp'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3323:25 Unresolved reference 'animateFloatAsState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3325:24 Unresolved reference 'tween'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3325:61 Unresolved reference 'FastOutSlowInEasing'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3332:13 Unresolved reference 'graphicsLayer'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3333:16 Unresolved reference 'scaleX'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3334:16 Unresolved reference 'scaleY'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3387:42 Unresolved reference 'abs'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3610:1 Unresolved reference 'Preview'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3613:4 Unresolved reference 'ControlMedicamentosTheme'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3614:8 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3615:34 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3625:26 Unresolved reference 'ImageVector'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3625:40 Unresolved reference 'ImageVector'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3631:2 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3631:8 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3633:4 Unresolved reference 'path'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3635:17 Unresolved reference 'SolidColor'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3637:24 Unresolved reference 'StrokeCap'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3638:25 Unresolved reference 'StrokeJoin'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3640:8 Unresolved reference 'moveTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3641:8 Unresolved reference 'lineTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3642:8 Unresolved reference 'arcTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3643:8 Unresolved reference 'lineTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3644:8 Unresolved reference 'arcTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3645:8 Unresolved reference 'close'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3648:4 Unresolved reference 'path'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3650:17 Unresolved reference 'SolidColor'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3652:24 Unresolved reference 'StrokeCap'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3653:25 Unresolved reference 'StrokeJoin'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3655:8 Unresolved reference 'moveTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3656:8 Unresolved reference 'lineTo'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3658:2 Unresolved reference 'build'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3745:8 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3752:12 None of the following candidates is applicable:
+fun <T> LazyListScope.items(items: Array<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+fun <T> LazyListScope.items(items: List<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3752:40 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3752:40 Function 'component1()' is ambiguous for this expression: 
+fun <T> Array<out T>.component1(): T
+fun ByteArray.component1(): Byte
+fun ShortArray.component1(): Short
+fun IntArray.component1(): Int
+fun LongArray.component1(): Long
+fun FloatArray.component1(): Float
+fun DoubleArray.component1(): Double
+fun BooleanArray.component1(): Boolean
+fun CharArray.component1(): Char
+fun <T> List<T>.component1(): T
+fun <K, V> Map.Entry<K, V>.component1(): K
+fun UIntArray.component1(): UInt
+fun ULongArray.component1(): ULong
+fun UByteArray.component1(): UByte
+fun UShortArray.component1(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3752:40 Function 'component2()' is ambiguous for this expression: 
+fun <T> Array<out T>.component2(): T
+fun ByteArray.component2(): Byte
+fun ShortArray.component2(): Short
+fun IntArray.component2(): Int
+fun LongArray.component2(): Long
+fun FloatArray.component2(): Float
+fun DoubleArray.component2(): Double
+fun BooleanArray.component2(): Boolean
+fun CharArray.component2(): Char
+fun <T> List<T>.component2(): T
+fun <K, V> Map.Entry<K, V>.component2(): V
+fun UIntArray.component2(): UInt
+fun ULongArray.component2(): ULong
+fun UByteArray.component2(): UByte
+fun UShortArray.component2(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3752:40 Function 'component3()' is ambiguous for this expression: 
+fun <T> Array<out T>.component3(): T
+fun ByteArray.component3(): Byte
+fun ShortArray.component3(): Short
+fun IntArray.component3(): Int
+fun LongArray.component3(): Long
+fun FloatArray.component3(): Float
+fun DoubleArray.component3(): Double
+fun BooleanArray.component3(): Boolean
+fun CharArray.component3(): Char
+fun <T> List<T>.component3(): T
+fun UIntArray.component3(): UInt
+fun ULongArray.component3(): ULong
+fun UByteArray.component3(): UByte
+fun UShortArray.component3(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3753:16 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3775:8 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3782:12 None of the following candidates is applicable:
+fun <T> LazyListScope.items(items: Array<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+fun <T> LazyListScope.items(items: List<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3782:41 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3782:41 Function 'component1()' is ambiguous for this expression: 
+fun <T> Array<out T>.component1(): T
+fun ByteArray.component1(): Byte
+fun ShortArray.component1(): Short
+fun IntArray.component1(): Int
+fun LongArray.component1(): Long
+fun FloatArray.component1(): Float
+fun DoubleArray.component1(): Double
+fun BooleanArray.component1(): Boolean
+fun CharArray.component1(): Char
+fun <T> List<T>.component1(): T
+fun <K, V> Map.Entry<K, V>.component1(): K
+fun UIntArray.component1(): UInt
+fun ULongArray.component1(): ULong
+fun UByteArray.component1(): UByte
+fun UShortArray.component1(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3782:41 Function 'component2()' is ambiguous for this expression: 
+fun <T> Array<out T>.component2(): T
+fun ByteArray.component2(): Byte
+fun ShortArray.component2(): Short
+fun IntArray.component2(): Int
+fun LongArray.component2(): Long
+fun FloatArray.component2(): Float
+fun DoubleArray.component2(): Double
+fun BooleanArray.component2(): Boolean
+fun CharArray.component2(): Char
+fun <T> List<T>.component2(): T
+fun <K, V> Map.Entry<K, V>.component2(): V
+fun UIntArray.component2(): UInt
+fun ULongArray.component2(): ULong
+fun UByteArray.component2(): UByte
+fun UShortArray.component2(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3783:16 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3801:12 Unresolved reference 'LazyRow'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3808:16 None of the following candidates is applicable:
+fun <T> LazyListScope.items(items: Array<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+fun <T> LazyListScope.items(items: List<T>, noinline key: ((@ParameterName(...) T) -> Any)? = ..., noinline contentType: (@ParameterName(...) T) -> Any? = ..., crossinline itemContent: 
+@Composable() ComposableFunction2<LazyItemScope, @ParameterName(...) T, Unit>): Unit
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3808:45 Cannot infer type for this parameter. Specify it explicitly.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3808:45 Function 'component1()' is ambiguous for this expression: 
+fun <T> Array<out T>.component1(): T
+fun ByteArray.component1(): Byte
+fun ShortArray.component1(): Short
+fun IntArray.component1(): Int
+fun LongArray.component1(): Long
+fun FloatArray.component1(): Float
+fun DoubleArray.component1(): Double
+fun BooleanArray.component1(): Boolean
+fun CharArray.component1(): Char
+fun <T> List<T>.component1(): T
+fun <K, V> Map.Entry<K, V>.component1(): K
+fun UIntArray.component1(): UInt
+fun ULongArray.component1(): ULong
+fun UByteArray.component1(): UByte
+fun UShortArray.component1(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3808:45 Function 'component2()' is ambiguous for this expression: 
+fun <T> Array<out T>.component2(): T
+fun ByteArray.component2(): Byte
+fun ShortArray.component2(): Short
+fun IntArray.component2(): Int
+fun LongArray.component2(): Long
+fun FloatArray.component2(): Float
+fun DoubleArray.component2(): Double
+fun BooleanArray.component2(): Boolean
+fun CharArray.component2(): Char
+fun <T> List<T>.component2(): T
+fun <K, V> Map.Entry<K, V>.component2(): V
+fun UIntArray.component2(): UInt
+fun ULongArray.component2(): ULong
+fun UByteArray.component2(): UByte
+fun UShortArray.component2(): UShort.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3809:20 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:3936:47 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5005:8 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5006:12 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5006:110 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5052:8 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5053:12 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5053:110 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5089:27 Unresolved reference 'delay'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5090:17 Unresolved reference 'animateFloatAsState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5090:92 Unresolved reference 'tween'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5094:13 Unresolved reference 'alpha'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5109:27 Unresolved reference 'delay'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5110:17 Unresolved reference 'animateFloatAsState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5110:92 Unresolved reference 'tween'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5125:13 Unresolved reference 'alpha'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5185:4 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5186:8 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5186:127 @Composable invocations can only happen from the context of a @Composable 
+function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5247:4 Unresolved reference 'Dialog'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5248:8 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5251:34 @Composable invocations can only happen from the context of a @Composable function
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5451:4 Unresolved reference 'BackHandler'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5556:76 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5636:47 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5728:76 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5806:76 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormUI.kt:5852:77 Unresolved reference. None of the following candidates is applicable because of a 
+receiver type mismatch:
+val Icons.Filled.KeyboardArrowLeft: ImageVector
+
+> Task :app:compileDebugKotlin FAILED
+
+[Incubating] Problems report is available at: file:///D:/Controlmedicamentos/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+> Get more help at https://help.gradle.org.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2m 24s
+10 actionable tasks: 3 executed, 7 up-to-date

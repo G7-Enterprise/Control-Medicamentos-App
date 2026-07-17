@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registro de Vacunas"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="20dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Seleccione la Vacuna:" />
+    
+    <Spinner
+        android:id="@+id/spinnerVacunas"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginBottom="15dp"/>
+
+    <CheckBox
+        android:id="@+id/cbYaRecibida"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ya recibí esta vacuna"
+        android:layout_marginBottom="15dp"/>
+
+    <Button
+        android:id="@+id/btnSeleccionarFecha"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Seleccionar Fecha"
+        android:layout_marginBottom="15dp"/>
+
+    <TextView
+        android:id="@+id/tvFechaSeleccionada"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ninguna fecha seleccionada"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchAlarma"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Activar Alarma / Recordatorio"
+        android:checked="true"
+        android:layout_marginBottom="30dp"/>
+
+    <Button
+        android:id="@+id/btnGuardarVacuna"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Guardar Vacuna" />
+
+</LinearLayout>

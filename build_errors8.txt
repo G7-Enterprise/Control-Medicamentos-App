@@ -1,0 +1,110 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.disallowKotlinSourceSets=false' is experimental.
+The current default is 'true'.
+
+> Task :sync-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :sync-core:compileKotlin UP-TO-DATE
+> Task :sync-core:compileJava NO-SOURCE
+> Task :sync-core:processResources NO-SOURCE
+> Task :sync-core:classes UP-TO-DATE
+> Task :sync-core:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+
+> Task :app:kspDebugKotlin
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+w: [ksp] ninoId column references a foreign key but it is not part of an index. This may trigger full table scans whenever parent table is modified so you are highly advised to create an index that covers this column.
+
+> Task :app:compileDebugKotlin
+.\gradlew.bat : e: file:///D:/Controlmedicamentos/app/src/main/java/com/ca
+rlos/controlmedicamentos/MedicamentoFormUI.kt:82:77 Unresolved reference 
+'ALL'.
+En línea: 1 Carácter: 1
++ .\gradlew.bat :app:compileDebugKotlin --no-daemon 2>&1 | Out-File "bu 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: file:///D:/C...eference ' 
+   ALL'.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:190:114 Unresolved reference 'ALL'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:191:115 Unresolved reference 'ALL'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:549:44 Unresolved reference 
+'frecuenciaBackupSeleccionada'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:767:42 Unresolved reference 
+'eFallAlertPanelState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:886:49 Unresolved reference 
+'eSigVitalesSeleccionados'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:972:36 Unresolved reference 
+'eUrlServicioIa'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:973:39 Unresolved reference 
+'eModeloServicioIa'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:1174:41 Unresolved reference 
+'eSigVitalesSeleccionados'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUI.kt:1220:34 Unresolved reference 
+'eFallAlertPanelState'.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUICompact.kt:52:8 No parameter with name 
+'opcionesToma' found.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUICompact.kt:53:8 No parameter with name 'ciclos' 
+found.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUICompact.kt:54:8 No parameter with name 
+'opcionesPesoUnidad' found.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUICompact.kt:55:8 No parameter with name 
+'opcionesEstaturaUnidad' found.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUICompact.kt:60:8 No parameter with name 
+'opcionesRecordatorioCita' found.
+e: file:///D:/Controlmedicamentos/app/src/main/java/com/carlos/controlmedi
+camentos/MedicamentoFormUICompact.kt:65:8 No parameter with name 
+'fechaEscritorioSeleccionada' found.
+
+> Task :app:compileDebugKotlin FAILED
+
+[Incubating] Problems report is available at: file:///D:/Controlmedicamentos/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.G
+radleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by 
+Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1m 28s
+10 actionable tasks: 3 executed, 7 up-to-date
