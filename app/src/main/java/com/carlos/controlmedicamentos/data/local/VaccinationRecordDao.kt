@@ -24,6 +24,9 @@ interface VaccinationRecordDao {
     @Query("SELECT * FROM vaccination_records WHERE id = :recordId LIMIT 1")
     suspend fun buscarPorId(recordId: Int): VaccinationRecord?
 
+    @Query("SELECT * FROM vaccination_records WHERE patientId = :patientId AND nextDoseAt IS NOT NULL AND nextDoseAt >= :now ORDER BY nextDoseAt ASC LIMIT 1")
+    suspend fun obtenerProximaDosis(patientId: Int, now: Long): VaccinationRecord?
+
     @Query("SELECT * FROM vaccination_records WHERE alarmEnabled = 1 AND nextDoseAt IS NOT NULL AND nextDoseAt >= :now ORDER BY nextDoseAt ASC")
     suspend fun obtenerPendientesConAlarma(now: Long): List<VaccinationRecord>
 

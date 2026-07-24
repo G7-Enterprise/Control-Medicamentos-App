@@ -404,25 +404,27 @@ fun FormularioVacunaScreen(onCerrar: () -> Unit) {
         if (recordToDelete != null) {
             AlertDialog(
                 onDismissRequest = { recordToDelete = null },
-                title = { Text("¿Eliminar registro?", color = PurpleTextMain) },
-                text = { Text("Se eliminará el registro de \"${recordToDelete!!.vaccineName}\". Esta acción no se puede deshacer.", color = PurpleTextSub) },
+                title = { Text("¿Eliminar registro?", color = Color.White) },
+                text = { Text("Se eliminará el registro de \"${recordToDelete!!.vaccineName}\". Esta acción no se puede deshacer.", color = Color.White) },
                 confirmButton = {
-                    TextButton(onClick = {
-                        val rec = recordToDelete!!
-                        recordToDelete = null
-                        coroutineScope.launch(Dispatchers.IO) {
-                            database.vaccinationRecordDao().eliminar(rec)
+                    IconButton(
+                        onClick = {
+                            val rec = recordToDelete!!
+                            recordToDelete = null
+                            coroutineScope.launch(Dispatchers.IO) {
+                                database.vaccinationRecordDao().eliminar(rec)
+                            }
                         }
-                    }) {
-                        Text("Eliminar", color = Color(0xFFFF6B6B))
+                    ) {
+                        Icon(Icons.Filled.Check, contentDescription = "Aceptar", tint = Color(0xFF4CAF50))
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { recordToDelete = null }) {
-                        Text("Cancelar", color = PurpleAccent)
+                    IconButton(onClick = { recordToDelete = null }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Cancelar", tint = Color(0xFFFF5252))
                     }
                 },
-                containerColor = PurpleCardBg
+                containerColor = Color(0xFF2A0040)
             )
         }
 

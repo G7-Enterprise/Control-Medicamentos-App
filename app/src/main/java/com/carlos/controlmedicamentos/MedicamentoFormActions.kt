@@ -232,11 +232,13 @@ internal fun resetCitaMedicaAction(
 internal fun resetMedicoHabitualAction(
     setEditingPractitionerId: (Int?) -> Unit,
     setNombreProfesional: (String) -> Unit,
-    setEspecialidadProfesional: (String) -> Unit
+    setEspecialidadProfesional: (String) -> Unit,
+    setTelefonoProfesional: (String) -> Unit
 ) {
     setEditingPractitionerId(null)
     setNombreProfesional("")
     setEspecialidadProfesional("")
+    setTelefonoProfesional("")
 }
 
 internal fun cargarFichaPacienteAction(
@@ -301,6 +303,7 @@ internal fun guardarMedicoHabitualActualAction(
     pacienteActivo: PatientProfile?,
     nombreProfesional: String,
     especialidadProfesional: String,
+    telefonoProfesional: String,
     editingPractitionerId: Int?,
     profesionalesHabituales: List<MedicalPractitioner>,
     database: AppDatabase,
@@ -309,6 +312,7 @@ internal fun guardarMedicoHabitualActualAction(
     setEditingPractitionerId: (Int?) -> Unit,
     setNombreProfesional: (String) -> Unit,
     setEspecialidadProfesional: (String) -> Unit,
+    setTelefonoProfesional: (String) -> Unit,
     setMostrarFormularioProfesional: (Boolean) -> Unit,
     setMostrarPanelProfesionales: (Boolean) -> Unit
 ) {
@@ -325,6 +329,7 @@ internal fun guardarMedicoHabitualActualAction(
         patientId = pacienteActivo.id,
         name = nombreProfesional.trim(),
         specialty = especialidadProfesional.trim(),
+        phone = telefonoProfesional.trim(),
         createdAt = profesionalesHabituales.firstOrNull { it.id == editingPractitionerId }?.createdAt
             ?: System.currentTimeMillis()
     )
@@ -335,6 +340,7 @@ internal fun guardarMedicoHabitualActualAction(
             setEditingPractitionerId(null)
             setNombreProfesional("")
             setEspecialidadProfesional("")
+            setTelefonoProfesional("")
             setMostrarFormularioProfesional(false)
             setMostrarPanelProfesionales(true)
             Toast.makeText(context, "Profesional guardado", Toast.LENGTH_SHORT).show()
@@ -586,7 +592,8 @@ internal fun resetCitaMedicaWithState(s: MedicamentoFormState) = resetCitaMedica
 internal fun resetMedicoHabitualWithState(s: MedicamentoFormState) = resetMedicoHabitualAction(
     setEditingPractitionerId = { s.editingPractitionerIdState.value = it },
     setNombreProfesional = { s.nombreProfesionalState.value = it },
-    setEspecialidadProfesional = { s.especialidadProfesionalState.value = it }
+    setEspecialidadProfesional = { s.especialidadProfesionalState.value = it },
+    setTelefonoProfesional = { s.telefonoProfesionalState.value = it }
 )
 
 internal fun cargarFichaPacienteWithState(

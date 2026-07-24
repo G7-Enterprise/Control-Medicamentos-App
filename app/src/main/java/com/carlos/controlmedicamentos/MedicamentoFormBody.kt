@@ -82,6 +82,7 @@ internal fun MedicamentoFormBody(
 ) {
     var mostrarListadoSignosPanel by mostrarListadoSignosPanelState
     var mostrarListadoSignosGuardados by mostrarListadoSignosGuardadosState
+    val onMostrarListadoSignosPanelChange: (Boolean) -> Unit = { mostrarListadoSignosPanelState.value = it }
     val mostrarFormulario = s.mostrarFormulario
     val mostrarListaInsumos = s.mostrarListaInsumos
     val mostrarPanelPacientes = s.mostrarPanelPacientes
@@ -110,7 +111,7 @@ internal fun MedicamentoFormBody(
     val mostrarPanelHidratacion = s.mostrarPanelHidratacion
     val mostrarPanelSedentarismo = s.mostrarPanelSedentarismo
     val mostrarPanelDentista = s.mostrarPanelDentista
-    val mostrarEscritorio = !mostrarFormulario && !mostrarListaInsumos && !mostrarPanelPacientes && !mostrarPanelCitasMedicas && !mostrarPanelProfesionales && !mostrarFormularioProfesional && !mostrarFormularioCitaMedica && !mostrarFichaPaciente && !mostrarPanelInformes && !mostrarFormularioInforme && !mostrarPanelBackups && !mostrarPanelPedidos && !mostrarPanelPodometro && !mostrarPanelConfiguracionAlertas && !mostrarPanelSignosVitales && !mostrarPanelConfiguracionIa && !mostrarPanelCicloMenstrual && !mostrarPanelEmbarazo && !mostrarPanelAnticonceptivos && !mostrarPanelPediatrico && !mostrarPanelReporteClinico && !mostrarPanelDiario && !mostrarPanelAsistenteIa && !mostrarPanelEstadisticas && !mostrarPanelVerificadorTomas && !mostrarPanelHidratacion && !mostrarPanelSedentarismo && !mostrarPanelDentista
+    val mostrarEscritorio = !mostrarFormulario && !mostrarListaInsumos && !mostrarPanelPacientes && !mostrarPanelCitasMedicas && !mostrarPanelProfesionales && !mostrarFormularioProfesional && !mostrarFormularioCitaMedica && !mostrarFichaPaciente && !mostrarPanelInformes && !mostrarFormularioInforme && !mostrarPanelBackups && !mostrarPanelPedidos && !mostrarPanelPodometro && !mostrarPanelConfiguracionAlertas && !mostrarPanelSignosVitales && !mostrarPanelConfiguracionIa && !mostrarPanelCicloMenstrual && !mostrarPanelEmbarazo && !mostrarPanelAnticonceptivos && !mostrarPanelPediatrico && !mostrarPanelReporteClinico && !mostrarPanelDiario && !mostrarPanelAsistenteIa && !mostrarPanelEstadisticas && !mostrarPanelVerificadorTomas && !mostrarPanelHidratacion && !mostrarPanelSedentarismo && !mostrarPanelDentista && !mostrarListadoSignosPanel && !mostrarListadoSignosGuardados
     val citaMedicaSeleccionada = citasMedicas.firstOrNull { it.id == s.citaMedicaSeleccionadaId }
     val medicoSeleccionado = profesionalesHabituales.firstOrNull { it.id == s.profesionalSeleccionadoId }
     val nombreProfesionalActivo = s.nombreProfesional.trim()
@@ -176,6 +177,8 @@ internal fun MedicamentoFormBody(
             mostrarPanelAsistenteIa ||
             mostrarFichaPaciente ||
             mostrarPanelPacientes ||
+            mostrarListadoSignosPanel ||
+            mostrarListadoSignosGuardados ||
             fallAlertPanelState.value
     LaunchedEffect(
         mostrarFormulario,
@@ -205,6 +208,43 @@ internal fun MedicamentoFormBody(
         panelUsaScrollInterno = panelUsaScrollInterno,
         scrollState = scrollState
     ) {
+        // Menú hamburguesa flotante (visible en todas las pantallas secundarias)
+        MenuHamburguesaFlotante(
+            mostrarEscritorio = mostrarEscritorio,
+            mostrarMenuHamburguesaState = s.mostrarMenuHamburguesaState,
+            pacienteActivo = pacienteActivo,
+            alarmaSonidoUriState = s.alarmaSonidoUriState,
+            alarmaSonidoNombreState = s.alarmaSonidoNombreState,
+            fallAlertPanelState = fallAlertPanelState,
+            intervaloReintentoSeleccionadoState = s.intervaloReintentoSeleccionadoState,
+            numeroIntentosCriticosSeleccionadoState = s.numeroIntentosCriticosSeleccionadoState,
+            onCerrarPanelesSecundarios = callbacks.onCerrarPanelesSecundarios,
+            onAbrirNuevaFichaPaciente = callbacks.onAbrirNuevaFichaPaciente,
+            onResetForm = callbacks.onResetForm,
+            onMostrarFormulario = { s.mostrarFormularioState.value = it },
+            onMostrarPanelPacientes = { s.mostrarPanelPacientesState.value = it },
+            onMostrarPanelProfesionales = { s.mostrarPanelProfesionalesState.value = it },
+            onMostrarPanelInformes = { s.mostrarPanelInformesState.value = it },
+            onMostrarListaInsumos = { s.mostrarListaInsumosState.value = it },
+            onMostrarDialogoMedia = { s.mostrarDialogoMediaState.value = it },
+            onMostrarFormularioInformeChange = { s.mostrarFormularioInformeState.value = it },
+            onMostrarPanelSignosVitales = callbacks.onMostrarPanelSignosVitalesInit,
+            onMostrarPanelConfiguracionAlertas = { s.mostrarPanelConfiguracionAlertasState.value = it },
+            onMostrarPanelAsistenteIa = { s.mostrarPanelAsistenteIaState.value = it },
+            onMostrarPanelPodometro = { s.mostrarPanelPodometroState.value = it },
+            onMostrarPanelPedidos = { s.mostrarPanelPedidosState.value = it },
+            onMostrarPanelBackups = { s.mostrarPanelBackupsState.value = it },
+            onMostrarPanelHidratacion = { s.mostrarPanelHidratacionState.value = it },
+            onMostrarPanelSedentarismo = { s.mostrarPanelSedentarismoState.value = it },
+            onMostrarPanelDentista = { s.mostrarPanelDentistaState.value = it },
+            onMostrarPanelReporteClinico = { s.mostrarPanelReporteClinicoState.value = it },
+            onMostrarPanelEstadisticas = { s.mostrarPanelEstadisticasState.value = it },
+            onMostrarPanelVerificadorTomas = { s.mostrarPanelVerificadorTomasState.value = it },
+            onMostrarPanelDiario = { s.mostrarPanelDiarioState.value = it },
+            onMostrarPanelCicloMenstrual = { s.mostrarPanelCicloMenstrualState.value = it },
+            onResolveAlarmSoundLabel = callbacks.onResolveAlarmSoundLabel
+        )
+
         if (mostrarEscritorio) {
             MedicamentoFormBodyEscritorio(
                 modifier = Modifier
@@ -263,6 +303,7 @@ internal fun MedicamentoFormBody(
             mostrarTimePickerSignos = mostrarTimePickerSignos,
             mostrarListadoSignosPanel = mostrarListadoSignosPanel,
             mostrarListadoSignosGuardados = mostrarListadoSignosGuardados,
+            onMostrarListadoSignosPanelChange = onMostrarListadoSignosPanelChange,
             exportandoTomasState = exportandoTomasState,
             periodoExportacionPendienteState = periodoExportacionPendienteState,
             database = database,
@@ -276,43 +317,6 @@ internal fun MedicamentoFormBody(
             patientId = pacienteActivo?.id ?: 0,
             database = database,
             onVolver = callbacks.onCerrarPanelesSecundarios
-        )
-
-        // Menú hamburguesa flotante (visible en todas las pantallas secundarias)
-        MenuHamburguesaFlotante(
-            mostrarEscritorio = mostrarEscritorio,
-            mostrarMenuHamburguesaState = s.mostrarMenuHamburguesaState,
-            pacienteActivo = pacienteActivo,
-            alarmaSonidoUriState = s.alarmaSonidoUriState,
-            alarmaSonidoNombreState = s.alarmaSonidoNombreState,
-            fallAlertPanelState = fallAlertPanelState,
-            intervaloReintentoSeleccionadoState = s.intervaloReintentoSeleccionadoState,
-            numeroIntentosCriticosSeleccionadoState = s.numeroIntentosCriticosSeleccionadoState,
-            onCerrarPanelesSecundarios = callbacks.onCerrarPanelesSecundarios,
-            onAbrirNuevaFichaPaciente = callbacks.onAbrirNuevaFichaPaciente,
-            onResetForm = callbacks.onResetForm,
-            onMostrarFormulario = { s.mostrarFormularioState.value = it },
-            onMostrarPanelPacientes = { s.mostrarPanelPacientesState.value = it },
-            onMostrarPanelProfesionales = { s.mostrarPanelProfesionalesState.value = it },
-            onMostrarPanelInformes = { s.mostrarPanelInformesState.value = it },
-            onMostrarListaInsumos = { s.mostrarListaInsumosState.value = it },
-            onMostrarDialogoMedia = { s.mostrarDialogoMediaState.value = it },
-            onMostrarFormularioInformeChange = { s.mostrarFormularioInformeState.value = it },
-            onMostrarPanelSignosVitales = callbacks.onMostrarPanelSignosVitalesInit,
-            onMostrarPanelConfiguracionAlertas = { s.mostrarPanelConfiguracionAlertasState.value = it },
-            onMostrarPanelAsistenteIa = { s.mostrarPanelAsistenteIaState.value = it },
-            onMostrarPanelPodometro = { s.mostrarPanelPodometroState.value = it },
-            onMostrarPanelPedidos = { s.mostrarPanelPedidosState.value = it },
-            onMostrarPanelBackups = { s.mostrarPanelBackupsState.value = it },
-            onMostrarPanelHidratacion = { s.mostrarPanelHidratacionState.value = it },
-            onMostrarPanelSedentarismo = { s.mostrarPanelSedentarismoState.value = it },
-            onMostrarPanelDentista = { s.mostrarPanelDentistaState.value = it },
-            onMostrarPanelReporteClinico = { s.mostrarPanelReporteClinicoState.value = it },
-            onMostrarPanelEstadisticas = { s.mostrarPanelEstadisticasState.value = it },
-            onMostrarPanelVerificadorTomas = { s.mostrarPanelVerificadorTomasState.value = it },
-            onMostrarPanelDiario = { s.mostrarPanelDiarioState.value = it },
-            onMostrarPanelCicloMenstrual = { s.mostrarPanelCicloMenstrualState.value = it },
-            onResolveAlarmSoundLabel = callbacks.onResolveAlarmSoundLabel
         )
 
         ListadoSignosVitalesPanel(

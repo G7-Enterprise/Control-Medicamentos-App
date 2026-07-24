@@ -109,6 +109,7 @@ data class SyncMedicalPractitioner(
     val patientId: Int,
     val name: String,
     val specialty: String,
+    val phone: String = "",
     val createdAt: Long
 )
 

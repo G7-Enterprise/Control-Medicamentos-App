@@ -102,6 +102,16 @@
             android:theme="@style/Theme.ControlMedicamentos"
             android:launchMode="singleInstance" />
         <activity
+            android:name=".ReminderAlertActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.ControlMedicamentos"
+            android:launchMode="singleInstance" />
+        <activity
             android:name=".NuevaVacunaActivity"
             android:exported="false"
             android:theme="@style/Theme.ControlMedicamentos" />

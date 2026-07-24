@@ -40,6 +40,9 @@ interface MedicalAppointmentDao {
     @Query("DELETE FROM medical_appointments WHERE patientId = :patientId")
     suspend fun eliminarPorPaciente(patientId: Int)
 
+    @Query("SELECT * FROM medical_appointments WHERE patientId = :patientId AND isCompleted = 0 AND scheduledAt >= :now ORDER BY scheduledAt ASC LIMIT 1")
+    suspend fun obtenerProximaNoCompletada(patientId: Int, now: Long): MedicalAppointment?
+
     @Query("DELETE FROM medical_appointments")
     suspend fun eliminarTodos()
 }

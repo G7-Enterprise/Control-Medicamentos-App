@@ -46,6 +46,9 @@ import com.carlos.controlmedicamentos.data.local.IncidenciaOrtodoncia
 import com.carlos.controlmedicamentos.data.local.ElasticoOrtodoncia
 import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import com.carlos.controlmedicamentos.data.local.ConfigSedentarismo
+import com.carlos.controlmedicamentos.data.local.RegistroHidratacion
+import com.carlos.controlmedicamentos.data.local.FallAlert
+import com.carlos.controlmedicamentos.data.local.FALL_STATUS_DETECTED
 import com.carlos.controlmedicamentos.notifications.CriticalAlertConfig
 import com.carlos.controlmedicamentos.data.local.TipoAnticonceptivo
 import com.carlos.controlmedicamentos.notifications.CriticalAlertSettings
@@ -109,7 +112,9 @@ data class BackupSummary(
     val incidenciasOrtodoncia: Int = 0,
     val elasticosOrtodoncia: Int = 0,
     val registrosSedentarismo: Int = 0,
-    val configSedentarismo: Int = 0
+    val configSedentarismo: Int = 0,
+    val registrosHidratacion: Int = 0,
+    val fallAlerts: Int = 0
 )
 
 data class BackupSelection(
@@ -149,7 +154,9 @@ data class BackupSelection(
     val incidenciasOrtodoncia: Boolean = true,
     val elasticosOrtodoncia: Boolean = true,
     val registrosSedentarismo: Boolean = true,
-    val configSedentarismo: Boolean = true
+    val configSedentarismo: Boolean = true,
+    val registrosHidratacion: Boolean = true,
+    val fallAlerts: Boolean = true
 ) {
     companion object {
         fun all() = BackupSelection()
@@ -190,7 +197,9 @@ data class BackupSelection(
             incidenciasOrtodoncia = false,
             elasticosOrtodoncia = false,
             registrosSedentarismo = false,
-            configSedentarismo = false
+            configSedentarismo = false,
+            registrosHidratacion = false,
+            fallAlerts = false
         )
     }
 }
@@ -338,6 +347,14 @@ object BackupManager {
             else database.sedentarismoDao().obtenerTodosLista()
         } else emptyList()
         val configsSedentarismo = if (selection.configSedentarismo) database.sedentarismoDao().obtenerTodosConfig() else emptyList()
+        val registrosHidratacion = if (selection.registrosHidratacion) {
+            if (patientId != null) database.hidratacionDao().obtenerTodosLista().filter { it.patientId == patientId }
+            else database.hidratacionDao().obtenerTodosLista()
+        } else emptyList()
+        val fallAlerts = if (selection.fallAlerts) {
+            if (patientId != null) database.fallAlertDao().obtenerTodosLista().filter { it.patientId == patientId }
+            else database.fallAlertDao().obtenerTodosLista()
+        } else emptyList()
         val criticalAlertConfig = CriticalAlertSettings.load(context)
         val exportedAt = System.currentTimeMillis()
         val syncSnapshot = buildAndroidSyncSnapshot(
@@ -396,24 +413,41 @@ object BackupManager {
             .put("elasticosOrtodoncia", JSONArray().apply { elasticosOrtodoncia.forEach { put(it.toJson()) } })
             .put("registrosSedentarismo", JSONArray().apply { registrosSedentarismo.forEach { put(it.toJson()) } })
             .put("configSedentarismo", JSONArray().apply { configsSedentarismo.forEach { put(it.toJson()) } })
+            .put("registrosHidratacion", JSONArray().apply { registrosHidratacion.forEach { put(it.toJson()) } })
+            .put("fallAlerts", JSONArray().apply { fallAlerts.forEach { put(it.toJson()) } })
     }
 
     private suspend fun restoreFromJson(context: Context, database: AppDatabase, json: JSONObject, selection: BackupSelection = BackupSelection.all(), patientId: Int? = null): BackupSummary {
         val syncSnapshot = json.optJSONObject("syncSnapshot")?.toSyncSnapshot()
-        val patients = syncSnapshot?.patients?.map(SyncPatient::toEntity) ?: json.optJSONArray("patients").toPatientProfiles(context)
-        val medications = syncSnapshot?.medications?.map(SyncMedication::toEntity) ?: json.optJSONArray("medications").toMedications()
+        val patients = json.optJSONArray("patients")?.toPatientProfiles(context)
+            ?: syncSnapshot?.patients?.map(SyncPatient::toEntity)
+            ?: emptyList()
+        val medications = (json.optJSONArray("medications")?.toMedications()
+            ?: syncSnapshot?.medications?.map(SyncMedication::toEntity)
+            ?: emptyList())
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
-        val intakes = syncSnapshot?.medicationIntakes?.map(SyncMedicationIntake::toEntity) ?: json.optJSONArray("intakes").toMedicationIntakes()
+        val intakes = (json.optJSONArray("intakes")?.toMedicationIntakes()
+            ?: syncSnapshot?.medicationIntakes?.map(SyncMedicationIntake::toEntity)
+            ?: emptyList())
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
-        val reports = json.optJSONArray("reports").toMedicalReports(context)
-            .ifEmpty { syncSnapshot?.reports?.map(SyncMedicalReport::toEntity).orEmpty() }
+        val reports = (json.optJSONArray("reports")?.toMedicalReports(context)
+            ?: syncSnapshot?.reports?.map(SyncMedicalReport::toEntity)
+            ?: emptyList())
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
-        val vitalSigns = syncSnapshot?.vitalSigns?.map(SyncVitalSigns::toEntity) ?: json.optJSONArray("vitalSigns").toVitalSigns()
+        val vitalSigns = (json.optJSONArray("vitalSigns")?.toVitalSigns()
+            ?: syncSnapshot?.vitalSigns?.map(SyncVitalSigns::toEntity)
+            ?: emptyList())
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
-        val appointments = syncSnapshot?.appointments?.map(SyncMedicalAppointment::toEntity) ?: json.optJSONArray("appointments").toMedicalAppointments()
+        val appointments = (json.optJSONArray("appointments")?.toMedicalAppointments()
+            ?: syncSnapshot?.appointments?.map(SyncMedicalAppointment::toEntity)
+            ?: emptyList())
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
-        val practitioners = syncSnapshot?.practitioners?.map(SyncMedicalPractitioner::toEntity) ?: json.optJSONArray("practitioners").toMedicalPractitioners()
-        val vaccinations = syncSnapshot?.vaccinations?.map(SyncVaccinationRecord::toEntity) ?: json.optJSONArray("vaccinations").toVaccinationRecords()
+        val practitioners = json.optJSONArray("practitioners")?.toMedicalPractitioners()
+            ?: syncSnapshot?.practitioners?.map(SyncMedicalPractitioner::toEntity)
+            ?: emptyList()
+        val vaccinations = (json.optJSONArray("vaccinations")?.toVaccinationRecords()
+            ?: syncSnapshot?.vaccinations?.map(SyncVaccinationRecord::toEntity)
+            ?: emptyList())
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val medicationOrders = json.optJSONArray("medicationOrders").toMedicationOrders()
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
@@ -462,6 +496,12 @@ object BackupManager {
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val configsSedentarismo = json.optJSONArray("configSedentarismo").toConfigsSedentarismo()
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
+        val registrosHidratacion = (json.optJSONArray("registrosHidratacion")?.toRegistrosHidratacion()
+            ?: emptyList())
+            .map { if (patientId != null) it.copy(patientId = patientId) else it }
+        val fallAlerts = (json.optJSONArray("fallAlerts")?.toFallAlerts()
+            ?: emptyList())
+            .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val criticalAlertConfig = json.optJSONObject("criticalAlertSettings")?.toCriticalAlertConfig()
             ?: medications.firstOrNull()?.let {
                 CriticalAlertConfig(
@@ -509,6 +549,8 @@ object BackupManager {
             if (selection.elasticosOrtodoncia) database.elasticoOrtodonciaDao().eliminarTodos()
             if (selection.registrosSedentarismo) database.sedentarismoDao().eliminarTodos()
             if (selection.configSedentarismo) database.sedentarismoDao().eliminarTodaConfig()
+            if (selection.registrosHidratacion) database.hidratacionDao().eliminarTodos()
+            if (selection.fallAlerts) database.fallAlertDao().eliminarTodos()
 
             if (selection.patients && patients.isNotEmpty()) database.patientProfileDao().guardarTodos(patients)
             if (selection.medications && medications.isNotEmpty()) database.medicationDao().guardarTodos(medications)
@@ -547,6 +589,8 @@ object BackupManager {
             if (selection.elasticosOrtodoncia && elasticosOrtodoncia.isNotEmpty()) database.elasticoOrtodonciaDao().guardarTodos(elasticosOrtodoncia)
             if (selection.registrosSedentarismo && registrosSedentarismo.isNotEmpty()) database.sedentarismoDao().guardarTodos(registrosSedentarismo)
             if (selection.configSedentarismo && configsSedentarismo.isNotEmpty()) database.sedentarismoDao().guardarTodosConfig(configsSedentarismo)
+            if (selection.registrosHidratacion && registrosHidratacion.isNotEmpty()) database.hidratacionDao().guardarTodos(registrosHidratacion)
+            if (selection.fallAlerts && fallAlerts.isNotEmpty()) database.fallAlertDao().guardarTodos(fallAlerts)
         }
 
         CriticalAlertSettings.save(context, criticalAlertConfig)
@@ -603,7 +647,9 @@ object BackupManager {
             incidenciasOrtodoncia = incidenciasOrtodoncia.size,
             elasticosOrtodoncia = elasticosOrtodoncia.size,
             registrosSedentarismo = registrosSedentarismo.size,
-            configSedentarismo = configsSedentarismo.size
+            configSedentarismo = configsSedentarismo.size,
+            registrosHidratacion = registrosHidratacion.size,
+            fallAlerts = fallAlerts.size
         )
     }
 
@@ -646,7 +692,9 @@ object BackupManager {
             incidenciasOrtodoncia = json.optJSONArray("incidenciasOrtodoncia")?.length() ?: 0,
             elasticosOrtodoncia = json.optJSONArray("elasticosOrtodoncia")?.length() ?: 0,
             registrosSedentarismo = json.optJSONArray("registrosSedentarismo")?.length() ?: 0,
-            configSedentarismo = json.optJSONArray("configSedentarismo")?.length() ?: 0
+            configSedentarismo = json.optJSONArray("configSedentarismo")?.length() ?: 0,
+            registrosHidratacion = json.optJSONArray("registrosHidratacion")?.length() ?: 0,
+            fallAlerts = json.optJSONArray("fallAlerts")?.length() ?: 0
         )
     }
 
@@ -779,6 +827,7 @@ private fun SyncMedicalPractitioner.toJson(): JSONObject = JSONObject()
     .put("patientId", patientId)
     .put("name", name)
     .put("specialty", specialty)
+    .put("phone", phone)
     .put("createdAt", createdAt)
 
 private fun SyncVaccinationRecord.toJson(): JSONObject = JSONObject()
@@ -1076,6 +1125,7 @@ private fun MedicalPractitioner.toJson(): JSONObject = JSONObject()
     .put("patientId", patientId)
     .put("name", name)
     .put("specialty", specialty)
+    .put("phone", phone)
     .put("createdAt", createdAt)
 
 private fun VaccinationRecord.toJson(): JSONObject = JSONObject()
@@ -1258,6 +1308,7 @@ private fun JSONArray?.toMedicalPractitioners(): List<MedicalPractitioner> {
             patientId = json.optInt("patientId"),
             name = json.optString("name"),
             specialty = json.optString("specialty"),
+            phone = json.optString("phone"),
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
         )
     }
@@ -1417,6 +1468,7 @@ private fun JSONArray?.toSyncMedicalPractitioners(): List<SyncMedicalPractitione
             patientId = json.optInt("patientId"),
             name = json.optString("name"),
             specialty = json.optString("specialty"),
+            phone = json.optString("phone"),
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
         )
     }
@@ -1550,6 +1602,7 @@ private fun SyncMedicalPractitioner.toEntity(): MedicalPractitioner = MedicalPra
     patientId = patientId,
     name = name,
     specialty = specialty,
+    phone = phone,
     createdAt = createdAt
 )
 
@@ -2380,6 +2433,54 @@ private fun JSONArray?.toConfigsSedentarismo(): List<ConfigSedentarismo> {
             horaInicioMonitoreo = json.optInt("horaInicioMonitoreo", 7),
             horaFinMonitoreo = json.optInt("horaFinMonitoreo", 22),
             diasActivos = json.optString("diasActivos", "1,2,3,4,5")
+        )
+    }
+}
+
+private fun RegistroHidratacion.toJson(): JSONObject = JSONObject()
+    .put("id", id)
+    .put("patientId", patientId)
+    .put("cantidadMl", cantidadMl)
+    .put("tipoBebida", tipoBebida)
+    .put("timestamp", timestamp)
+
+private fun JSONArray?.toRegistrosHidratacion(): List<RegistroHidratacion> {
+    if (this == null) return emptyList()
+    return List(length()) { index -> getJSONObject(index) }.map { json ->
+        RegistroHidratacion(
+            id = json.optInt("id"),
+            patientId = json.optInt("patientId"),
+            cantidadMl = json.optInt("cantidadMl", 0),
+            tipoBebida = json.optString("tipoBebida", "Agua"),
+            timestamp = json.optLong("timestamp", System.currentTimeMillis())
+        )
+    }
+}
+
+private fun FallAlert.toJson(): JSONObject = JSONObject()
+    .put("id", id)
+    .put("patientId", patientId)
+    .put("detectedAt", detectedAt)
+    .put("confirmedAt", confirmedAt ?: JSONObject.NULL)
+    .put("latitude", latitude ?: JSONObject.NULL)
+    .put("longitude", longitude ?: JSONObject.NULL)
+    .put("impactMagnitude", impactMagnitude?.toDouble() ?: JSONObject.NULL)
+    .put("status", status)
+    .put("notes", notes)
+
+private fun JSONArray?.toFallAlerts(): List<FallAlert> {
+    if (this == null) return emptyList()
+    return List(length()) { index -> getJSONObject(index) }.map { json ->
+        FallAlert(
+            id = json.optInt("id"),
+            patientId = json.optInt("patientId"),
+            detectedAt = json.optLong("detectedAt", System.currentTimeMillis()),
+            confirmedAt = if (json.has("confirmedAt") && !json.isNull("confirmedAt")) json.optLong("confirmedAt") else null,
+            latitude = if (json.has("latitude") && !json.isNull("latitude")) json.optDouble("latitude") else null,
+            longitude = if (json.has("longitude") && !json.isNull("longitude")) json.optDouble("longitude") else null,
+            impactMagnitude = if (json.has("impactMagnitude") && !json.isNull("impactMagnitude")) json.optDouble("impactMagnitude").toFloat() else null,
+            status = json.optString("status", FALL_STATUS_DETECTED),
+            notes = json.optString("notes")
         )
     }
 }

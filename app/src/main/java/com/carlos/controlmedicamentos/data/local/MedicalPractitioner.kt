@@ -1,5 +1,6 @@
 package com.carlos.controlmedicamentos.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -16,5 +17,7 @@ data class MedicalPractitioner(
     val patientId: Int = 0,
     val name: String,
     val specialty: String,
+    @ColumnInfo(defaultValue = "")
+    val phone: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )

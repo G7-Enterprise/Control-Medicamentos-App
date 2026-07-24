@@ -180,6 +180,7 @@ internal fun MenuHamburguesaEscritorio(
                 onCerrarPanelesSecundarios(); onMostrarListaInsumos(true)
             }
         )
+        /* Galería oculta temporalmente
         DropdownMenuItem(
             text = { Text("Galería") },
             leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
@@ -189,6 +190,7 @@ internal fun MenuHamburguesaEscritorio(
                 onMostrarDialogoMedia(true)
             }
         )
+        */
         DropdownMenuItem(
             text = { Text("Signos vitales") },
             leadingIcon = { Icon(Icons.Filled.BarChart, contentDescription = null) },

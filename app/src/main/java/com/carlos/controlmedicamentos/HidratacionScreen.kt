@@ -571,14 +571,28 @@ fun HidratacionScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(1500, 2000, 2500, 3000).forEach { ml ->
-                            FilterChip(
-                                selected = metaTemp == ml.toString(),
-                                onClick = { metaTemp = ml.toString() },
-                                label = { Text("${ml}ml", fontSize = 11.sp) },
-                                enabled = metaManual || pesoKg <= 0
-                            )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(1500, 2000).forEach { ml ->
+                                FilterChip(
+                                    selected = metaTemp == ml.toString(),
+                                    onClick = { metaTemp = ml.toString() },
+                                    label = { Text("${ml}ml", fontSize = 11.sp) },
+                                    enabled = metaManual || pesoKg <= 0,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(2500, 3000).forEach { ml ->
+                                FilterChip(
+                                    selected = metaTemp == ml.toString(),
+                                    onClick = { metaTemp = ml.toString() },
+                                    label = { Text("${ml}ml", fontSize = 11.sp) },
+                                    enabled = metaManual || pesoKg <= 0,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                 }

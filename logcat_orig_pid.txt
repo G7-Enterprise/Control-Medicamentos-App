@@ -1,0 +1,33 @@
+﻿
+07-21 16:02:11.095  7059 13592 I MediaProvider: Filtering owner package name for com.carlos.controlmedicamentos, projection: [title_key, instance_id, compilation, disc_number, duration, 
+is_ringtone, album_artist, resolution, orientation, artist, author, inferred_date, height, is_drm, bucket_display_name, is_audiobook, owner_package_name, volume_name, title_resource_uri, 
+date_modified, writer, date_expires, composer, bits_per_sample, _display_name, is_recording, datetaken, mime_type, is_notification, bitrate, cd_track_number, _id, xmp, year, null as 
+oem_metadata, _data, _size, album, genre, is_alarm, title, track, width, is_music, samplerate, album_key, is_favorite, is_trashed, group_id, document_id, artist_id, generation_added, 
+artist_key, genre_key, is_download, generation_modified, is_pending, date_added, is_podcast, capture_framerate, album_id, num_tracks, original_document_id, genre_id, bucket_id, bookmark, 
+relative_path]
+07-21 16:02:11.096  7059 13592 D MediaProvider: Constructed owner_package_name substitution: CASE WHEN owner_package_name IN () THEN owner_package_name ELSE NULL END AS owner_package_name
+07-21 16:02:11.097  7059 13592 W SQLiteQueryBuilder: Allowing abusive custom column: CASE WHEN owner_package_name IN () THEN owner_package_name ELSE NULL END AS owner_package_name
+07-21 16:02:11.097  7059 13592 W SQLiteQueryBuilder: Allowing abusive custom column: null as oem_metadata
+07-21 16:02:11.100  7059 13592 W MediaProvider: Didn't find any volume for getVolume(/system/media/audio/ringtones/SoundTheme/Galaxy/ACH_Outer_Bell.ogg)
+07-21 16:02:11.100  7059 13592 I MediaProvider: Open with lower FS for /system/media/audio/ringtones/SoundTheme/Galaxy/ACH_Outer_Bell.ogg. Uid: 10529
+07-21 16:02:11.131  7059 13592 I MediaProvider: Filtering owner package name for com.carlos.controlmedicamentos, projection: [title_key, instance_id, compilation, disc_number, duration, 
+is_ringtone, album_artist, resolution, orientation, artist, author, inferred_date, height, is_drm, bucket_display_name, is_audiobook, owner_package_name, volume_name, title_resource_uri, 
+date_modified, writer, date_expires, composer, bits_per_sample, _display_name, is_recording, datetaken, mime_type, is_notification, bitrate, cd_track_number, _id, xmp, year, null as 
+oem_metadata, _data, _size, album, genre, is_alarm, title, track, width, is_music, samplerate, album_key, is_favorite, is_trashed, group_id, document_id, artist_id, generation_added, 
+artist_key, genre_key, is_download, generation_modified, is_pending, date_added, is_podcast, capture_framerate, album_id, num_tracks, original_document_id, genre_id, bucket_id, bookmark, 
+relative_path]
+07-21 16:02:11.131  7059 13592 D MediaProvider: Constructed owner_package_name substitution: CASE WHEN owner_package_name IN () THEN owner_package_name ELSE NULL END AS owner_package_name
+07-21 16:02:11.132  7059 13592 W SQLiteQueryBuilder: Allowing abusive custom column: CASE WHEN owner_package_name IN () THEN owner_package_name ELSE NULL END AS owner_package_name
+07-21 16:02:11.132  7059 13592 W SQLiteQueryBuilder: Allowing abusive custom column: null as oem_metadata
+07-21 16:02:12.075  4395  4395 I BLASTBufferQueue_Java: update, w= 1440 h= 125 mName = VRI[StatusBar]@fd660ca mNativeObject= 0xb4000075ba13ac00 sc.mNativeObject= 0xb4000075b817b3c0 format= -3 
+caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3592 android.view.ViewRootImpl.relayoutWindow:11813 android.view.ViewRootImpl.performTraversals:4840 
+android.view.ViewRootImpl.doTraversal:3959 android.view.ViewRootImpl$TraversalRunnable.run:13034 android.view.Choreographer$CallbackRecord.run:1961 
+07-21 16:02:17.687  4395  4395 I BLASTBufferQueue_Java: update, w= 1440 h= 125 mName = VRI[StatusBar]@fd660ca mNativeObject= 0xb4000075ba13ac00 sc.mNativeObject= 0xb4000075b817b3c0 format= -3 
+caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3592 android.view.ViewRootImpl.relayoutWindow:11813 android.view.ViewRootImpl.performTraversals:4840 
+android.view.ViewRootImpl.doTraversal:3959 android.view.ViewRootImpl$TraversalRunnable.run:13034 android.view.Choreographer$CallbackRecord.run:1961 
+07-21 16:02:17.972 29844 29844 I adbd    : adbd service requested 'shell,v2:export ANDROID_LOG_TAGS=''; exec logcat '-d' '--pid=3592''
+07-21 16:02:18.527  4395  4395 I BLASTBufferQueue_Java: update, w= 1440 h= 3088 mName = VRI[NotificationShade]@c51b341 mNativeObject= 0xb40000759b92e400 sc.mNativeObject= 0xb40000759e1a5240 
+format= -3 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3592 android.view.ViewRootImpl.relayoutWindow:11813 android.view.ViewRootImpl.performTraversals:4840 
+android.view.ViewRootImpl.doTraversal:3959 android.view.ViewRootImpl$TraversalRunnable.run:13034 android.view.Choreographer$CallbackRecord.run:1961 
+
+

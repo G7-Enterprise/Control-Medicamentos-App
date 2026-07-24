@@ -544,6 +544,12 @@ object NotificacionHelper {
             .build()
 
         manager.notify(notificationId, notification)
+        val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_STOCK_BAJO)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_STOCK_MESSAGE, message)
+        }
+        context.startActivity(fullScreenIntent)
     }
 
     fun abrirPedidoWhatsapp(
@@ -1094,6 +1100,7 @@ object NotificacionHelper {
     fun mostrarRecordatorioHidratacion(context: Context, patientId: Int, patientName: String) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
+        // Notificación base para compatibilidad
         val openIntent = Intent(context, com.carlos.controlmedicamentos.MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
@@ -1107,12 +1114,20 @@ object NotificacionHelper {
             .setContentIntent(pi)
             .build()
         manager.notify(75_000 + patientId, n)
+        // Lanzar actividad a pantalla completa
+        val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_HIDRATACION)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_NAME, patientName)
+        }
+        context.startActivity(fullScreenIntent)
     }
 
     // ── Sedentarismo ─────────────────────────────────────────────────────────
     fun mostrarAlertaSedentarismo(context: Context, patientId: Int, minutosInactivo: Int) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
+        // Notificación base para compatibilidad
         val openIntent = Intent(context, com.carlos.controlmedicamentos.MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
@@ -1126,6 +1141,14 @@ object NotificacionHelper {
             .setContentIntent(pi)
             .build()
         manager.notify(76_000 + patientId, n)
+        // Lanzar actividad a pantalla completa
+        val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_SEDENTARISMO)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_NAME, "Usuario")
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_MINUTES_INACTIVE, minutosInactivo)
+        }
+        context.startActivity(fullScreenIntent)
     }
 
     // ── Dentista ─────────────────────────────────────────────────────────────

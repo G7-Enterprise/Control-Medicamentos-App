@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +56,7 @@ internal fun FormularioInformePanel(
 
     val context = LocalContext.current
     val formularioScrollState = rememberScrollState()
+    val adjuntoPendienteDeEliminar = remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -152,17 +155,19 @@ internal fun FormularioInformePanel(
                         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                     }
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
             ) {
                 Icon(Icons.Filled.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Escanear")
+                Text("Escanear", color = Color.Black)
             }
             Button(
                 onClick = { pickStudyImagesLauncher.launch("image/*") },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
             ) {
-                Text("Galeria")
+                Text("Galeria", color = Color.Black)
             }
         }
         if (estudiosAdjuntos.isNotEmpty()) {
@@ -185,12 +190,38 @@ internal fun FormularioInformePanel(
                         }
                     )
                     Text(attachmentDisplayName(path, index), modifier = Modifier.weight(1f), color = Color.White)
-                    Button(onClick = { estudiosAdjuntos.remove(path) }) {
-                        Text("Quitar")
+                    Button(
+                        onClick = { adjuntoPendienteDeEliminar.value = path },
+                        colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
+                    ) {
+                        Text("Quitar", color = Color.Black)
                     }
                 }
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+    }
+
+    adjuntoPendienteDeEliminar.value?.let { path ->
+        AlertDialog(
+            onDismissRequest = { adjuntoPendienteDeEliminar.value = null },
+            title = { Text("Quitar adjunto") },
+            text = { Text("¿Quitar este adjunto del informe?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        adjuntoPendienteDeEliminar.value = null
+                        estudiosAdjuntos.remove(path)
+                    },
+                    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
+                ) { Text("Quitar", color = Color.Black) }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { adjuntoPendienteDeEliminar.value = null },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+                ) { Text("Cancelar", color = Color.Black) }
+            }
+        )
     }
 }

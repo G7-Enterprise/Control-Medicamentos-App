@@ -177,9 +177,10 @@ internal fun ListaInsumosPanel(
                                         onInputRecargarStockChange("")
                                         onInsumoARecargarChange(insumo)
                                     },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                                 ) {
-                                    Text("Recargar stock")
+                                    Text("Recargar stock", color = Color.Black)
                                 }
                                 if (insumo.origenReposicion != "INSS") {
                                     Button(
@@ -187,9 +188,10 @@ internal fun ListaInsumosPanel(
                                             onInputUnidadesPedidoChange("")
                                             onInsumoAPedirChange(insumo)
                                         },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                                     ) {
-                                        Text("Añadir a la lista de pedidos")
+                                        Text("Añadir a la lista de pedidos", color = Color.Black)
                                     }
                                 }
                             }
@@ -213,9 +215,10 @@ internal fun ListaInsumosPanel(
                                         }
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                             ) {
-                                Text(if (insumo.estaActivo) "Suspender" else "Reactivar")
+                                Text(if (insumo.estaActivo) "Suspender" else "Reactivar", color = Color.Black)
                             }
                             Button(
                                 onClick = {
@@ -240,9 +243,10 @@ internal fun ListaInsumosPanel(
                                         }
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                             ) {
-                                Text(if (insumo.alarmaActiva) "Desactivar alarma" else "Activar alarma")
+                                Text(if (insumo.alarmaActiva) "Desactivar alarma" else "Activar alarma", color = Color.Black)
                             }
                         }
                     }
@@ -265,15 +269,16 @@ internal fun ListaInsumosPanel(
                         onMostrarPanelPedidosChange(true)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20), contentColor = Color.Black)
                 ) {
-                    Text("Ver lista de pedidos (${carritoItems.size} ${if (carritoItems.size == 1) "medicamento" else "medicamentos"})", color = Color.White)
+                    Text("Ver lista de pedidos (${carritoItems.size} ${if (carritoItems.size == 1) "medicamento" else "medicamentos"})", color = Color.Black)
                 }
             }
 
             Button(
                 onClick = { onCerrarPanelesSecundarios() },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
             ) {
                 Text("Volver al escritorio", color = Color.Black)
             }

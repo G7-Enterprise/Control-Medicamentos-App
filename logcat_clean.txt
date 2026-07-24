@@ -1,0 +1,8 @@
+﻿--------- beginning of main
+07-21 15:34:59.817  1838  1863 E BatteryDump: !@new_battery_dump : 3706,-868,475,550,31,412,391,499,412,0,429,498,0,Charging,NO_CHARGING,Normal,Good,USB,1,Normal,0,0,9300,0x0,0x10000,0x0,0,0,0000,0000,00000000,0,0,0,0,782,3742,3140,990,0,
+07-21 15:34:59.834  1922  5340 E NativeCustomFrequencyManager: [NativeCFMS] BpCustomFrequencyManager::acquire()
+07-21 15:35:01.384  1922  5340 E NativeCustomFrequencyManager: [NativeCFMS] BpCustomFrequencyManager::acquire()
+--------- beginning of system
+07-21 15:35:01.777  2978  3341 E Watchdog: !@Sync: 6305 heap(MB): 214 / 228 FD: 1661 Threads: 595 [2026-07-21 15:35:01.777]
+07-21 15:35:02.891  1922  5340 E NativeCustomFrequencyManager: [NativeCFMS] BpCustomFrequencyManager::acquire()
+

@@ -137,6 +137,7 @@ internal fun MedicalPractitioner.toSyncModel(): SyncMedicalPractitioner = SyncMe
     patientId = patientId,
     name = name,
     specialty = specialty,
+    phone = phone,
     createdAt = createdAt
 )
 

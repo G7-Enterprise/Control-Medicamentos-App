@@ -1,0 +1,162 @@
+﻿--------- beginning of main
+07-21 16:02:09.544  8962  8962 I Zygote  : Process 8962 created for com.carlos.controlmedicamentos
+07-21 16:02:09.545  8962  8962 I rolmedicamentos: Late-enabling -Xcheck:jni
+07-21 16:02:09.573  8962  8962 I rolmedicamentos: Using generational CollectorTypeCMC GC.
+07-21 16:02:09.591  8962  8962 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+07-21 16:02:09.595  8962  8962 D ActivityThread: setConscryptValidator
+07-21 16:02:09.596  8962  8962 D ActivityThread: setConscryptValidator - put
+07-21 16:02:10.226  8962  8962 D nativeloader: Configuring clns-9 for other apk /data/app/~~vlpFqzmiz4ONw3tXXbtuuA==/com.carlos.controlmedicamentos-HvN7mj6gjeLXdDJkIDNwog==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~vlpFqzmiz4ONw3tXXbtuuA==/com.carlos.controlmedicamentos-HvN7mj6gjeLXdDJkIDNwog==/lib/arm64:/data/app/~~vlpFqzmiz4ONw3tXXbtuuA==/com.carlos.controlmedicamentos-HvN7mj6gjeLXdDJkIDNwog==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.carlos.controlmedicamentos
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment: Currently set values for:
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment: com.carlos.controlmedicamentos is not listed in per-application setting
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment: ANGLE allowlist from config: com.dreamgames.royalmatch com.dts.freefiremax com.dxx.firenow com.gramgames.mergedragons com.ludo.king com.mojang.minecraftpe com.my.defense com.nintendo.zaka com.os.airforce com.playrix.fishdomdd.gplay io.teslatech.callbreak jp.konami.prospia net.peakgames.toonblast
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment: No special selections for ANGLE, returning default driver choice
+07-21 16:02:10.242  8962  8962 V GraphicsEnvironment: App is not on the allowlist for updatable production driver.
+07-21 16:02:10.293  8962  8962 D WM-WrkMgrInitializer: Initializing WorkManager with default configuration.
+07-21 16:02:10.326  8962  8962 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+07-21 16:02:10.326  8962  8962 D WM-Schedulers: Created SystemJobScheduler and enabled SystemJobService
+07-21 16:02:10.336  8962  8989 D WM-ForceStopRunnable: The default process name was not specified.
+07-21 16:02:10.343  8962  8989 D WM-ForceStopRunnable: Performing cleanup operations.
+07-21 16:02:10.350  8962  8962 I HWUI    : Using FreeType backend (prop=Auto)
+07-21 16:02:10.360  8962  8962 D BootReceiver: onReceive action=android.intent.action.BOOT_COMPLETED
+07-21 16:02:10.361  8962  8989 E ashmem  : Pinning is deprecated since Android Q. Please use trim or other methods.
+07-21 16:02:10.364  8962  8991 D BootReceiver: Coroutine started at 1784671330364
+--------- beginning of system
+07-21 16:02:10.365  8962  8962 D ActivityThread: com.carlos.controlmedicamentos will use render engine as VK
+07-21 16:02:10.365  8962  8962 D HWUI    : HWUI - treat SMPTE_170M as sRGB
+07-21 16:02:10.367  8962  8994 I DisplayManager: Choreographer implicitly registered for the refresh rate.
+07-21 16:02:10.369  8962  8994 D HWUI    : CacheManager constructor. deviceInfo=(1080, 1920)
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: QUALCOMM build                   : 3df4c357f0, I515341007c
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Build Date                       : 01/27/26
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: OpenGL ES Shader Compiler Version: E031.41.03.64
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Local Branch                     : 
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Remote Branch                    : refs/tags/AU_LINUX_ANDROID_LA.VENDOR.13.2.0.11.00.00.856.062
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Remote Branch                    : NONE
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Reconstruct Branch               : NOTHING
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Build Config                     : S P 14.1.4 AArch64
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+07-21 16:02:10.371  8962  8994 I AdrenoGLES-0: Driver Version                   : 0676.77.1
+07-21 16:02:10.381  8962  8962 D DesktopExperienceFlags: Toggle override initialized to: false
+07-21 16:02:10.392  8962  8994 I AdrenoGLES-0: PFP: 0x01740181, ME: 0x00000000
+07-21 16:02:10.398  8962  8989 D WM-ForceStopRunnable: Application was force-stopped, rescheduling.
+07-21 16:02:10.400  8962  8962 D CompatChangeReporter: Compat change id reported: 377864165; UID 10529; state: ENABLED
+07-21 16:02:10.401  8962  8962 D DesktopModeFlags: Toggle override initialized to: OVERRIDE_UNSET
+07-21 16:02:10.403  8962  8962 I DecorView: setWindowBackground: isPopOver=false color=fffafafa d=android.graphics.drawable.ColorDrawable@567d1be
+07-21 16:02:10.425  8962  8994 W Adreno-AppProfiles: Could not find QSPM HAL service. Skipping adreno profile processing.
+07-21 16:02:10.434  8962  9000 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemalarm.RescheduleReceiver
+07-21 16:02:10.439  8962  8962 D ViewRootImpl: desktopMode is false
+07-21 16:02:10.441  8962  8962 I ViewRootImpl: dVRR is disabled
+07-21 16:02:10.442  8962  8994 I AdrenoUtils: <ReadGpuID:407>: Reading chip ID through GSL
+07-21 16:02:10.443  8962  8962 D HardwareRenderer: onDisplayChanged. displayId=0 current wxh=1440x3088 mLargest wxh=0x0
+07-21 16:02:10.443  8962  8962 D HardwareRenderer: Set largestWidth and largestHeight as logical resolution. (1440x3088)
+07-21 16:02:10.451  8962  8994 D HWUI    : setMaxSurfaceArea requested wxh=(1440,3088) requestedSurfaceArea(4446720) mMaxSurfaceArea(2073600)
+07-21 16:02:10.451  8962  8994 D NativeCustomFrequencyManager: [NativeCFMS] BpCustomFrequencyManager::BpCustomFrequencyManager()
+07-21 16:02:10.452  8962  8991 D BootReceiver: Medicamentos con alarma: 10
+07-21 16:02:10.458  8962  8962 D InputTransport: Input channel constructed: 'c146317', fd=131
+07-21 16:02:10.459  8962  8962 I InsetsController: onStateChanged: host=com.carlos.controlmedicamentos/com.carlos.controlmedicamentos.MainActivity, from=android.view.ViewRootImpl.onInsetsStateChanged:3038, state=InsetsState: {mDisplayFrame=Rect(0, 0 - 1440, 3088), mDisplayCutout=DisplayCutout{insets=Rect(0, 125 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(684, 0 - 756, 125), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1440 displayHeight=3088 physicalDisplayWidth=1440 physicalDisplayHeight=3088 density={3.75} cutoutSpec={M 0,0 H -9.6 V 33.33333333333333 H 9.6 V 0 H 0 Z @dp} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}} sideOverrides={}}, mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=16, center=Point(16, 16)}, RoundedCorner{position=TopRight, radius=16, center=Point(1424, 16)}, RoundedCorner{position=BottomRight, radius=16, center=Point(1424, 3072)}, RoundedCorner{position=BottomLeft, radius=16, center=Point(16, 3072)}]}  mRoundedCornerFrame=Rect(0, 0 - 1440, 3088), mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(1264, 0 - 1440, 125) rotation=0}, mDisplayShape=DisplayShape{ spec=-311912193 displayWidth=1440 displayHeight=3088 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}, mSources= { InsetsSource: {3 mType=ime mFrame=[0,0][0,0] mAttachedInsets=null mVisible=false mFlags=INVALID mSideHint=NONE mBoundingRects=null}, InsetsSource: {27 mType=displayCutout mFrame=[0,0][1440,125] mAttachedInsets=null mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {31250001 mType=navigationBars mFrame=[0,3028][1440,3088] mAttachedInsets=null mVisible=true mFlags=SUPPRESS_SCRIM mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {31250004 mType=systemGestures mFrame=[0,0][90,3088] mAttachedInsets=null mVisible=true mFlags= mSideHint=LEFT mBoundingRects=null}, InsetsSource: {31250005 mType=mandatorySystemGestures mFrame=[0,2960][1440,3088] mAttachedInsets=null mVisible=true mFlags= mSideHint=BOTTOM mBoundingRects=null}, InsetsSource: {31250006 mType=tappableElement mFrame=[0,0][0,0] mAttachedInsets=null mVisible=true mFlags= mSideHint=NONE mBoundingRects=null}, InsetsSource: {31250024 mType=systemGestures mFrame=[1350,0][1440,3088] mAttachedInsets=null mVisible=true mFlags= mSideHint=RIGHT mBoundingRects=null}, InsetsSource: {44350000 mType=statusBars mFrame=[0,0][1440,125] mAttachedInsets=null mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {44350005 mType=mandatorySystemGestures mFrame=[0,0][1440,173] mAttachedInsets=null mVisible=true mFlags= mSideHint=TOP mBoundingRects=null}, InsetsSource: {44350006 mType=tappableElement mFrame=[0,0][1440,125] mAttachedInsets=null mVisible=true mFlags= mSideHint=TOP mBoundingRects=null} }
+07-21 16:02:10.461  8962  8962 I VRI[MainActivity]@7a46c7e: synced displayState. AttachInfo displayState=2
+07-21 16:02:10.462  8962  8962 I VRI[MainActivity]@7a46c7e: setView = com.android.internal.policy.DecorView@4265b71 IsHRR=false mFlingFrameRateChange=0 TM=true
+07-21 16:02:10.462  8962  8962 I IDS_TAG : Starting IDS observe window
+07-21 16:02:10.463  8962  8962 I IDS_TAG : Getting Shared Preference for android.app.Application@fe6b112 uid = 10529
+07-21 16:02:10.469  8962  8962 I IDS_TAG : App android.app.Application@fe6b112 has not finished training
+07-21 16:02:10.470  8962  8994 D HWUI    : HWUI - treat SMPTE_170M as sRGB
+07-21 16:02:10.470  8962  8962 I IDS_TAG : Closing IDS observe window
+07-21 16:02:10.470  8962  8962 I IDS_TAG : Getting Shared Preference for android.app.Application@fe6b112 uid = 10529
+07-21 16:02:10.470  8962  8962 I IDS_TAG : IDS count updated to 10 for android.app.Application@fe6b112
+07-21 16:02:10.472  8962  8962 D WindowOnBackDispatcher: setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@19728e2
+07-21 16:02:10.586  8962  8991 D BootReceiver: M├®todos anticonceptivos activos: 0
+07-21 16:02:10.599  8962  8991 D BootReceiver: lastBootTime=1784671054477, now=1784671330364
+07-21 16:02:10.600  8962  8991 D BootReceiver: lookbackStart=1784671054477 range=1784671054477..1784671330364
+07-21 16:02:10.610  8962  8991 D BootReceiver: detectarYNotificarAnticonceptivosPerdidos range=1784671054477..1784671330364
+07-21 16:02:10.612  8962  8991 D BootReceiver: Anticonceptivos perdidos detectados: 0
+07-21 16:02:10.847  8962  8962 D VRI[MainActivity]@7a46c7e: WindowInsets changed: 1440x3088 statusBars:[0,125,0,0] navigationBars:[0,0,0,60] mandatorySystemGestures:[0,173,0,128] 
+07-21 16:02:10.953  8962  8962 E BufferQueueProducer: Unable to open libpenguin.so: dlopen failed: library "libpenguin.so" not found.
+07-21 16:02:10.953  8962  8962 E rolmedicamentos: Unable to open libpenguin.so: dlopen failed: library "libpenguin.so" not found.
+07-21 16:02:10.953  8962  8962 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+07-21 16:02:10.954  8962  8962 I BufferQueueProducer: [](id:230200000000,api:0,p:-130318496,c:8962) setDequeueTimeout:2077252342
+07-21 16:02:10.954  8962  8962 I BLASTBufferQueue_Java: new BLASTBufferQueue, mName= VRI[MainActivity]@7a46c7e mNativeObject= 0xb4000076a0852800 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3603 android.view.ViewRootImpl.relayoutWindow:11813 android.view.ViewRootImpl.performTraversals:4840 android.view.ViewRootImpl.doTraversal:3959 android.view.ViewRootImpl$TraversalRunnable.run:13034 android.view.Choreographer$CallbackRecord.run:1961 android.view.Choreographer$CallbackRecord.run:1970 android.view.Choreographer.doCallbacks:1423 android.view.Choreographer.doFrame:1348 android.view.Choreographer$FrameDisplayEventReceiver.run:1930 
+07-21 16:02:10.954  8962  8962 I BLASTBufferQueue_Java: update, w= 1440 h= 3088 mName = VRI[MainActivity]@7a46c7e mNativeObject= 0xb4000076a0852800 sc.mNativeObject= 0xb4000076a0869480 format= -1 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3608 android.view.ViewRootImpl.relayoutWindow:11813 android.view.ViewRootImpl.performTraversals:4840 android.view.ViewRootImpl.doTraversal:3959 android.view.ViewRootImpl$TraversalRunnable.run:13034 android.view.Choreographer$CallbackRecord.run:1961 
+07-21 16:02:10.955  8962  8962 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+07-21 16:02:10.955  8962  8962 I VRI[MainActivity]@7a46c7e: Relayout returned: old=(0,0,1440,3088) new=(0,0,1440,3088) relayoutAsync=false req=(1440,3088)0 dur=8 res=0x3 s={true 0xb4000076f8516c00} ch=true seqId=0
+07-21 16:02:10.956  8962  8962 I VRI[MainActivity]@7a46c7e: performConfigurationChange setNightDimText nightDimLevel=32
+07-21 16:02:10.957  8962  8962 D VRI[MainActivity]@7a46c7e: mThreadedRenderer.initialize() mSurface={isValid=true 0xb4000076f8516c00} hwInitialized=true
+07-21 16:02:11.001  8962  8962 D VRI[MainActivity]@7a46c7e: reportNextDraw android.view.ViewRootImpl.performTraversals:5507 android.view.ViewRootImpl.doTraversal:3959 android.view.ViewRootImpl$TraversalRunnable.run:13034 android.view.Choreographer$CallbackRecord.run:1961 android.view.Choreographer$CallbackRecord.run:1970 
+07-21 16:02:11.001  8962  8962 D VRI[MainActivity]@7a46c7e: Setup new sync=wmsSync-VRI[MainActivity]@7a46c7e#0
+07-21 16:02:11.001  8962  8962 I VRI[MainActivity]@7a46c7e: Creating new active sync group VRI[MainActivity]@7a46c7e#1
+07-21 16:02:11.002  8962  8962 D VRI[MainActivity]@7a46c7e: registerCallbacksForSync syncBuffer=false
+07-21 16:02:11.037  8962  9007 D VRI[MainActivity]@7a46c7e: Received frameDrawingCallback syncResult=0 frameNum=1.
+07-21 16:02:11.038  8962  9007 I VRI[MainActivity]@7a46c7e: mWNT: t=0xb4000076a074ca00 mBlastBufferQueue=0xb4000076a0852800 fn= 1 HdrRenderState mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$12.onFrameDraw:15561 android.view.ThreadedRenderer$1.onFrameDraw:751 <bottom of call stack> 
+07-21 16:02:11.038  8962  9007 I VRI[MainActivity]@7a46c7e: Setting up sync and frameCommitCallback
+07-21 16:02:11.058  8962  8994 I BLASTBufferQueue: [VRI[MainActivity]@7a46c7e#0](f:0,a:0,s:0) onFrameAvailable the first frame is available
+07-21 16:02:11.059  8962  8994 I SurfaceComposerClient: apply transaction with the first frame. layerId: 16251, bufferData(ID: 38491496906755, frameNumber: 1)
+07-21 16:02:11.059  8962  8994 I VRI[MainActivity]@7a46c7e: Received frameCommittedCallback lastAttemptedDrawFrameNum=1 didProduceBuffer=true
+07-21 16:02:11.059  8962  8994 D HWUI    : CFMS:: SetUp Pid : 8962    Tid : 8994
+07-21 16:02:11.060  8962  8962 D VRI[MainActivity]@7a46c7e: reportDrawFinished seqId=0
+07-21 16:02:11.060  8962  8962 I Choreographer: Skipped 68 frames!  The application may be doing too much work on its main thread.
+07-21 16:02:11.086  8962  8962 D Ringtone: highlight offset is : null
+07-21 16:02:11.087  8962  8962 V MediaPlayer-JNI: native_setup
+07-21 16:02:11.087  8962  8962 V MediaPlayerNative: constructor
+07-21 16:02:11.087  8962  8962 D AudioSystem: onNewServiceWithAdapter: media.audio_flinger service obtained 0xb4000077058cd2c0
+07-21 16:02:11.088  8962  8962 D AudioSystem: getService: IAudioFlingerService retrieved: 0xb400007705931080  IAudioFlinger cached: 0xb4000077058cd2c0
+07-21 16:02:11.090  8962  8962 V MediaPlayerNative: setListener
+07-21 16:02:11.090  8962  8962 V MediaPlayer-JNI: get_session_id()
+07-21 16:02:11.104  8962  8962 V MediaPlayer-JNI: setDataSourceFD: fd 156
+07-21 16:02:11.104  8962  8962 V MediaPlayerNative: setDataSource(156, 0, 576460752303423487)
+07-21 16:02:11.116  8962  8962 V MediaPlayer-JNI: setParameter: key 1400
+07-21 16:02:11.116  8962  8962 V MediaPlayerNative: MediaPlayer::setParameter(1400)
+07-21 16:02:11.117  8962  8962 V MediaPlayer-JNI: setVolume: left 1.000000  right 1.000000
+07-21 16:02:11.117  8962  8962 V MediaPlayerNative: MediaPlayer::setVolume(1.000000, 1.000000)
+07-21 16:02:11.117  8962  8962 V MediaPlayer-JNI: setLooping: 0
+07-21 16:02:11.117  8962  8962 V MediaPlayerNative: MediaPlayer::setLooping
+07-21 16:02:11.117  8962  8962 V MediaPlayerNative: setVideoSurfaceTexture
+07-21 16:02:11.117  8962  8962 V MediaPlayerNative: prepare
+07-21 16:02:11.124  8962  8980 V MediaPlayerNative: message received msg=200, ext1=10973, ext2=0
+07-21 16:02:11.124  8962  8980 W MediaPlayerNative: info/warning (10973, 0)
+07-21 16:02:11.124  8962  8980 V MediaPlayerNative: message received msg=1, ext1=0, ext2=0
+07-21 16:02:11.124  8962  8980 V MediaPlayerNative: MediaPlayer::notify() prepared
+07-21 16:02:11.124  8962  8980 V MediaPlayerNative: signal application thread
+07-21 16:02:11.125  8962  8962 V MediaPlayerNative: prepare complete - status=0
+07-21 16:02:11.125  8962  8962 V MediaPlayerNative: invoke 80
+07-21 16:02:11.126  8962  8962 V MediaPlayerNative: invoke 76
+07-21 16:02:11.129  8962  8962 D Ringtone: Successfully created local player
+07-21 16:02:11.205  8962  8962 D ConnectivityManager: StackLog: [android.net.ConnectivityManager.sendRequestForNetwork(ConnectivityManager.java:4744)] [android.net.ConnectivityManager.sendRequestForNetwork(ConnectivityManager.java:4912)] [android.net.ConnectivityManager.registerNetworkCallback(ConnectivityManager.java:5329)] [android.net.ConnectivityManager.registerNetworkCallback(ConnectivityManager.java:5299)] [coil.network.RealNetworkObserver.<init>(NetworkObserver.kt:88)] [coil.network.NetworkObserverKt.NetworkObserver(NetworkObserver.kt:33)] [coil.util.SystemCallbacks.<init>(SystemCallbacks.kt:31)] [coil.RealImageLoader.<init>(RealImageLoader.kt:79)] [coil.ImageLoader$Builder.build(ImageLoader.kt:529)] [coil.ImageLoaders.create(ImageLoaders.kt:16)] [coil.Coil.newImageLoader(Coil.kt:75)] [coil.Coil.imageLoader(Coil.kt:27)] [coil.compose.ImageLoaderProvidableCompositionLocal.getCurrent(LocalImageLoader.kt:57)] [coil.compose.SingletonAsyncImageKt.AsyncImage-3HmZ8SU(SingletonAsyncImage.kt:117)] [com.carlos.controlmedicamentos.EscritorioContentKt.EscritorioContent$lambda$61$lambda$28$lambda$19$lambda$18$lambda$12(EscritorioContent.kt:130)] [com.carlos.controlmedicamentos.EscritorioContentKt$$ExternalSyntheticLambda24.invoke(D8$$SyntheticClass:0)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:118)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)] [com.carlos.controlmedicamentos.MainActivityKt.MetallicProfileCard$lambda$36(MainActivity.kt:4137)] [com.carlos.controlmedicamentos.MainActivityKt$$ExternalSyntheticLambda99.invoke(D8$$SyntheticClass:0)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:118)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)] [androidx.compose.material3.CardKt$Card$1.invoke(Card.kt:888)] [androidx.compose.material3.CardKt$Card$1.invoke(Card.kt:96)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)] [androidx.compose.material3.SurfaceKt$Surface$1.invoke(Surface.kt:126)] [androidx.compose.material3.SurfaceKt$Surface$1.invoke(Surface.kt:108)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:109)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:35)] [androidx.compose.runtime.CompositionLocalKt.CompositionLocalProvider(CompositionLocal.kt:380)] [androidx.compose.material3.SurfaceKt.Surface-T9BRK9s(Surface.kt:105)] [androidx.compose.material3.CardKt.Card(Card.kt:89)] [com.carlos.controlmedicamentos.MainActivityKt.MetallicProfileCard(MainActivity.kt:1189)] [com.carlos.controlmedicamentos.EscritorioContentKt.EscritorioContent$lambda$61$lambda$28$lambda$19(EscritorioContent.kt:123)] [com.carlos.controlmedicamentos.EscritorioContentKt$$ExternalSyntheticLambda2.invoke(D8$$SyntheticClass:0)] [androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.jvm.kt:118)] [androidx.compose.runtime.internal.ComposableLambdaImpl$invoke$1.invoke(ComposableLambda.jvm.kt:130)] [androidx.compose.runtime.internal.ComposableLambdaImpl$invoke$1.invoke(ComposableLambda.jvm.kt:129)] [androidx.compose.runtime.RecomposeScopeImpl.compose(RecomposeScopeImpl.kt:192)] [androidx.compose.runtime.ComposerImpl.recomposeToGroupEnd(Composer.kt:2825)] [androidx.compose.runtime.ComposerImpl.skipToGroupEnd(Composer.kt:3139)] [com.carlos.controlmedicamentos.MainActivityKt.MetallicGreenHeaderCard(MainActivity.kt:1205)] [com.carlos.controlmedicamentos.EscritorioContentKt.EscritorioContent(EscritorioContent.kt:116)] [com.carlos.controlmedicamentos.MedicamentoFormBodyEscritorioKt.MedicamentoFormBodyEscritorio(MedicamentoFormBodyEscritorio.kt:28)] [com.carlos.controlmedicamentos.MedicamentoFormBodyKt.MedicamentoFormBody$lambda$76(MedicamentoFormBody.kt:210)] [com.carlos.controlmedicamentos.MedicamentoFormBodyKt$$ExternalSyntheticLambda31.invoke(D8$$SyntheticClass:0)]
+07-21 16:02:11.297  8962  8962 I InsetsSourceConsumer: applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.carlos.controlmedicamentos/com.carlos.controlmedicamentos.MainActivity
+07-21 16:02:11.298  8962  8962 I InsetsSourceConsumer: applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.carlos.controlmedicamentos/com.carlos.controlmedicamentos.MainActivity
+07-21 16:02:11.299  8962  8962 V MediaPlayerNative: invoke 76
+07-21 16:02:11.346  8962  8962 D VRI[MainActivity]@7a46c7e: mThreadedRenderer.initializeIfNeeded()#2 mSurface={isValid=true 0xb4000076f8516c00}
+07-21 16:02:11.347  8962  8962 D InputMethodManagerUtils: startInputInner - Id : 0
+07-21 16:02:11.347  8962  8962 I InputMethodManager: startInputInner - IInputMethodManagerGlobalInvoker.startInputOrWindowGainedFocus
+07-21 16:02:11.365  8962  9029 D InputTransport: Input channel constructed: 'ClientS', fd=166
+07-21 16:02:11.407  8962  8969 I rolmedicamentos: Compiler allocated 5313KB to compile void android.view.ViewRootImpl.performTraversals()
+07-21 16:02:11.425  8962  9015 I Kumiho-Kumiho: getPackageName: com.carlos.controlmedicamentos
+07-21 16:02:11.429  8962  9015 E Kumiho-Kumiho: updateList - failed to retrieve policy '/data/system/Kumiho/Kumiho.policy' retrying with default
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'com.whatsapp' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'com.facebook.orca' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'org.telegram.messenger' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'com.kakao.talk' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'jp.naver.line.android' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'com.discord' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'com.tencent.mm' in the Kumiho client list
+07-21 16:02:11.431  8962  9015 D Kumiho-Kumiho: updateList: inserting 'com.snapchat.android' in the Kumiho client list
+07-21 16:02:11.435  8962  9015 I Kumiho-Kumiho: getPackageName: com.carlos.controlmedicamentos
+07-21 16:02:11.587  8962  8991 I NotificationManager: com.carlos.controlmedicamentos: notify(-1011586906, null, Notification(channel=MED_STOCK shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 category=reminder actions=1 vis=PUBLIC semFlags=0x0 semPriority=0 semMissedCount=0 semScenarioType=0)) as user
+07-21 16:02:11.587  8962  8991 D NotificationManager: BOOTING pkg =com.carlos.controlmedicamentos mBlockedChannelsForOverflowNoti=[]
+07-21 16:02:11.607  8962  8962 D InsetsController: hide(ime())
+07-21 16:02:11.607  8962  8962 I ImeTracker: com.carlos.controlmedicamentos:e442f218: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+07-21 16:02:12.144  8962  8962 I VRI[MainActivity]@7a46c7e: handleResized, frames=ClientWindowFrames{frame=[0,0][1440,3088] display=[0,0][1440,3088] parentFrame=[0,0][0,0]} displayId=0 dragResizing=false compatScale=1.0 frameChanged=false attachedFrameChanged=false configChanged=false displayChanged=false compatScaleChanged=false dragResizingChanged=false
+07-21 16:02:12.848  8962  8962 I VRI[MainActivity]@7a46c7e: ViewPostIme pointer 0
+07-21 16:02:12.856  8962  8962 I VRI[MainActivity]@7a46c7e: call setFrameRateCategory for touch hint category=high hint, reason=touch, vri=VRI[MainActivity]@7a46c7e
+07-21 16:02:12.871  8962  8962 I VRI[MainActivity]@7a46c7e: ViewPostIme pointer 1
+07-21 16:02:14.294  8962  8974 V MediaPlayer: resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+07-21 16:02:14.294  8962  8974 V MediaPlayer: cleanDrmObj: mDrmObj=null mDrmSessionId=null
+07-21 16:02:14.294  8962  8974 V MediaPlayer-JNI: release
+07-21 16:02:14.294  8962  8974 V MediaPlayerNative: setListener
+07-21 16:02:14.294  8962  8974 V MediaPlayerNative: disconnect
+07-21 16:02:14.300  8962  8974 V MediaPlayerNative: destructor
+07-21 16:02:14.301  8962  8974 V MediaPlayerNative: disconnect
+07-21 16:02:14.301  8962  8974 V MediaPlayer-JNI: native_finalize
+07-21 16:02:14.301  8962  8974 V MediaPlayer-JNI: release
+07-21 16:02:15.883  8962  8962 I VRI[MainActivity]@7a46c7e: call setFrameRateCategory for touch hint category=no preference, reason=boost timeout, vri=VRI[MainActivity]@7a46c7e
+07-21 16:02:16.190  8962  9328 D ProfileInstaller: Installing profile for com.carlos.controlmedicamentos
+07-21 16:02:17.702  8962  8962 I InsetsSourceConsumer: applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.carlos.controlmedicamentos/com.carlos.controlmedicamentos.MainActivity

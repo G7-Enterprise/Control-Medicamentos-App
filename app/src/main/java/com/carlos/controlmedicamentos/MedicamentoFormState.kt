@@ -100,6 +100,7 @@ internal class MedicamentoFormState(
     val descripcionInformeState: MutableState<String>,
     val nombreProfesionalState: MutableState<String>,
     val especialidadProfesionalState: MutableState<String>,
+    val telefonoProfesionalState: MutableState<String>,
     val tituloCitaMedicaState: MutableState<String>,
     val profesionalCitaMedicaState: MutableState<String>,
     val lugarCitaMedicaState: MutableState<String>,
@@ -297,6 +298,7 @@ internal val MedicamentoFormState.inputEditarTotal get() = inputEditarTotalState
 internal val MedicamentoFormState.visorAdjuntos get() = visorAdjuntosState.value
 internal val MedicamentoFormState.nombreProfesional get() = nombreProfesionalState.value
 internal val MedicamentoFormState.especialidadProfesional get() = especialidadProfesionalState.value
+internal val MedicamentoFormState.telefonoProfesional get() = telefonoProfesionalState.value
 internal val MedicamentoFormState.tituloInforme get() = tituloInformeState.value
 internal val MedicamentoFormState.descripcionInforme get() = descripcionInformeState.value
 internal val MedicamentoFormState.expandedProfesionalInforme get() = expandedProfesionalInformeState.value
@@ -405,6 +407,7 @@ internal fun rememberMedicamentoFormState(
     val descripcionInformeState = remember { mutableStateOf("") }
     val nombreProfesionalState = remember { mutableStateOf("") }
     val especialidadProfesionalState = remember { mutableStateOf("") }
+    val telefonoProfesionalState = remember { mutableStateOf("") }
     val tituloCitaMedicaState = remember { mutableStateOf("") }
     val profesionalCitaMedicaState = remember { mutableStateOf("") }
     val lugarCitaMedicaState = remember { mutableStateOf("") }
@@ -571,6 +574,7 @@ internal fun rememberMedicamentoFormState(
         descripcionInformeState = descripcionInformeState,
         nombreProfesionalState = nombreProfesionalState,
         especialidadProfesionalState = especialidadProfesionalState,
+        telefonoProfesionalState = telefonoProfesionalState,
         tituloCitaMedicaState = tituloCitaMedicaState,
         profesionalCitaMedicaState = profesionalCitaMedicaState,
         lugarCitaMedicaState = lugarCitaMedicaState,

@@ -3,6 +3,7 @@ package com.carlos.controlmedicamentos
 import android.Manifest
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -27,13 +28,25 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ControlEmbarazo
+import com.carlos.controlmedicamentos.data.local.MedicalAppointment
 import com.carlos.controlmedicamentos.data.local.Medication
 import com.carlos.controlmedicamentos.data.local.PatientProfile
+import com.carlos.controlmedicamentos.data.local.VaccinationRecord
+import com.carlos.controlmedicamentos.data.local.VisitaDentista
 import com.carlos.controlmedicamentos.data.local.unidadesPorToma
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private data class ProximaCitaInfo(
+    val titulo: String,
+    val fechaHora: Long
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -229,6 +242,63 @@ internal fun EscritorioContent(
                 text = fechaResumenEscritorioTexto,
                 isToday = escritorioEsHoy
             )
+            val proximaCitaState = remember { mutableStateOf<ProximaCitaInfo?>(null) }
+            LaunchedEffect(pacienteActivo?.id) {
+                val pid = pacienteActivo?.id
+                if (pid != null) {
+                    proximaCitaState.value = withContext(Dispatchers.IO) {
+                        val ahora = System.currentTimeMillis()
+                        val citaMedica = database.medicalAppointmentDao().obtenerProximaNoCompletada(pid, ahora)
+                        val citaDental = database.visitaDentistaDao().proximaCitaPendiente(pid, ahora)
+                        val dosisVacuna = database.vaccinationRecordDao().obtenerProximaDosis(pid, ahora)
+                        val embarazo = database.controlEmbarazoDao().obtenerEmbarazoActivo(pid)
+                        listOfNotNull(
+                            citaMedica?.let { ProximaCitaInfo(it.title, it.scheduledAt) },
+                            citaDental?.let { ProximaCitaInfo(it.motivo, it.fechaHora) },
+                            dosisVacuna?.let { ProximaCitaInfo("Vacuna: ${it.vaccineName} (${it.doseLabel})", it.nextDoseAt!!) },
+                            embarazo?.let { ProximaCitaInfo("Fecha probable de parto", it.fechaProbableParto) }
+                        ).minByOrNull { it.fechaHora }
+                    }
+                } else {
+                    proximaCitaState.value = null
+                }
+            }
+            proximaCitaState.value?.let { cita ->
+                val fechaCita = SimpleDateFormat("dd MMM yyyy · HH:mm", Locale.forLanguageTag("es-ES"))
+                    .format(Date(cita.fechaHora))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEB3B),
+                        contentColor = Color.Black
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "📅",
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            text = "Próx. cita: ${cita.titulo} - $fechaCita",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.Black,
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE, velocity = 60.dp)
+                        )
+                    }
+                }
+            }
             if (perfilesPacientes.isEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),

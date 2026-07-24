@@ -1,5 +1,334 @@
 # Dossier del proyecto ControlMedicamentos
 
+## 24 de julio de 2026 (continuación) — Reparación del botón "Ver listado de registros guardados" en signos vitales
+
+### 1. Problema detectado
+
+En la pantalla **Signos vitales**, el botón **"Ver listado de registros guardados"** no mostraba el listado y regresaba al escritorio. La primera causa era que la lambda que debía cambiar el estado `mostrarListadoSignosPanel` estaba vacía:
+
+```kotlin
+val onMostrarListadoSignosPanelChange: (Boolean) -> Unit = { /* handled externally */ }
+```
+
+Al pulsar el botón se ocultaba `mostrarPanelSignosVitales` pero nunca se activaba el panel del listado, por lo que `mostrarEscritorio` volvía a `true`.
+
+Tras conectar correctamente el callback, la app lanzaba un **crash** con el mensaje:
+
+```text
+java.lang.IllegalStateException: Vertically scrollable component was measured with an infinity maximum height constraints, which is disallowed.
+```
+
+El `logcat` mostró que el error se producía al renderizar `ListadoSignosVitalesPanel`.
+
+### 2. Solución implementada
+
+**Archivos modificados:**
+
+- `app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormPanelSecundarios.kt`
+- `app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormBodyPaneles.kt`
+- `app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormBody.kt`
+
+Cambios:
+
+1. Se añadió el parámetro `onMostrarListadoSignosPanelChange: (Boolean) -> Unit` a `MedicamentoFormPanelSecundarios` y a `MedicamentoFormBodyPaneles`.
+2. En `MedicamentoFormBody` se creó el setter real:
+   ```kotlin
+   val onMostrarListadoSignosPanelChange: (Boolean) -> Unit = { mostrarListadoSignosPanelState.value = it }
+   ```
+   y se propagó hacia `MedicamentoFormPanelSecundarios`.
+3. Se eliminó el lambda no-op `/* handled externally */` de `MedicamentoFormPanelSecundarios`, dejando que el callback recibido actualice el estado.
+4. Se actualizó `mostrarEscritorio` para incluir `!mostrarListadoSignosPanel && !mostrarListadoSignosGuardados`, evitando que el escritorio se considere activo cuando el listado de signos vitales esté abierto.
+5. **Ajuste final del crash**: `MedicamentoFormGradientWrapper` añade `verticalScroll` al contenedor principal cuando `panelUsaScrollInterno` es `false`. `ListadoSignosVitalesPanel` también tiene `verticalScroll` en su `Column` raíz. Al activarse el listado, ambos scrolls anidados creaban una altura infinita. Se solucionó añadiendo `mostrarListadoSignosPanel` y `mostrarListadoSignosGuardados` a `panelUsaScrollInterno`, para que el wrapper no aplique `verticalScroll` mientras se muestra el listado y deje que el propio panel gestione su scroll.
+
+El flujo correcto ahora es:
+
+- Pulsa **"Ver listado de registros guardados"** → `mostrarPanelSignosVitales = false` y `mostrarListadoSignosPanel = true` → se muestra `ListadoSignosVitalesPanel`.
+- Desde el listado, el icono de cerrar o el `BackHandler` vuelven a `mostrarListadoSignosPanel = false` y `mostrarPanelSignosVitales = true`.
+
+### 3. Verificación
+
+- Compilación:
+  ```text
+  BUILD SUCCESSFUL
+  ```
+- Instalación:
+  ```text
+  > Task :app:installDebug
+  Installing APK 'app-debug.apk' on 'SM-X115 - 16' for :app:debug
+  Installed on 1 device.
+  ```
+- No se afectó el formulario de informes médicos ni los diálogos de eliminación implementados en la sesión anterior.
+
+---
+
+## 24 de julio de 2026 (segundo ajuste) — Layout del menú flotante y etiqueta "Signos vitales"
+
+### 1. Problema detectado
+
+Tras corregir el crash, al pulsar **"Ver listado de registros guardados"** se mostraba una pantalla en blanco con el menú hamburguesa visible. Dentro del menú flotante no aparecía la opción **"Signos vitales"**; en su lugar se mostraba **"Métricas Diarias"**.
+
+La causa fue que `MenuHamburguesaFlotante` usaba `Modifier.fillMaxSize()` y se ubicaba antes que `ListadoSignosVitalesPanel` dentro del `Column` de `MedicamentoFormBody`. Al consumir toda la altura disponible, dejaba al listado fuera de la pantalla. Además, la opción del menú flotante tenía una etiqueta diferente a la del escritorio.
+
+### 2. Solución implementada
+
+**Archivos modificados:**
+
+- `app/src/main/java/com/carlos/controlmedicamentos/MenuHamburguesaFlotante.kt`
+- `app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormBody.kt`
+
+Cambios:
+
+1. Se cambió el `Box` raíz de `MenuHamburguesaFlotante` de `fillMaxSize()` a `fillMaxWidth().wrapContentHeight()`, de modo que el menú ocupe solo la barra superior y no tape el contenido.
+2. Se movió la llamada a `MenuHamburguesaFlotante` al inicio del contenido de `MedicamentoFormGradientWrapper` en `MedicamentoFormBody`, por encima de los paneles y del escritorio.
+3. Se renombró la opción del menú flotante de **"Métricas Diarias"** a **"Signos vitales"** para mantener consistencia con el menú del escritorio.
+
+### 3. Verificación
+
+- Compilación:
+  ```text
+  BUILD SUCCESSFUL
+  ```
+- Instalación:
+  ```text
+  > Task :app:installDebug
+  Installing APK 'app-debug.apk' on 'SM-X115 - 16' for :app:debug
+  Installed on 1 device.
+  ```
+
+---
+
+## 23 de julio de 2026 (sesión nocturna) — Corrección UI de informes médicos, texto negro en botones, diálogos de eliminación y refuerzo del profesional médico
+
+### 1. Problema detectado
+
+- Al pulsar **"Nuevo informe"** o **"Editar"** en la sección **Documentos / Informes médicos** de la ficha del paciente, la app navegaba a una pantalla en blanco en la que solo se veía el menú hamburguesa. El formulario `FormularioInformePanel` no llegaba a renderizarse.
+- El texto de numerosos botones de menús, submenús y paneles secundarios se mostraba en blanco o con poco contraste, dificultando su lectura.
+- Varios botones de **Eliminar** (documentos, citas, adjuntos, médicos, pedidos y vacunas) ejecutaban la acción directamente sin pedir confirmación, con riesgo de borrados accidentales.
+
+### 2. Corrección de la navegación en blanco de informes médicos
+
+**Archivo:** `app/src/main/java/com/carlos/controlmedicamentos/MedicamentoFormPanelSecundarios.kt`
+
+El `FormularioInformePanel` ya existía como composable, pero nunca se invocaba desde `MedicamentoFormPanelSecundarios`. Se añadió la renderización condicional con todos los estados y callbacks necesarios:
+
+- Variables derivadas desde `MedicamentoFormState`:
+  - `tituloInforme`
+  - `descripcionInforme`
+  - `expandedProfesionalInforme`
+  - `practitionerIdInforme`
+  - `estudiosAdjuntos`
+  - `visorAdjuntos`
+  - `tienePermisoCamara`
+  - `cameraPermissionPending`
+
+- Callbacks conectados:
+  - `onTituloInformeChange`
+  - `onDescripcionInformeChange`
+  - `onExpandedProfesionalInformeChange`
+  - `onPractitionerIdInformeChange`
+  - `onVisorAdjuntosChange`
+  - `onCameraPermissionPendingChange`
+  - `onGuardarInformeMedicoActual`
+  - `onInformeMedicoTieneCambiosSinGuardar`
+  - `onCerrarFormularioInforme`
+  - `onMostrarDialogoCerrarInformeSinGuardarChange`
+  - `onLaunchDocumentScanner`
+
+- Invocación añadida:
+
+```kotlin
+FormularioInformePanel(
+    mostrarFormularioInforme = mostrarFormularioInforme,
+    tituloInforme = tituloInforme,
+    descripcionInforme = descripcionInforme,
+    expandedProfesionalInforme = expandedProfesionalInforme,
+    practitionerIdInforme = practitionerIdInforme,
+    profesionalesHabituales = profesionalesHabituales,
+    estudiosAdjuntos = estudiosAdjuntos,
+    visorAdjuntos = visorAdjuntos,
+    tienePermisoCamara = tienePermisoCamara,
+    cameraPermissionPending = cameraPermissionPending,
+    onTituloInformeChange = onTituloInformeChange,
+    onDescripcionInformeChange = onDescripcionInformeChange,
+    onExpandedProfesionalInformeChange = onExpandedProfesionalInformeChange,
+    onPractitionerIdInformeChange = onPractitionerIdInformeChange,
+    onVisorAdjuntosChange = onVisorAdjuntosChange,
+    onCameraPermissionPendingChange = onCameraPermissionPendingChange,
+    onGuardarInformeMedicoActual = onGuardarInformeMedicoActual,
+    onInformeMedicoTieneCambiosSinGuardar = onInformeMedicoTieneCambiosSinGuardar,
+    onCerrarFormularioInforme = onCerrarFormularioInforme,
+    onMostrarDialogoCerrarInformeSinGuardarChange = onMostrarDialogoCerrarInformeSinGuardarChange,
+    onLaunchDocumentScanner = onLaunchDocumentScanner,
+    cameraPermissionLauncher = launchers.cameraPermissionLauncher,
+    pickStudyImagesLauncher = launchers.pickStudyImagesLauncher
+)
+```
+
+Este cambio hace que el formulario de informes aparezca correctamente tanto al crear un documento nuevo como al editar uno existente.
+
+### 3. Texto negro en botones de menús y paneles
+
+Se aplicó `contentColor = Color.Black` y `Text(..., color = Color.Black)` en todos los botones afectados para garantizar legibilidad.
+
+#### 3.1 `FichaPacientePanel.kt`
+
+- Botones **"Editar"** y **"Eliminar"** de cada documento/informe.
+- Botones de exportación por periodo.
+- Botón **"Nuevo informe"**.
+- Botón **"Volver al escritorio"**.
+
+Ejemplo del cambio:
+
+```kotlin
+Button(
+    onClick = { onCargarInformeMedico(reporte) },
+    modifier = Modifier.weight(1f),
+    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
+) {
+    Text("Editar", color = Color.Black)
+}
+```
+
+#### 3.2 `FormularioInformePanel.kt`
+
+- Botones **"Escanear"**, **"Galeria"** y **"Quitar"**.
+
+#### 3.3 `CitasMedicasActivity.kt`
+
+- Botones de listado: **"Ya realizada"**, **"Editar"**, **"Eliminar"**, **"Ver historial"**, **"Nuevo Evento"**.
+- Formulario: **"Guardar Cita"**, **"Cancelar"**, selector de fecha.
+- Historial: **"Exportar a PDF"** y **"Cerrar"**.
+- Botones del diálogo de eliminación de cita: **"Eliminar"** y **"Cancelar"**.
+- Además se corrigió el título de la pantalla: de `"Informes médicos"` a `"Citas médicas"`, usando `CApptTextMain` para que sea visible sobre el fondo oscuro.
+
+#### 3.4 `ListaInsumosPanel.kt`
+
+- **"Recargar stock"**
+- **"Añadir a la lista de pedidos"**
+- **"Suspender"** / **"Reactivar"**
+- **"Desactivar alarma"** / **"Activar alarma"**
+- **"Ver lista de pedidos"**
+- **"Volver al escritorio"**
+
+#### 3.5 `PanelProfesionalesPanel.kt`
+
+- **"Nuevo"**, **"Editar"**, **"Eliminar"** y **"Ver informes"**.
+
+#### 3.6 `FormularioProfesionalPanel.kt`
+
+- **"Guardar"** y **"Cerrar"**.
+
+### 4. Diálogos de confirmación para eliminar
+
+#### 4.1 `FichaPacientePanel.kt`
+
+Se añadieron dos `AlertDialog` al final del composable:
+
+- **Eliminar documento**: usa el estado `reportePendienteDeEliminar` y, tras confirmar, ejecuta `database.medicalReportDao().eliminar(reporte)`.
+- **Eliminar cita médica**: usa el estado `citaPendienteDeEliminar` y, tras confirmar, cancela la alarma (`MedicalAppointmentScheduler`) y elimina la cita. También limpia la selección actual.
+
+#### 4.2 `FormularioInformePanel.kt`
+
+- El botón **"Quitar"** de un adjunto ya no elimina directamente del `SnapshotStateList`, sino que muestra un diálogo de confirmación con estado `adjuntoPendienteDeEliminar`.
+
+#### 4.3 `PanelProfesionalesPanel.kt`
+
+- El botón **"Eliminar"** de un médico habitual ahora abre un diálogo con iconos de aceptar/cancelar antes de llamar a `database.medicalPractitionerDao().eliminar(...)`.
+
+#### 4.4 `PanelPedidosPanel.kt`
+
+- El botón **"Vaciar lista de pedidos"** ahora requiere confirmación a través del estado `mostrarDialogoVaciar`.
+
+#### 4.5 `NuevaVacunaActivity.kt`
+
+- El diálogo de eliminación de registros de vacuna fue estilizado con iconos de aceptar/cancelar y fondo `Color(0xFF2A0040)`.
+
+### 5. Campo teléfono en profesionales médicos
+
+Se añadió soporte para guardar el teléfono del profesional médico en todas las capas:
+
+- `MedicalPractitioner.kt`: nueva propiedad `phone: String = ""` con `@ColumnInfo(defaultValue = "")`.
+- `AppDatabase.kt`:
+  - Versión de base de datos subida a **58**.
+  - Migración `MIGRATION_57_58` añade la columna `phone TEXT NOT NULL DEFAULT ''` en `medical_practitioners`.
+- `MedicamentoFormState.kt`: añadido `telefonoProfesionalState` y su getter.
+- `MedicamentoFormActions.kt`:
+  - `guardarMedicoHabitualActualAction` recibe y persiste `telefonoProfesional`.
+  - `resetMedicoHabitualAction` resetea el campo.
+- `MainActivity.kt`:
+  - Carga `practitioner.phone` al editar.
+  - Pasa el teléfono al guardar.
+- `FormularioProfesionalPanel.kt`: nuevo `OutlinedTextField` con etiqueta **"Teléfono"**.
+- `MedicamentoFormPanelSecundarios.kt`: conecta el estado y callback del teléfono con el panel y el formulario.
+- Backup y sincronización:
+  - `BackupManager.kt`: `phone` se incluye en JSON de `MedicalPractitioner` y `SyncMedicalPractitioner`, y se lee/escribe en las conversiones.
+  - `AndroidSyncSnapshotMapper.kt`: `MedicalPractitioner.toSyncModel()` copia `phone`.
+  - `SyncModels.kt`: `SyncMedicalPractitioner` incluye `phone`.
+
+### 6. Escritorio: indicador de próxima cita o evento
+
+**Archivo:** `app/src/main/java/com/carlos/controlmedicamentos/EscritorioContent.kt`
+
+- Se añadió una `data class ProximaCitaInfo(titulo: String, fechaHora: Long)`.
+- Se añadió un `LaunchedEffect(pacienteActivo?.id)` que consulta en `Dispatchers.IO` la próxima cita médica, cita dental, próxima dosis de vacuna y fecha probable de parto.
+- Se muestra una tarjeta amarilla en la parte superior del escritorio con el evento más cercano y un marquee para títulos largos.
+
+Queries añadidas:
+
+- `MedicalAppointmentDao.kt`: `obtenerProximaNoCompletada(patientId, now)`.
+- `VaccinationRecordDao.kt`: `obtenerProximaDosis(patientId, now)`.
+
+### 7. Notificaciones de pantalla completa
+
+**Archivo:** `app/src/main/AndroidManifest.xml`
+
+- Se añadió la actividad `ReminderAlertActivity` con flags `showOnLockScreen`, `turnScreenOn`, `showWhenLocked`, `excludeFromRecents` y `noHistory`.
+
+**Archivo:** `app/src/main/java/com/carlos/controlmedicamentos/notifications/NotificacionHelper.kt`
+
+- Las notificaciones de **stock bajo**, **hidratación** y **sedentarismo** ahora lanzan `ReminderAlertActivity` a pantalla completa (`context.startActivity(fullScreenIntent)`), además de la notificación estándar.
+
+### 8. Ajustes de compilación, firma y seguridad
+
+- `app/build.gradle.kts`:
+  - `appVersionCode` subido a **41**.
+  - Release: `isMinifyEnabled = false` y `isShrinkResources = false` para facilitar depuración.
+  - Configuración de firma: `enableV1Signing = true` y `enableV2Signing = true`.
+- `build.gradle.kts`:
+  - Forzar `sourceCompatibility` y `targetCompatibility` a Java **21** en todas las tareas `JavaCompile`.
+- `sync-core/build.gradle.kts`:
+  - Compatibilidad Java 11 para `JavaCompile`.
+  - `jvmToolchain(21)` para Kotlin, con `jvmTarget = JVM_11`.
+- `settings.gradle.kts`:
+  - Limpieza de espacios al incluir `:sync-core`.
+- `SecurityManager.kt`:
+  - `EXPECTED_CERT_SHA256` cambiado a `"CONFIGURE_ME"` para desactivar la validación de firma del certificado hasta que se configure el hash real del keystore de release.
+- `LicenseManager.kt`:
+  - La fecha de expiración ahora se calcula a partir de `firstInstallTime` del paquete, no de `BuildConfig.BUILD_TIMESTAMP`, para que la caducidad sea relativa a la instalación del usuario.
+
+### 9. Otros ajustes menores
+
+- `MenuHamburguesaEscritorio.kt` y `MenuHamburguesaFlotante.kt`: la opción **"Galería"** se comentó/ocultó temporalmente.
+- `HidratacionScreen.kt`: los chips de selección de meta de hidratación (1500, 2000, 2500, 3000 ml) se reorganizaron en dos filas con `Modifier.weight(1f)`, evitando que se corten en pantallas pequeñas.
+
+### 10. Verificación
+
+- Compilación:
+  ```text
+  > Task :app:compileDebugKotlin
+  > Task :app:compileDebugJavaWithJavac
+  BUILD SUCCESSFUL
+  ```
+- Instalación:
+  ```text
+  > Task :app:installDebug
+  Installing APK 'app-debug.apk' on 'SM-X115 - 16' for :app:debug
+  Installed on 1 device.
+  ```
+- No se produjeron errores de compilación. Los únicos warnings fueron por APIs obsoletas (`Modifier.menuAnchor()`, `Locale` constructors y flags de pantalla de bloqueo).
+
+---
+
 ## 1 de julio de 2026 (sesión tarde) — Corrección del descuento de stock en medicamentos con múltiples tomas
 
 ### 1. Problema detectado

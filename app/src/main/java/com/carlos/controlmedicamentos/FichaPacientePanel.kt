@@ -939,15 +939,17 @@ internal fun FichaPacientePanel(
                                     ) {
                                         Button(
                                             onClick = { onCargarInformeMedico(reporte) },
-                                            modifier = Modifier.weight(1f)
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                                         ) {
-                                            Text("Editar")
+                                            Text("Editar", color = Color.Black)
                                         }
                                         Button(
                                             onClick = { reportePendienteDeEliminar = reporte },
-                                            modifier = Modifier.weight(1f)
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                                         ) {
-                                            Text("Eliminar")
+                                            Text("Eliminar", color = Color.Black)
                                         }
                                     }
                                 }
@@ -979,9 +981,10 @@ internal fun FichaPacientePanel(
                                         },
                                         enabled = !exportandoTomas,
                                         modifier = Modifier.weight(1f),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                        colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                                     ) {
-                                        Text(periodo.label, fontSize = 12.sp, maxLines = 1)
+                                        Text(periodo.label, fontSize = 12.sp, maxLines = 1, color = Color.Black)
                                     }
                                 }
                             }
@@ -1002,18 +1005,78 @@ internal fun FichaPacientePanel(
                             onMostrarFormularioInformeChange(true)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                 ) {
-                    Text("Nuevo informe")
+                    Text("Nuevo informe", color = Color.Black)
                 }
                 Button(
                     onClick = { onCerrarPanelesSecundarios() },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
                 ) {
                     Text("Volver al escritorio", color = Color.Black)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+    }
+
+    reportePendienteDeEliminar?.let { reporte ->
+        AlertDialog(
+            onDismissRequest = { reportePendienteDeEliminar = null },
+            title = { Text("Eliminar documento") },
+            text = { Text("¿Seguro que quieres eliminar \"${reporte.titulo}\"? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        reportePendienteDeEliminar = null
+                        coroutineScope.launch(Dispatchers.IO) {
+                            database.medicalReportDao().eliminar(reporte)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Documento eliminado", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
+                ) { Text("Eliminar", color = Color.Black) }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { reportePendienteDeEliminar = null },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+                ) { Text("Cancelar", color = Color.Black) }
+            }
+        )
+    }
+
+    citaPendienteDeEliminar?.let { cita ->
+        AlertDialog(
+            onDismissRequest = { citaPendienteDeEliminar = null },
+            title = { Text("Eliminar cita") },
+            text = { Text("¿Seguro que quieres eliminar la cita \"${cita.title}\"? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        citaPendienteDeEliminar = null
+                        citaMedicaSeleccionadaIdMutable = null
+                        coroutineScope.launch(Dispatchers.IO) {
+                            try { MedicalAppointmentScheduler(context).cancelar(cita.id) } catch (_: Exception) {}
+                            database.medicalAppointmentDao().eliminar(cita)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Cita eliminada", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(contentColor = Color.Black)
+                ) { Text("Eliminar", color = Color.Black) }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { citaPendienteDeEliminar = null },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+                ) { Text("Cancelar", color = Color.Black) }
+            }
+        )
     }
 }

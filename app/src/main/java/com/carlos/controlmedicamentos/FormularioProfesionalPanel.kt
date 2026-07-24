@@ -5,6 +5,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.carlos.controlmedicamentos.data.local.MedicalAppointment
@@ -16,11 +17,13 @@ internal fun FormularioProfesionalPanel(
     editingPractitionerId: Int?,
     nombreProfesional: String,
     especialidadProfesional: String,
+    telefonoProfesional: String,
     proximaCitaMedico: MedicalAppointment?,
     informesSincronizadosMedico: List<MedicalReport>,
     panelInternoScrollState: androidx.compose.foundation.ScrollState,
     onNombreProfesionalChange: (String) -> Unit,
     onEspecialidadProfesionalChange: (String) -> Unit,
+    onTelefonoProfesionalChange: (String) -> Unit,
     onGuardarMedicoHabitualActual: () -> Unit,
     onResetMedicoHabitual: () -> Unit,
     onMostrarFormularioProfesionalChange: (Boolean) -> Unit,
@@ -52,6 +55,13 @@ internal fun FormularioProfesionalPanel(
                 value = especialidadProfesional,
                 onValueChange = { onEspecialidadProfesionalChange(it) },
                 label = { Text("Especialidad") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = telefonoProfesional,
+                onValueChange = { onTelefonoProfesionalChange(it) },
+                label = { Text("Teléfono") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -98,7 +108,7 @@ internal fun FormularioProfesionalPanel(
                     onClick = { onGuardarMedicoHabitualActual() },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Guardar")
+                    Text("Guardar", color = Color.Black)
                 }
                 Button(
                     onClick = {
@@ -108,7 +118,7 @@ internal fun FormularioProfesionalPanel(
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Cerrar")
+                    Text("Cerrar", color = Color.Black)
                 }
             }
         }

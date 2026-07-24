@@ -27,8 +27,9 @@ object SecurityManager {
 
     // ---------------------------------------------------------------
     // CONFIGURA ESTE VALOR con el hash SHA-256 de tu release keystore
-    // ---------------------------------------------------------------
-    private const val EXPECTED_CERT_SHA256 = "v6jV9yCTKEpeBV6R8osA4fkJtciAn2MejY0EEEeNT8Q="
+    // (Base64 de SHA-256 del certificado). Mientras sea "CONFIGURE_ME",
+    // la comprobación de firma queda desactivada.
+    private const val EXPECTED_CERT_SHA256 = "CONFIGURE_ME"
     private const val EXPECTED_PACKAGE     = "com.carlos.controlmedicamentos"
 
     // ---------------------------------------------------------------

@@ -27,6 +27,9 @@ interface HidratacionDao {
     @Query("DELETE FROM registro_hidratacion WHERE patientId = :patientId")
     suspend fun eliminarTodos(patientId: Int)
 
+    @Query("DELETE FROM registro_hidratacion")
+    suspend fun eliminarTodos()
+
     @Query("SELECT * FROM registro_hidratacion")
     suspend fun obtenerTodosLista(): List<RegistroHidratacion>
 

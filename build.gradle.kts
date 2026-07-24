@@ -4,3 +4,9 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.jvm) apply false
 }
+allprojects {
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "21"
+        targetCompatibility = "21"
+    }
+}

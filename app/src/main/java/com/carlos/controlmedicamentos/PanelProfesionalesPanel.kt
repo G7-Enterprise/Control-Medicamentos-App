@@ -4,8 +4,11 @@ import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +45,7 @@ internal fun PanelProfesionalesPanel(
     onAbrirFormularioMedico: (MedicalPractitioner?) -> Unit
 ) {
     val context = LocalContext.current
+    var medicoAEliminar by remember { mutableStateOf<MedicalPractitioner?>(null) }
 
     if (!mostrarPanelProfesionales) return
 
@@ -77,7 +81,7 @@ internal fun PanelProfesionalesPanel(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Nuevo")
+                        Text("Nuevo", color = Color.Black)
                     }
                     Button(
                         onClick = {
@@ -91,27 +95,21 @@ internal fun PanelProfesionalesPanel(
                         enabled = medicoSeleccionado != null,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Editar")
+                        Text("Editar", color = Color.Black)
                     }
                     Button(
                         onClick = {
                             val seleccionado = medicoSeleccionado
                             if (seleccionado == null) {
                                 Toast.makeText(context, "Selecciona un médico primero", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-                            coroutineScope.launch(Dispatchers.IO) {
-                                database.medicalPractitionerDao().eliminar(seleccionado)
-                                withContext(Dispatchers.Main) {
-                                    onProfesionalSeleccionadoIdChange(null)
-                                    Toast.makeText(context, "Médico eliminado", Toast.LENGTH_SHORT).show()
-                                }
+                            } else {
+                                medicoAEliminar = seleccionado
                             }
                         },
                         enabled = medicoSeleccionado != null,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Eliminar")
+                        Text("Eliminar", color = Color.Black)
                     }
                 }
 
@@ -171,13 +169,45 @@ internal fun PanelProfesionalesPanel(
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text("Ver informes")
+                                        Text("Ver informes", color = Color.Black)
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+
+            if (medicoAEliminar != null) {
+                AlertDialog(
+                    onDismissRequest = { medicoAEliminar = null },
+                    title = { Text("Eliminar médico") },
+                    text = { Text("¿Eliminar a ${medicoAEliminar?.name}?") },
+                    confirmButton = {
+                        IconButton(
+                            onClick = {
+                                val seleccionado = medicoAEliminar
+                                medicoAEliminar = null
+                                if (seleccionado != null) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        database.medicalPractitionerDao().eliminar(seleccionado)
+                                        withContext(Dispatchers.Main) {
+                                            onProfesionalSeleccionadoIdChange(null)
+                                            Toast.makeText(context, "Médico eliminado", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Filled.Check, contentDescription = "Aceptar", tint = Color(0xFF4CAF50))
+                        }
+                    },
+                    dismissButton = {
+                        IconButton(onClick = { medicoAEliminar = null }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Cancelar", tint = Color(0xFFFF5252))
+                        }
+                    }
+                )
             }
 
             Button(

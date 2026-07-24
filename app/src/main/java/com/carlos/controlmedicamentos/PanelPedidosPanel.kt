@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -64,6 +65,8 @@ internal fun PanelPedidosPanel(
     val context = LocalContext.current
 
     if (!mostrarPanelPedidos) return
+
+    var mostrarDialogoVaciar by remember { mutableStateOf(false) }
 
     MetallicMedicationCard(
         modifier = Modifier.fillMaxSize(),
@@ -220,15 +223,36 @@ internal fun PanelPedidosPanel(
                 }
 
                 Button(
-                    onClick = {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            database.carritoPendienteDao().limpiarPorPaciente(pacienteActivoId ?: 0)
-                        }
-                    },
+                    onClick = { mostrarDialogoVaciar = true },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B0000))
                 ) {
                     Text("Vaciar lista de pedidos", color = Color.White)
+                }
+
+                if (mostrarDialogoVaciar) {
+                    AlertDialog(
+                        onDismissRequest = { mostrarDialogoVaciar = false },
+                        title = { Text("Vaciar lista") },
+                        text = { Text("¿Seguro que deseas vaciar la lista de pedidos pendientes?") },
+                        confirmButton = {
+                            IconButton(
+                                onClick = {
+                                    mostrarDialogoVaciar = false
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        database.carritoPendienteDao().limpiarPorPaciente(pacienteActivoId ?: 0)
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Filled.Check, contentDescription = "Aceptar", tint = Color(0xFF4CAF50))
+                            }
+                        },
+                        dismissButton = {
+                            IconButton(onClick = { mostrarDialogoVaciar = false }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Cancelar", tint = Color(0xFFFF5252))
+                            }
+                        }
+                    )
                 }
             }
 

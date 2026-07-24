@@ -52,6 +52,7 @@ internal fun MedicamentoFormPanelSecundarios(
     mostrarTimePickerSignos: Boolean,
     mostrarListadoSignosPanel: Boolean,
     mostrarListadoSignosGuardados: Boolean,
+    onMostrarListadoSignosPanelChange: (Boolean) -> Unit,
     exportandoTomasState: MutableState<Boolean>,
     periodoExportacionPendienteState: MutableState<IntakeExportPeriod?>,
     database: AppDatabase,
@@ -171,6 +172,12 @@ internal fun MedicamentoFormPanelSecundarios(
     val visorAdjuntos = s.visorAdjuntosState.value
     val nombreProfesional = s.nombreProfesionalState.value
     val especialidadProfesional = s.especialidadProfesionalState.value
+    val tituloInforme = s.tituloInformeState.value
+    val descripcionInforme = s.descripcionInformeState.value
+    val expandedProfesionalInforme = s.expandedProfesionalInformeState.value
+    val practitionerIdInforme = s.practitionerIdInformeState.value
+    val tienePermisoCamara = s.tienePermisoCamaraState.value
+    val cameraPermissionPending = s.cameraPermissionPendingState.value
 
     // Derive callbacks
     val onCerrarPanelesSecundarios = callbacks.onCerrarPanelesSecundarios
@@ -194,6 +201,8 @@ internal fun MedicamentoFormPanelSecundarios(
     val onRequestBirthdayPreview = callbacks.onRequestBirthdayPreview
     val onResetInformeMedico = callbacks.onResetInformeMedico
     val onCargarInformeMedico = callbacks.onCargarInformeMedico
+    val onInformeMedicoTieneCambiosSinGuardar = callbacks.onInformeMedicoTieneCambiosSinGuardar
+    val onLaunchDocumentScanner = callbacks.onLaunchDocumentScanner
     val onGuardarMedicoHabitualActual = callbacks.onGuardarMedicoHabitualActual
     val onResetMedicoHabitual = callbacks.onResetMedicoHabitual
     val onAbrirFormularioCitaMedica = callbacks.onAbrirFormularioCitaMedica
@@ -211,7 +220,6 @@ internal fun MedicamentoFormPanelSecundarios(
     val onMostrarPanelPedidosChange: (Boolean) -> Unit = { s.mostrarPanelPedidosState.value = it }
     val onMostrarPanelBackupsChange: (Boolean) -> Unit = { s.mostrarPanelBackupsState.value = it }
     val onMostrarFormularioInformeChange: (Boolean) -> Unit = { s.mostrarFormularioInformeState.value = it }
-    val onMostrarListadoSignosPanelChange: (Boolean) -> Unit = { /* handled externally */ }
     val onMostrarPanelSignosVitalesChange: (Boolean) -> Unit = { s.mostrarPanelSignosVitalesState.value = it }
     val onMostrarPanelEmbarazoChange: (Boolean) -> Unit = { s.mostrarPanelEmbarazoState.value = it }
     val onMostrarPanelPediatricoChange: (Boolean) -> Unit = { s.mostrarPanelPediatricoState.value = it }
@@ -270,6 +278,11 @@ internal fun MedicamentoFormPanelSecundarios(
     val onTomaSeleccionadaChange: (String) -> Unit = { s.tomaSeleccionadaState.value = it }
     val onOrigenReposicionChange: (String) -> Unit = { s.origenReposicionState.value = it }
     val onMostrarDialogoCerrarInformeSinGuardarChange: (Boolean) -> Unit = { s.mostrarDialogoCerrarInformeSinGuardarState.value = it }
+    val onTituloInformeChange: (String) -> Unit = { s.tituloInformeState.value = it }
+    val onDescripcionInformeChange: (String) -> Unit = { s.descripcionInformeState.value = it }
+    val onExpandedProfesionalInformeChange: (Boolean) -> Unit = { s.expandedProfesionalInformeState.value = it }
+    val onPractitionerIdInformeChange: (Int?) -> Unit = { s.practitionerIdInformeState.value = it }
+    val onCameraPermissionPendingChange: (Boolean) -> Unit = { s.cameraPermissionPendingState.value = it }
     val onMedicationToDeleteChange: (Medication?) -> Unit = { s.medicationToDeleteState.value = it }
     val onDuplicateMedicationChange: (Medication?) -> Unit = { s.duplicateMedicationState.value = it }
     val onInsumoARecargarChange: (Medication?) -> Unit = { s.insumoARecargarState.value = it }
@@ -309,6 +322,7 @@ internal fun MedicamentoFormPanelSecundarios(
     val onLanzarExportVitalSigns: (String) -> Unit = { launchers.exportVitalSignsReportLauncher.launch(it) }
     val onNombreProfesionalChange: (String) -> Unit = { s.nombreProfesionalState.value = it }
     val onEspecialidadProfesionalChange: (String) -> Unit = { s.especialidadProfesionalState.value = it }
+    val onTelefonoProfesionalChange: (String) -> Unit = { s.telefonoProfesionalState.value = it }
     val onProfesionalSeleccionadoIdChange: (Int?) -> Unit = { s.profesionalSeleccionadoIdState.value = it }
 
     // Launchers
@@ -457,11 +471,14 @@ internal fun MedicamentoFormPanelSecundarios(
             onFormatDate = onFormatDate
         )
 
+        val profesionalSeleccionadoId = s.profesionalSeleccionadoIdState.value
+        val medicoSeleccionado = profesionalesHabituales.firstOrNull { it.id == profesionalSeleccionadoId }
+
         PanelProfesionalesPanel(
             mostrarPanelProfesionales = mostrarPanelProfesionales,
             pacienteActivo = pacienteActivo,
-            profesionalSeleccionadoId = null,
-            medicoSeleccionado = null,
+            profesionalSeleccionadoId = profesionalSeleccionadoId,
+            medicoSeleccionado = medicoSeleccionado,
             profesionalesHabituales = profesionalesHabituales,
             citasMedicas = citasMedicas,
             reportesSalud = reportesSalud,
@@ -476,11 +493,17 @@ internal fun MedicamentoFormPanelSecundarios(
             onCerrarPanelesSecundarios = onCerrarPanelesSecundarios,
             onAbrirFormularioMedico = { practitioner ->
                 if (practitioner != null) {
+                    s.editingPractitionerIdState.value = practitioner.id
+                    s.profesionalSeleccionadoIdState.value = practitioner.id
                     onNombreProfesionalChange(practitioner.name)
                     onEspecialidadProfesionalChange(practitioner.specialty)
+                    onTelefonoProfesionalChange(practitioner.phone)
                 } else {
+                    s.editingPractitionerIdState.value = null
+                    s.profesionalSeleccionadoIdState.value = null
                     onNombreProfesionalChange("")
                     onEspecialidadProfesionalChange("")
+                    onTelefonoProfesionalChange("")
                 }
                 onMostrarFormularioProfesionalChange(true)
                 onMostrarPanelProfesionalesChange(false)
@@ -492,15 +515,43 @@ internal fun MedicamentoFormPanelSecundarios(
             editingPractitionerId = editingPractitionerId,
             nombreProfesional = nombreProfesional,
             especialidadProfesional = especialidadProfesional,
+            telefonoProfesional = s.telefonoProfesionalState.value,
             proximaCitaMedico = null,
             informesSincronizadosMedico = emptyList(),
             panelInternoScrollState = panelInternoScrollState,
             onNombreProfesionalChange = onNombreProfesionalChange,
             onEspecialidadProfesionalChange = onEspecialidadProfesionalChange,
+            onTelefonoProfesionalChange = onTelefonoProfesionalChange,
             onGuardarMedicoHabitualActual = onGuardarMedicoHabitualActual,
             onResetMedicoHabitual = onResetMedicoHabitual,
             onMostrarFormularioProfesionalChange = onMostrarFormularioProfesionalChange,
             onMostrarPanelProfesionalesChange = onMostrarPanelProfesionalesChange
+        )
+
+        FormularioInformePanel(
+            mostrarFormularioInforme = mostrarFormularioInforme,
+            tituloInforme = tituloInforme,
+            descripcionInforme = descripcionInforme,
+            expandedProfesionalInforme = expandedProfesionalInforme,
+            practitionerIdInforme = practitionerIdInforme,
+            profesionalesHabituales = profesionalesHabituales,
+            estudiosAdjuntos = estudiosAdjuntos,
+            visorAdjuntos = visorAdjuntos,
+            tienePermisoCamara = tienePermisoCamara,
+            cameraPermissionPending = cameraPermissionPending,
+            onTituloInformeChange = onTituloInformeChange,
+            onDescripcionInformeChange = onDescripcionInformeChange,
+            onExpandedProfesionalInformeChange = onExpandedProfesionalInformeChange,
+            onPractitionerIdInformeChange = onPractitionerIdInformeChange,
+            onVisorAdjuntosChange = onVisorAdjuntosChange,
+            onCameraPermissionPendingChange = onCameraPermissionPendingChange,
+            onGuardarInformeMedicoActual = onGuardarInformeMedicoActual,
+            onInformeMedicoTieneCambiosSinGuardar = onInformeMedicoTieneCambiosSinGuardar,
+            onCerrarFormularioInforme = onCerrarFormularioInforme,
+            onMostrarDialogoCerrarInformeSinGuardarChange = onMostrarDialogoCerrarInformeSinGuardarChange,
+            onLaunchDocumentScanner = onLaunchDocumentScanner,
+            cameraPermissionLauncher = launchers.cameraPermissionLauncher,
+            pickStudyImagesLauncher = launchers.pickStudyImagesLauncher
         )
 
         if (mostrarPanelSignosVitales) {

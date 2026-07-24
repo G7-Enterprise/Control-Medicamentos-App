@@ -72,7 +72,8 @@ internal fun MenuHamburguesaFlotante(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .wrapContentHeight()
             .zIndex(10f),
         contentAlignment = Alignment.TopEnd
     ) {
@@ -196,6 +197,7 @@ internal fun MenuHamburguesaFlotante(
                     onCerrarPanelesSecundarios(); onMostrarListaInsumos(true)
                 }
             )
+            /* Galería oculta temporalmente
             DropdownMenuItem(
                 text = { Text("Galería") },
                 leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
@@ -207,8 +209,9 @@ internal fun MenuHamburguesaFlotante(
                     onMostrarFormularioInformeChange(true)
                 }
             )
+            */
             DropdownMenuItem(
-                text = { Text("Métricas Diarias") },
+                text = { Text("Signos vitales") },
                 leadingIcon = { Icon(Icons.Filled.BarChart, contentDescription = null) },
                 colors = floatMenuItemColors,
                 onClick = { mostrarMenuHamburguesa = false; onCerrarPanelesSecundarios(); onMostrarPanelSignosVitales() }

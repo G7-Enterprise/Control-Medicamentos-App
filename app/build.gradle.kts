@@ -7,7 +7,7 @@ plugins {
 }
 
 // Usar versionCode fijo - ignorar local.properties para evitar conflictos
-val appVersionCode = 36
+val appVersionCode = 41
 val appVersionName = providers.gradleProperty("APP_VERSION_NAME").orElse("1.0.0").get()
 val appExpirationDays = providers.gradleProperty("APP_EXPIRATION_DAYS").orElse("3650").get().toLong()
 
@@ -44,13 +44,15 @@ android {
             storePassword = localProps.getProperty("KEYSTORE_PASSWORD", "")
             keyAlias = localProps.getProperty("KEY_ALIAS", "controlmed")
             keyPassword = localProps.getProperty("KEY_PASSWORD", "")
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("release")
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"

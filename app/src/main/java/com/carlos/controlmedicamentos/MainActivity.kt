@@ -588,6 +588,26 @@ private fun StartupOverlay(
                 .padding(end = 14.dp, bottom = 60.dp)
         )
 
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+                .zIndex(3f)
+                .background(
+                    color = Color(0xE8FFFFFF),
+                    shape = RoundedCornerShape(10.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = "Create by Carlos Gamboa G7 Enterprise",
+                color = Color.Black,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+
     }
 }
 
@@ -1846,6 +1866,7 @@ fun MedicamentoForm(
     var descripcionInforme by _s.descripcionInformeState
     var nombreProfesional by _s.nombreProfesionalState
     var especialidadProfesional by _s.especialidadProfesionalState
+    var telefonoProfesional by _s.telefonoProfesionalState
     var tituloCitaMedica by _s.tituloCitaMedicaState
     val _profesionalCitaMedica = _s.profesionalCitaMedicaState
     var profesionalCitaMedica by _profesionalCitaMedica
@@ -2355,6 +2376,7 @@ fun MedicamentoForm(
         editingPractitionerId = practitioner.id
         nombreProfesional = practitioner.name
         especialidadProfesional = practitioner.specialty
+        telefonoProfesional = practitioner.phone
     }
 
     fun abrirFormularioMedico(practitioner: MedicalPractitioner? = null) {
@@ -2377,7 +2399,9 @@ fun MedicamentoForm(
 
     fun guardarMedicoHabitualActual() = guardarMedicoHabitualActualAction(
         context = context, pacienteActivo = pacienteActivo,
-        nombreProfesional = nombreProfesional, especialidadProfesional = especialidadProfesional,
+        nombreProfesional = nombreProfesional,
+        especialidadProfesional = especialidadProfesional,
+        telefonoProfesional = telefonoProfesional,
         editingPractitionerId = editingPractitionerId,
         profesionalesHabituales = profesionalesHabituales,
         database = database, coroutineScope = coroutineScope,
@@ -2385,6 +2409,7 @@ fun MedicamentoForm(
         setEditingPractitionerId = { editingPractitionerId = it },
         setNombreProfesional = { nombreProfesional = it },
         setEspecialidadProfesional = { especialidadProfesional = it },
+        setTelefonoProfesional = { telefonoProfesional = it },
         setMostrarFormularioProfesional = { mostrarFormularioProfesional = it },
         setMostrarPanelProfesionales = { mostrarPanelProfesionales = it }
     )

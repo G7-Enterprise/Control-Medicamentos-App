@@ -148,9 +148,9 @@ fun CitasMedicasScreen() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Informes médicos",
+            text = "Citas médicas",
             style = MaterialTheme.typography.headlineMedium,
-            color = Color.Black,
+            color = CApptTextMain,
             fontWeight = FontWeight.Bold
         )
 
@@ -251,7 +251,7 @@ fun CitasMedicasScreen() {
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF2E7D32).copy(alpha = 0.85f),
-                                contentColor = Color.White
+                                contentColor = Color.Black
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -279,20 +279,20 @@ fun CitasMedicasScreen() {
                                     citaEditando = cita
                                 },
                                 border = BorderStroke(1.dp, CApptAccent),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptAccent),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = CApptAccent)
                                 Spacer(Modifier.width(4.dp))
                                 Text("Editar", fontSize = 13.sp)
                             }
                             OutlinedButton(
                                 onClick = { citaParaEliminar = cita },
                                 border = BorderStroke(1.dp, Color(0xFFFF5252)),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFFFF5252))
                                 Spacer(Modifier.width(4.dp))
                                 Text("Eliminar", fontSize = 13.sp)
                             }
@@ -309,7 +309,7 @@ fun CitasMedicasScreen() {
             onClick = { mostrarHistorial = true },
             colors = ButtonDefaults.buttonColors(
                 containerColor = CApptMid,
-                contentColor = CApptTextMain
+                contentColor = Color.Black
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -325,7 +325,7 @@ fun CitasMedicasScreen() {
             onClick = { mostrarFormNuevaCita = !mostrarFormNuevaCita },
             colors = ButtonDefaults.buttonColors(
                 containerColor = CApptMid,
-                contentColor = CApptTextMain
+                contentColor = Color.Black
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -416,7 +416,7 @@ fun CitasMedicasScreen() {
                             ).show()
                         },
                         border = BorderStroke(1.dp, CApptFieldBdr),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptTextMain),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, tint = CApptAccent)
@@ -491,13 +491,13 @@ fun CitasMedicasScreen() {
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CApptLight,
-                            contentColor = CApptTextMain
+                            contentColor = Color.Black
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
                     ) {
-                        Text("Guardar Cita", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Guardar Cita", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     }
                 }
             }
@@ -575,7 +575,7 @@ fun CitasMedicasScreen() {
                             ).show()
                         },
                         border = BorderStroke(1.dp, CApptFieldBdr),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptTextMain),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, tint = CApptAccent)
@@ -609,7 +609,7 @@ fun CitasMedicasScreen() {
                         OutlinedButton(
                             onClick = { citaEditando = null },
                             border = BorderStroke(1.dp, CApptFieldBdr),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptTextSub),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                             modifier = Modifier.weight(1f)
                         ) { Text("Cancelar") }
                         Button(
@@ -675,11 +675,14 @@ fun CitasMedicasScreen() {
                         }
                         citaParaEliminar = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
-                ) { Text("Eliminar") }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.Black)
+                ) { Text("Eliminar", color = Color.Black) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { citaParaEliminar = null }) { Text("Cancelar") }
+                OutlinedButton(
+                    onClick = { citaParaEliminar = null },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+                ) { Text("Cancelar", color = Color.Black) }
             },
             containerColor = CApptCardDetail,
             titleContentColor = CApptTextMain,
@@ -830,20 +833,20 @@ fun CitasMedicasScreen() {
                                                         citaEditando = cita
                                                     },
                                                     border = BorderStroke(1.dp, CApptAccent),
-                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptAccent),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                                                     modifier = Modifier.weight(1f)
                                                 ) {
-                                                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = CApptAccent)
                                                     Spacer(Modifier.width(4.dp))
                                                     Text("Editar", fontSize = 13.sp)
                                                 }
                                                 OutlinedButton(
                                                     onClick = { citaParaEliminar = cita },
                                                     border = BorderStroke(1.dp, Color(0xFFFF5252)),
-                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                                                     modifier = Modifier.weight(1f)
                                                 ) {
-                                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFFFF5252))
                                                     Spacer(Modifier.width(4.dp))
                                                     Text("Eliminar", fontSize = 13.sp)
                                                 }
@@ -872,13 +875,13 @@ fun CitasMedicasScreen() {
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = CApptLight,
-                                contentColor = CApptTextMain
+                                contentColor = Color.Black
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.Description, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Exportar a PDF", fontWeight = FontWeight.Bold)
+                            Text("Exportar a PDF", fontWeight = FontWeight.Bold, color = Color.Black)
                         }
                     }
 
@@ -888,11 +891,11 @@ fun CitasMedicasScreen() {
                         onClick = { mostrarHistorial = false },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CApptMid,
-                            contentColor = CApptTextMain
+                            contentColor = Color.Black
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Cerrar", fontWeight = FontWeight.Bold)
+                        Text("Cerrar", fontWeight = FontWeight.Bold, color = Color.Black)
                     }
                 }
             }

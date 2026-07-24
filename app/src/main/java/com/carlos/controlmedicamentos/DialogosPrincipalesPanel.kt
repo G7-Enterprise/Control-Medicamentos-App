@@ -220,6 +220,22 @@ internal fun DialogosPrincipalesPanel(
                         Checkbox(checked = backupSelection.physicalActivities, onCheckedChange = { backupSelection = backupSelection.copy(physicalActivities = it) })
                         Text("Actividades físicas")
                     }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = backupSelection.registrosSedentarismo, onCheckedChange = { backupSelection = backupSelection.copy(registrosSedentarismo = it) })
+                        Text("Sedentarismo (registros)")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = backupSelection.configSedentarismo, onCheckedChange = { backupSelection = backupSelection.copy(configSedentarismo = it) })
+                        Text("Sedentarismo (configuración)")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = backupSelection.registrosHidratacion, onCheckedChange = { backupSelection = backupSelection.copy(registrosHidratacion = it) })
+                        Text("Hidratación")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = backupSelection.fallAlerts, onCheckedChange = { backupSelection = backupSelection.copy(fallAlerts = it) })
+                        Text("Alertas de caídas")
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = { backupSelection = BackupSelection.all() },
@@ -307,6 +323,22 @@ internal fun DialogosPrincipalesPanel(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = restoreSelection.physicalActivities, onCheckedChange = { restoreSelection = restoreSelection.copy(physicalActivities = it) })
                         Text("Actividades físicas")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = restoreSelection.registrosSedentarismo, onCheckedChange = { restoreSelection = restoreSelection.copy(registrosSedentarismo = it) })
+                        Text("Sedentarismo (registros)")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = restoreSelection.configSedentarismo, onCheckedChange = { restoreSelection = restoreSelection.copy(configSedentarismo = it) })
+                        Text("Sedentarismo (configuración)")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = restoreSelection.registrosHidratacion, onCheckedChange = { restoreSelection = restoreSelection.copy(registrosHidratacion = it) })
+                        Text("Hidratación")
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = restoreSelection.fallAlerts, onCheckedChange = { restoreSelection = restoreSelection.copy(fallAlerts = it) })
+                        Text("Alertas de caídas")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
