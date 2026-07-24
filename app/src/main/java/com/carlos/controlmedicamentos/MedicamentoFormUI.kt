@@ -3015,7 +3015,9 @@ internal fun VademecumDropdown(
     expanded: Boolean,
     onExpandedChange: () -> Unit,
     onDismiss: () -> Unit,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
+    emptyOptionsText: String? = null
 ) {
     ExposedDropdownMenuBox(
         expanded = expanded && options.isNotEmpty(),
@@ -3032,15 +3034,15 @@ internal fun VademecumDropdown(
             enabled = options.isNotEmpty(),
             label = { Text(label) },
             placeholder = {
-                if (options.isEmpty()) {
-                    Text("Selecciona primero un medicamento")
+                if (options.isEmpty() && !emptyOptionsText.isNullOrBlank()) {
+                    Text(emptyOptionsText)
                 }
             },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && options.isNotEmpty())
             },
             modifier = Modifier.menuAnchor().fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors()
+            colors = colors
         )
         ExposedDropdownMenu(
             expanded = expanded && options.isNotEmpty(),

@@ -143,7 +143,7 @@ fun FallAlertScreen(
     var selectedAlarmSound by remember { mutableStateOf(prefs.getString(KEY_ALARM_SOUND_URI, null)) }
     var customSmsMessage by remember { 
         mutableStateOf(
-            prefs.getString(KEY_SMS_MESSAGE, "ALERTA DE CAÍDA\n\nUbicación: {lat}, {lon}\n\nMagnitud del impacto: {magnitude} m/s²") 
+            prefs.getString(KEY_SMS_MESSAGE, "ALERTA DE CAÍDA\n\nSe ha detectado una posible caída. Por favor verifica la situación inmediatamente.\n\nUbicación: {maps}\n\nMagnitud del impacto: {magnitude} m/s²") 
         ) 
     }
 

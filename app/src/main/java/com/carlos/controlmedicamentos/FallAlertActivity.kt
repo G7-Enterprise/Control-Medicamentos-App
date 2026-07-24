@@ -69,6 +69,8 @@ import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.FallAlert
 import com.carlos.controlmedicamentos.data.local.FALL_STATUS_CONFIRMED
 import com.carlos.controlmedicamentos.data.local.FALL_STATUS_DISMISSED
+import com.carlos.controlmedicamentos.fall.FallEmergencyNotifier
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -100,8 +102,9 @@ class FallAlertActivity : ComponentActivity() {
     private val requestSmsPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            sendWhatsAppAlert()
+        CoroutineScope(Dispatchers.IO).launch {
+            sendAlerts()
+            withContext(Dispatchers.Main) { finish() }
         }
     }
 
@@ -303,12 +306,16 @@ class FallAlertActivity : ComponentActivity() {
     fun autoFireEmergency() {
         android.util.Log.d("FallAlertActivity", "Dead Man's Switch: tiempo agotado, disparando emergencia automática")
         saveAlert(FALL_STATUS_CONFIRMED)
-        if (emergencyPhone.isNotBlank()) {
-            sendWhatsAppAlert()
-        }
         stopAlarm()
         stopVibration()
-        finish()
+        if (emergencyPhone.isNotBlank()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                sendAlerts()
+                withContext(Dispatchers.Main) { finish() }
+            }
+        } else {
+            finish()
+        }
     }
 
     private fun confirmAlert() {
@@ -316,9 +323,17 @@ class FallAlertActivity : ComponentActivity() {
         stopAlarm()
         stopVibration()
         if (emergencyPhone.isNotBlank()) {
-            sendWhatsAppAlert()
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    sendAlerts()
+                    withContext(Dispatchers.Main) { finish() }
+                }
+            } else {
+                requestSmsPermission.launch(Manifest.permission.SEND_SMS)
+            }
+        } else {
+            finish()
         }
-        finish()
     }
 
     private fun saveAlert(status: String) {
@@ -397,68 +412,40 @@ class FallAlertActivity : ComponentActivity() {
         }
     }
 
-    private fun sendWhatsAppAlert() {
+    private fun sendAlerts() {
         try {
-            android.util.Log.d("FallAlertActivity", "sendWhatsAppAlert called")
+            android.util.Log.d("FallAlertActivity", "sendAlerts called")
+            if (emergencyPhone.isBlank()) return
+
+            val ctx = applicationContext
             val location = getLastKnownLocation()
-            val prefs = getSharedPreferences("fall_alert_prefs", Context.MODE_PRIVATE)
-            val customMessage = prefs.getString("sms_message", null)
-            
-            android.util.Log.d("FallAlertActivity", "emergencyPhone: '$emergencyPhone'")
-            
-            val lat = if (location != null) "%.5f".format(location.latitude) else "N/A"
-            val lon = if (location != null) "%.5f".format(location.longitude) else "N/A"
-            val magnitude = "%.2f".format(impactMagnitude)
-            val mapsLink = if (location != null) "https://maps.google.com/?q=$lat,$lon" else "N/A"
-            
-            val message = if (customMessage != null) {
-                customMessage
-                    .replace("{lat}", lat)
-                    .replace("{lon}", lon)
-                    .replace("{magnitude}", magnitude)
-                    .replace("{maps}", mapsLink)
-            } else {
-                "ALERTA DE CAÍDA\n\nSe ha detectado una posible caída. Por favor verifica la situación inmediatamente.\n\nUbicación: $lat, $lon\nMaps: $mapsLink\n\nMagnitud del impacto: $magnitude m/s²"
-            }
-            
-            android.util.Log.d("FallAlertActivity", "Final message: $message")
-            
+            val customMessage = FallEmergencyNotifier.loadCustomMessage(ctx)
+            val message = FallEmergencyNotifier.buildEmergencyMessage(customMessage, location, impactMagnitude)
             val phones = emergencyPhone.split(",").map { it.trim() }.filter { it.isNotBlank() }
-            android.util.Log.d("FallAlertActivity", "Phones to send: $phones")
-            
-            val encodedMessage = android.net.Uri.encode(message)
-            
-            for (phone in phones) {
-                try {
-                    val cleanPhone = phone.replace("+", "").replace(" ", "").replace("-", "")
-                    val waIntent = Intent(Intent.ACTION_VIEW).apply {
-                        data = Uri.parse("https://wa.me/$cleanPhone?text=$encodedMessage")
-                        setPackage("com.whatsapp")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(waIntent)
-                    android.util.Log.d("FallAlertActivity", "WhatsApp intent launched for: $cleanPhone")
-                    Thread.sleep(1500)
-                } catch (e: Exception) {
-                    android.util.Log.e("FallAlertActivity", "WhatsApp no disponible para $phone, intentando navegador", e)
-                    try {
-                        val cleanPhone = phone.replace("+", "").replace(" ", "").replace("-", "")
-                        val browserIntent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("https://wa.me/$cleanPhone?text=$encodedMessage")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(browserIntent)
-                        Thread.sleep(1500)
-                    } catch (e2: Exception) {
-                        android.util.Log.e("FallAlertActivity", "Error enviando a $phone", e2)
-                    }
-                }
+
+            android.util.Log.d("FallAlertActivity", "emergencyPhone: '$emergencyPhone'")
+            android.util.Log.d("FallAlertActivity", "Final message: $message")
+
+            // 1) Enviar SMS automático si hay permiso (no requiere interacción del usuario)
+            val smsEnviados = if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                FallEmergencyNotifier.sendSmsAlert(ctx, phones, message)
+            } else {
+                0
             }
-            Toast.makeText(this, "Alerta enviada por WhatsApp", Toast.LENGTH_LONG).show()
+
+            // 2) Pre-llenar WhatsApp para cada contacto (el usuario debe pulsar enviar en WhatsApp)
+            FallEmergencyNotifier.sendWhatsAppAlert(ctx, phones, message)
+
+            val mensajeToast = if (smsEnviados > 0) {
+                "Alerta enviada por SMS a $smsEnviados contacto(s). WhatsApp preparado para enviar."
+            } else {
+                "WhatsApp preparado para enviar. Concede permiso SMS para envío automático."
+            }
+            Toast.makeText(ctx, mensajeToast, Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            android.util.Log.e("FallAlertActivity", "Error in sendWhatsAppAlert", e)
+            android.util.Log.e("FallAlertActivity", "Error in sendAlerts", e)
             e.printStackTrace()
-            Toast.makeText(this, "No se pudo enviar la alerta por WhatsApp", Toast.LENGTH_LONG).show()
+            Toast.makeText(applicationContext, "No se pudo enviar la alerta de emergencia", Toast.LENGTH_LONG).show()
         }
     }
 }

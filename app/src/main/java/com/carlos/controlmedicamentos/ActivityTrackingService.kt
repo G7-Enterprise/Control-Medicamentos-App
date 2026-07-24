@@ -22,6 +22,9 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.NotificationCompat
+import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.PhysicalActivity
+import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -35,12 +38,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
+import java.util.Calendar
 import java.util.Locale
 
 // ── Actions sent via PendingIntent from the notification ─────────────────────
 const val ACTION_PAUSE_RESUME  = "com.carlos.controlmedicamentos.ACTION_PAUSE_RESUME"
 const val ACTION_STOP          = "com.carlos.controlmedicamentos.ACTION_STOP"
 const val ACTION_STOP_DISCARD  = "com.carlos.controlmedicamentos.ACTION_STOP_DISCARD"
+
+const val EXTRA_PACIENTE_ID = "pacienteId"
+const val EXTRA_ORIGEN      = "origen"
+const val EXTRA_META_MINUTOS = "metaMinutos"
+const val ORIGEN_SEDENTARISMO = "sedentarismo"
 
 // ── State shared with the UI ──────────────────────────────────────────────────
 data class TrackingState(
@@ -55,6 +64,7 @@ data class TrackingState(
     val rutaGps: List<GeoPoint> = emptyList(),
     val fechaInicio: Long       = 0L,
     val discarded: Boolean      = false,
+    val sesionSedentarismo: Boolean = false,       // true si nació desde la alerta de sedentarismo
     val altitudInicioMetros: Double   = 0.0,  // altitud GPS en el primer fix
     val altitudMaxMetros: Double      = 0.0,  // altitud máxima alcanzada
     val desnivelPositivoMetros: Double = 0.0, // metros totales de ascenso
@@ -89,6 +99,11 @@ class ActivityTrackingService : Service() {
     private var autoPausaJob: Job? = null      // monitor de auto-pausa
     private var altitudPreviaMetros: Double? = null  // para calcular desnivel incremental
 
+    private var patientId: Int = 0
+    private var modoSedentarismo = false
+    private var metaMinutos = 5
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+
     // ── TTS ───────────────────────────────────────────────────────────────────
     private var tts: TextToSpeech? = null
     private var ttsReady = false
@@ -116,6 +131,9 @@ class ActivityTrackingService : Service() {
             ACTION_STOP         -> stopTracking()
             ACTION_STOP_DISCARD -> stopTrackingDiscard()
             else                -> {
+                patientId = intent?.getIntExtra(EXTRA_PACIENTE_ID, 0) ?: 0
+                modoSedentarismo = intent?.getStringExtra(EXTRA_ORIGEN) == ORIGEN_SEDENTARISMO
+                metaMinutos = intent?.getIntExtra(EXTRA_META_MINUTOS, 5) ?: 5
                 val tipo = intent?.getStringExtra("tipo") ?: "caminar"
                 startTracking(tipo)
             }
@@ -126,10 +144,11 @@ class ActivityTrackingService : Service() {
     // ── Start ─────────────────────────────────────────────────────────────────
     fun startTracking(tipo: String) {
         _state.value = TrackingState(
-            activo      = true,
-            pausado     = false,
-            tipo        = tipo,
-            fechaInicio = System.currentTimeMillis()
+            activo              = true,
+            pausado             = false,
+            tipo                = tipo,
+            fechaInicio         = System.currentTimeMillis(),
+            sesionSedentarismo  = modoSedentarismo
         )
         pasosBase             = -1
         kmHablados            = 0
@@ -187,7 +206,11 @@ class ActivityTrackingService : Service() {
 
     // ── Stop ──────────────────────────────────────────────────────────────────
     fun stopTracking() {
-        speak("Entrenamiento finalizado. ${formatDistanciaHablada(_state.value.distanciaMetros)} recorridos en ${formatDuracionHablada(_state.value.duracionSegundos)}.")
+        if (modoSedentarismo) {
+            evaluarYGuardarSesionSedentarismo()
+        } else {
+            speak("Entrenamiento finalizado. ${formatDistanciaHablada(_state.value.distanciaMetros)} recorridos en ${formatDuracionHablada(_state.value.duracionSegundos)}.")
+        }
         tickerJob?.cancel()
         autoPausaJob?.cancel()
         unregisterSensors()
@@ -197,12 +220,55 @@ class ActivityTrackingService : Service() {
     }
 
     fun stopTrackingDiscard() {
+        if (modoSedentarismo) {
+            evaluarYGuardarSesionSedentarismo(forzarSinMovimiento = true)
+        }
         tickerJob?.cancel()
         autoPausaJob?.cancel()
         unregisterSensors()
         _state.value = _state.value.copy(activo = false, pausado = false, discarded = true)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    private fun evaluarYGuardarSesionSedentarismo(forzarSinMovimiento: Boolean = false) {
+        val s = _state.value
+        val duracionSeg = s.duracionSegundos
+        val esMovimiento = !forzarSinMovimiento && duracionSeg >= (metaMinutos * 60L) && s.pasos > 0
+        val tipoEvento = if (esMovimiento) "MOVIMIENTO_REGISTRADO" else "SIN_MOVIMIENTO"
+        val minutos = (duracionSeg / 60).toInt()
+        val notas = if (esMovimiento) {
+            "Pasos: ${s.pasos}, distancia: %.0f m, tiempo: ${minutos} min".format(s.distanciaMetros)
+        } else {
+            "Tiempo: ${minutos} min, pasos: ${s.pasos}"
+        }
+
+        ioScope.launch {
+            val db = AppDatabase.getDatabase(applicationContext)
+            db.sedentarismoDao().insertarRegistro(
+                RegistroSedentarismo(
+                    patientId = patientId,
+                    tipoEvento = tipoEvento,
+                    minutosInactivo = minutos,
+                    notas = notas
+                )
+            )
+            if (esMovimiento) {
+                db.physicalActivityDao().insertar(
+                    PhysicalActivity(
+                        patientId       = patientId,
+                        tipo            = "caminar",
+                        fechaInicio     = s.fechaInicio,
+                        fechaFin        = System.currentTimeMillis(),
+                        pasos           = s.pasos,
+                        distanciaMetros = s.distanciaMetros,
+                        duracionSegundos= s.duracionSegundos,
+                        calorias        = s.calorias,
+                        rutaJson        = s.rutaGps.joinToString(",") { "${it.latitude}:${it.longitude}" }
+                    )
+                )
+            }
+        }
     }
 
     // ── Sensors ───────────────────────────────────────────────────────────────
@@ -402,7 +468,19 @@ class ActivityTrackingService : Service() {
                     delay(1000L)
                     val s = _state.value
                     if (!s.activo) break
-                    if (!s.pausado) {
+                    if (s.sesionSedentarismo) {
+                        // En sedentarismo se detiene directamente tras 30s sin pasos
+                        if (s.pasos == ultimoCheck) {
+                            segsInactivo++
+                            if (segsInactivo >= 30) {
+                                stopTracking()
+                                break
+                            }
+                        } else {
+                            segsInactivo = 0
+                            ultimoCheck = s.pasos
+                        }
+                    } else if (!s.pausado) {
                         if (s.pasos == ultimoCheck) {
                             segsInactivo++
                             if (segsInactivo >= 5) {

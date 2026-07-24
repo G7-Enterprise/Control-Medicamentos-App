@@ -53,6 +53,9 @@ interface SedentarismoDao {
     @Query("SELECT COUNT(*) FROM registros_sedentarismo WHERE patientId = :patientId AND tipoEvento = 'ALERTA_INACTIVIDAD' AND timestamp >= :desde")
     fun contarAlertasHoy(patientId: Int, desde: Long): Flow<Int>
 
+    @Query("DELETE FROM registros_sedentarismo WHERE id = :id")
+    suspend fun eliminarRegistro(id: Int)
+
     @Query("DELETE FROM registros_sedentarismo WHERE patientId = :patientId AND timestamp < :hasta")
     suspend fun limpiarAntiguos(patientId: Int, hasta: Long)
 

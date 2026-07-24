@@ -181,6 +181,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
@@ -428,6 +429,12 @@ private fun StartupOverlay(
     val revealScale = remember { Animatable(0.18f) }
     val beatScale = remember { Animatable(1f) }
     val alpha = remember { Animatable(0f) }
+    var showAuthor by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(3000)
+        showAuthor = false
+    }
     val heartShape = remember {
         GenericShape { size, _ ->
             moveTo(size.width / 2f, size.height * 0.92f)
@@ -588,24 +595,29 @@ private fun StartupOverlay(
                 .padding(end = 14.dp, bottom = 60.dp)
         )
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp)
-                .zIndex(3f)
-                .background(
-                    color = Color(0xE8FFFFFF),
-                    shape = RoundedCornerShape(10.dp)
-                )
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+        AnimatedVisibility(
+            visible = showAuthor,
+            exit = fadeOut(animationSpec = tween(500)),
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            Text(
-                text = "Create by Carlos Gamboa G7 Enterprise",
-                color = Color.Black,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center
-            )
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 24.dp)
+                    .zIndex(3f)
+                    .background(
+                        color = Color(0xE8FFFFFF),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Create by Carlos Gamboa G7 Enterprise",
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
     }

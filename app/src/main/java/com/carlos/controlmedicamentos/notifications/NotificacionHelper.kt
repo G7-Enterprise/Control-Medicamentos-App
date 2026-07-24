@@ -1124,9 +1124,10 @@ object NotificacionHelper {
     }
 
     // ── Sedentarismo ─────────────────────────────────────────────────────────
-    fun mostrarAlertaSedentarismo(context: Context, patientId: Int, minutosInactivo: Int) {
+    fun mostrarAlertaSedentarismo(context: Context, patientId: Int, minutosInactivo: Int, metaMinutos: Int) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
+        val recomendacion = "Llevas $minutosInactivo minutos sin moverte. Camina al menos ${metaMinutos} minutos para reactivar la circulación."
         // Notificación base para compatibilidad
         val openIntent = Intent(context, com.carlos.controlmedicamentos.MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -1135,7 +1136,7 @@ object NotificacionHelper {
         val n = NotificationCompat.Builder(context, SIGNOS_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Llevas $minutosInactivo minutos sin moverte 🚶")
-            .setContentText("Es un buen momento para levantarte, estirarte o dar una caminata corta.")
+            .setContentText(recomendacion)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(pi)
@@ -1146,7 +1147,9 @@ object NotificacionHelper {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_SEDENTARISMO)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_NAME, "Usuario")
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_ID, patientId)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_MINUTES_INACTIVE, minutosInactivo)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_META_MINUTOS, metaMinutos)
         }
         context.startActivity(fullScreenIntent)
     }

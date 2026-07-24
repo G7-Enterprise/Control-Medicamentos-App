@@ -2,11 +2,13 @@ package com.carlos.controlmedicamentos
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -87,6 +89,9 @@ internal fun NuevoRegistroForm(
     onMostrarFormularioChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val contactLauncher = rememberLauncherForActivityResult(PickPhoneNumber()) { uri ->
+        uri?.let { readPhoneNumberFromUri(context, it)?.let(onTelefonoChange) }
+    }
     val calendar = remember { Calendar.getInstance() }
     val ciclos = listOf("Diario", "Cada 12 horas", "Cada 8 horas", "Cada 6 horas", "Semanal", "Mensual", "A demanda")
     val opcionesToma = listOf("En una sola toma", "En diferentes horarios")
@@ -414,7 +419,12 @@ internal fun NuevoRegistroForm(
                             onValueChange = onTelefonoChange,
                             label = { Text("Telefono WhatsApp del pedido") },
                             placeholder = { Text("+34612345678") },
-                            modifier = Modifier.fillMaxWidth(), singleLine = true
+                            modifier = Modifier.fillMaxWidth(), singleLine = true,
+                            trailingIcon = {
+                                IconButton(onClick = { contactLauncher.launch(Unit) }) {
+                                    Icon(Icons.Default.Contacts, contentDescription = "Seleccionar de contactos")
+                                }
+                            }
                         )
                     }
                 }

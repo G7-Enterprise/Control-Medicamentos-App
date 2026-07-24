@@ -595,30 +595,6 @@ Para que sirve:
 Mantener un control actualizado de la inmunización y no perder fechas de refuerzos."""
             ),
             ModuloDirectorio(
-                id = "galería",
-                titulo = "Galería",
-                icono = Icons.Default.PhotoLibrary,
-                descripcionCorta = "Fotos y documentos adjuntos",
-                explicacionDetallada = """📷 GALERIA
-
-Que es:
-Espacio centralizado donde puedes ver todas las fotos y documentos adjuntos a perfiles, registros, citas, visitas o diario.
-
-Como usarlo:
-1. Selecciona un perfil activo
-2. Abre Galería desde el menu hamburguesa
-3. Explora las imagenes vinculadas a ese perfil
-
-Funciones:
-• Visualizacion de fotos adjuntas
-• Miniaturas organizadas por fecha
-• Acceso rápido a la fuente del registro
-• Compartir imagenes
-
-Para que sirve:
-Tener a mano documentos, recetas, resultados, fotos de visitas o cualquier imagen relacionada con tus registros."""
-            ),
-            ModuloDirectorio(
                 id = "actividad",
                 titulo = "Actividad Fisica",
                 icono = Icons.Default.DirectionsRun,
@@ -1464,13 +1440,13 @@ private suspend fun sendMessage(
                 "Para empezar: 1) Ve a Perfiles y crea tu primer usuario. 2) Ve a Inventario y agrega los artículos para ese perfil. 3) Configura recordatorios para cada artículo. 4) ¡Listo! Recibirás alertas cuando corresponda."
 
             message.contains("ayuda", ignoreCase = true) || message.contains("que puedes hacer", ignoreCase = true) ->
-                "Puedo ayudarte con: Perfiles de Usuario, Inventario, Registros de Consumo, Alarmas, Agenda, Médicos y especialistas, Informes médicos, Métricas Diarias, Gestación, Ciclo, Infantil, Compras, Diario, Respaldo, Galería, Actividad Física, Hidratación, Sedentarismo, Alerta de Caídas, Vacunas, Anticonceptivos, Estadísticas, Exportar Resumen, Verificador, Medicamentos Suspendidos y Módulo Dental. También puedes usar el Directorio tocando cualquier módulo para ver la guía completa."
+                "Puedo ayudarte con: Perfiles de Usuario, Inventario, Registros de Consumo, Alarmas, Agenda, Médicos y especialistas, Informes médicos, Métricas Diarias, Gestación, Ciclo, Infantil, Compras, Diario, Respaldo, Actividad Física, Hidratación, Sedentarismo, Alerta de Caídas, Vacunas, Anticonceptivos, Estadísticas, Exportar Resumen, Verificador, Medicamentos Suspendidos y Módulo Dental. También puedes usar el Directorio tocando cualquier módulo para ver la guía completa."
 
             contexto.isNotEmpty() ->
                 "Entiendo tu pregunta sobre $contexto Estoy aqui para aclarar cualquier duda sobre lo que lei en la explicacion. Si algo no quedo claro, preguntame específicamente sobre ese punto y te ayudo."
 
             else ->
-                "Entiendo tu consulta. ¿Te gustaría que te explique cómo funciona algún módulo específico? Puedo ayudarte con Inventario, Perfiles, Alarmas, Agenda, Médicos y especialistas, Informes médicos, Métricas, Gestación, Ciclo, Infantil, Compras, Diario, Respaldo, Galería, Actividad Física, Hidratación, Sedentarismo, Alerta de Caídas, Vacunas, Anticonceptivos, Estadísticas, Exportar Resumen, Verificador, Medicamentos Suspendidos o Módulo Dental. También puedes usar el Directorio tocando el módulo que te interese!"
+                "Entiendo tu consulta. ¿Te gustaría que te explique cómo funciona algún módulo específico? Puedo ayudarte con Inventario, Perfiles, Alarmas, Agenda, Médicos y especialistas, Informes médicos, Métricas, Gestación, Ciclo, Infantil, Compras, Diario, Respaldo, Actividad Física, Hidratación, Sedentarismo, Alerta de Caídas, Vacunas, Anticonceptivos, Estadísticas, Exportar Resumen, Verificador, Medicamentos Suspendidos o Módulo Dental. También puedes usar el Directorio tocando el módulo que te interese!"
         }
 
         val aiMessage = ChatMessage(

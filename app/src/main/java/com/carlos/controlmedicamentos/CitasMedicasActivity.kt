@@ -102,6 +102,12 @@ fun CitasMedicasScreen() {
         todasLasCitas.filter { it.isCompleted }.sortedByDescending { it.scheduledAt }
     }
 
+    val profesionalesHabituales by remember(pacienteActivo?.id) {
+        val id = pacienteActivo?.id
+        if (id != null) database.medicalPractitionerDao().observarPorPaciente(id)
+        else flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
+
     // Estado del formulario nueva cita
     var mostrarFormNuevaCita by remember { mutableStateOf(false) }
     var mostrarHistorial by remember { mutableStateOf(false) }
@@ -121,6 +127,8 @@ fun CitasMedicasScreen() {
     var editFecha by remember { mutableStateOf<Long?>(null) }
     var editAlarma by remember { mutableStateOf(true) }
     var citaParaEliminar by remember { mutableStateOf<MedicalAppointment?>(null) }
+    var expandedMedicoCita by remember { mutableStateOf(false) }
+    var expandedEditMedico by remember { mutableStateOf(false) }
 
     val cal = Calendar.getInstance()
 
@@ -139,6 +147,10 @@ fun CitasMedicasScreen() {
         focusedTrailingIconColor = CApptAccent,
         unfocusedTrailingIconColor = CApptFieldBdr
     )
+
+    val formatoMedico: (com.carlos.controlmedicamentos.data.local.MedicalPractitioner) -> String = {
+        if (it.specialty.isNotBlank()) "${it.name} — ${it.specialty}" else it.name
+    }
 
     Column(
         modifier = Modifier
@@ -309,7 +321,7 @@ fun CitasMedicasScreen() {
             onClick = { mostrarHistorial = true },
             colors = ButtonDefaults.buttonColors(
                 containerColor = CApptMid,
-                contentColor = Color.Black
+                contentColor = CApptTextMain
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -325,7 +337,7 @@ fun CitasMedicasScreen() {
             onClick = { mostrarFormNuevaCita = !mostrarFormNuevaCita },
             colors = ButtonDefaults.buttonColors(
                 containerColor = CApptMid,
-                contentColor = Color.Black
+                contentColor = CApptTextMain
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -367,13 +379,21 @@ fun CitasMedicasScreen() {
                         singleLine = true
                     )
 
-                    OutlinedTextField(
-                        value = doctorCita,
-                        onValueChange = { doctorCita = it },
-                        label = { Text("Doctor / Especialista") },
+                    val opcionesDoctoresNueva = profesionalesHabituales.map(formatoMedico)
+                    val doctorSeleccionadoNueva = profesionalesHabituales.find { it.name == doctorCita }?.let(formatoMedico) ?: doctorCita
+                    VademecumDropdown(
+                        label = "Doctor / Especialista",
+                        options = opcionesDoctoresNueva,
+                        selectedValue = doctorSeleccionadoNueva,
+                        expanded = expandedMedicoCita,
+                        onExpandedChange = { expandedMedicoCita = !expandedMedicoCita },
+                        onDismiss = { expandedMedicoCita = false },
+                        onSelect = { selected ->
+                            profesionalesHabituales.find { formatoMedico(it) == selected }?.let { doctorCita = it.name }
+                            expandedMedicoCita = false
+                        },
                         colors = fieldColors,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        emptyOptionsText = "No hay médicos guardados"
                     )
 
                     OutlinedTextField(
@@ -416,7 +436,7 @@ fun CitasMedicasScreen() {
                             ).show()
                         },
                         border = BorderStroke(1.dp, CApptFieldBdr),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptTextMain),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, tint = CApptAccent)
@@ -530,13 +550,21 @@ fun CitasMedicasScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-                    OutlinedTextField(
-                        value = editDoctor,
-                        onValueChange = { editDoctor = it },
-                        label = { Text("Doctor / Especialista") },
+                    val opcionesDoctoresEdit = profesionalesHabituales.map(formatoMedico)
+                    val doctorSeleccionadoEdit = profesionalesHabituales.find { it.name == editDoctor }?.let(formatoMedico) ?: editDoctor
+                    VademecumDropdown(
+                        label = "Doctor / Especialista",
+                        options = opcionesDoctoresEdit,
+                        selectedValue = doctorSeleccionadoEdit,
+                        expanded = expandedEditMedico,
+                        onExpandedChange = { expandedEditMedico = !expandedEditMedico },
+                        onDismiss = { expandedEditMedico = false },
+                        onSelect = { selected ->
+                            profesionalesHabituales.find { formatoMedico(it) == selected }?.let { editDoctor = it.name }
+                            expandedEditMedico = false
+                        },
                         colors = fieldColors,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        emptyOptionsText = "No hay médicos guardados"
                     )
                     OutlinedTextField(
                         value = editLugar,
@@ -575,7 +603,7 @@ fun CitasMedicasScreen() {
                             ).show()
                         },
                         border = BorderStroke(1.dp, CApptFieldBdr),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptTextMain),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, tint = CApptAccent)
@@ -609,7 +637,7 @@ fun CitasMedicasScreen() {
                         OutlinedButton(
                             onClick = { citaEditando = null },
                             border = BorderStroke(1.dp, CApptFieldBdr),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = CApptTextMain),
                             modifier = Modifier.weight(1f)
                         ) { Text("Cancelar") }
                         Button(

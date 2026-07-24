@@ -1,11 +1,21 @@
 package com.carlos.controlmedicamentos
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.carlos.controlmedicamentos.data.local.MedicalAppointment
@@ -58,12 +68,22 @@ internal fun FormularioProfesionalPanel(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+            val context = LocalContext.current
+            val contactLauncher = rememberLauncherForActivityResult(PickPhoneNumber()) { uri ->
+                uri?.let { readPhoneNumberFromUri(context, it)?.let(onTelefonoProfesionalChange) }
+            }
+
             OutlinedTextField(
                 value = telefonoProfesional,
                 onValueChange = { onTelefonoProfesionalChange(it) },
                 label = { Text("Teléfono") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { contactLauncher.launch(Unit) }) {
+                        Icon(Icons.Default.Contacts, contentDescription = "Seleccionar de contactos")
+                    }
+                }
             )
 
             TransparentFormSectionCard(modifier = Modifier.fillMaxWidth()) {
@@ -124,3 +144,4 @@ internal fun FormularioProfesionalPanel(
         }
     }
 }
+

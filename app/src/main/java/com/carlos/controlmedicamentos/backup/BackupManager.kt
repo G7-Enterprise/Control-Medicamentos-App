@@ -704,8 +704,8 @@ object BackupManager {
             ?: throw IllegalArgumentException("No se pudo leer el archivo")
         val json = JSONObject(jsonString)
 
-        val syncSnapshot = json.optJSONObject("syncSnapshot")
-        val vitalSignsArray = syncSnapshot?.optJSONArray("vitalSigns") ?: json.optJSONArray("vitalSigns")
+        val vitalSignsArray = json.optJSONArray("vitalSigns")
+            ?: json.optJSONObject("syncSnapshot")?.optJSONArray("vitalSigns")
             ?: return 0
 
         val vitalSigns = vitalSignsArray.toVitalSigns()

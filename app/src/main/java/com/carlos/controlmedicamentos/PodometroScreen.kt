@@ -40,6 +40,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.PhysicalActivity
+import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
@@ -157,7 +158,7 @@ fun PodometroScreen(
     // Detect when service finishes (activo → false) and show summary
     var prevActivo by remember { mutableStateOf(false) }
     LaunchedEffect(tracking.activo) {
-        if (prevActivo && !tracking.activo && tracking.duracionSegundos > 0 && !tracking.discarded) {
+        if (prevActivo && !tracking.activo && tracking.duracionSegundos > 0 && !tracking.discarded && !tracking.sesionSedentarismo) {
             sesionGuardada = tracking
         }
         prevActivo = tracking.activo
@@ -379,6 +380,7 @@ fun PodometroScreen(
                     coroutineScope.launch {
                         val longPaso = if (finished.tipo == "correr") 1.2 else 0.762
                         val calPaso  = if (finished.tipo == "correr") 0.07 else 0.04
+                        val distFinal = if (finished.tipo == "bicicleta") finished.distanciaMetros else finished.pasos * longPaso
                         database.physicalActivityDao().insertar(
                             PhysicalActivity(
                                 patientId        = pacienteId,
@@ -386,8 +388,7 @@ fun PodometroScreen(
                                 fechaInicio      = finished.fechaInicio,
                                 fechaFin         = System.currentTimeMillis(),
                                 pasos            = finished.pasos,
-                                distanciaMetros  = if (finished.tipo == "bicicleta") finished.distanciaMetros
-                                                   else finished.pasos * longPaso,
+                                distanciaMetros  = distFinal,
                                 duracionSegundos = finished.duracionSegundos,
                                 calorias         = if (finished.tipo == "bicicleta") finished.calorias
                                                    else (finished.pasos * calPaso).toInt(),
@@ -396,6 +397,16 @@ fun PodometroScreen(
                                 altitudMaxMetros       = finished.altitudMaxMetros,
                                 desnivelPositivoMetros = finished.desnivelPositivoMetros,
                                 desnivelNegativoMetros = finished.desnivelNegativoMetros
+                            )
+                        )
+                        val minutos = (finished.duracionSegundos / 60).toInt()
+                        val esMovimiento = finished.duracionSegundos >= 300L && (finished.pasos > 0 || distFinal > 0)
+                        database.sedentarismoDao().insertarRegistro(
+                            RegistroSedentarismo(
+                                patientId = pacienteId,
+                                tipoEvento = if (esMovimiento) "MOVIMIENTO_REGISTRADO" else "SIN_MOVIMIENTO",
+                                minutosInactivo = minutos,
+                                notas = "Actividad ${finished.tipo}: ${finished.pasos} pasos, %.0f m, $minutos min".format(distFinal)
                             )
                         )
                     }

@@ -2,6 +2,7 @@ package com.carlos.controlmedicamentos
 
 import android.app.TimePickerDialog
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,8 +49,22 @@ fun SedentarismoScreen(
             set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
+    val inicioMes = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
     val historial by db.sedentarismoDao().observarHistorial(patientId).collectAsState(initial = emptyList())
     val alertasHoy by db.sedentarismoDao().contarAlertasHoy(patientId, inicioHoy).collectAsState(initial = 0)
+
+    var registroDetalle by remember { mutableStateOf<RegistroSedentarismo?>(null) }
+    var registroAEliminar by remember { mutableStateOf<RegistroSedentarismo?>(null) }
+
+    val movimientosHoy = historial.filter { it.timestamp >= inicioHoy && it.tipoEvento == "MOVIMIENTO_REGISTRADO" }
+    val sinMovimientoHoy = historial.filter { it.timestamp >= inicioHoy && it.tipoEvento == "SIN_MOVIMIENTO" }
+    val movimientosMes = historial.filter { it.timestamp >= inicioMes && it.tipoEvento == "MOVIMIENTO_REGISTRADO" }
+    val sinMovimientoMes = historial.filter { it.timestamp >= inicioMes && it.tipoEvento == "SIN_MOVIMIENTO" }
 
     fun guardar(nuevo: ConfigSedentarismo) {
         scope.launch {
@@ -113,6 +128,24 @@ fun SedentarismoScreen(
                 }
             }
 
+            // ── Resumen diario / mensual ──
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0F2A12))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("Resumen de actividad", color = colorVerde, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        ResumenFila("Hoy", movimientosHoy.size, movimientosHoy.sumOf { it.minutosInactivo }, sinMovimientoHoy.size)
+                        HorizontalDivider(color = Color.White.copy(0.1f))
+                        ResumenFila("Este mes", movimientosMes.size, movimientosMes.sumOf { it.minutosInactivo }, sinMovimientoMes.size)
+                    }
+                }
+            }
+
             // ── Configuración ──
             item {
                 Card(
@@ -141,14 +174,14 @@ fun SedentarismoScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color.White.copy(0.1f))
 
-                        Text("Tiempo máximo sin moverme", color = Color.White, fontSize = 14.sp)
+                        Text("Intervalo de aviso", color = Color.White, fontSize = 14.sp)
                         Spacer(Modifier.height(4.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(30, 45, 60, 90).forEach { min ->
+                            listOf(60 to "1h", 120 to "2h", 180 to "3h", 240 to "4h", 300 to "5h").forEach { (min, label) ->
                                 FilterChip(
                                     selected = config.limiteInactividadMinutos == min,
                                     onClick = { guardar(config.copy(limiteInactividadMinutos = min)) },
-                                    label = { Text("${min}min", fontSize = 12.sp) },
+                                    label = { Text(label, fontSize = 12.sp) },
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = colorVerde.copy(0.3f),
                                         selectedLabelColor = colorVerde
@@ -199,24 +232,95 @@ fun SedentarismoScreen(
                     Text("Historial reciente", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
                 items(historial.take(30)) { reg ->
-                    RegistroSedentarismoCard(reg)
+                    RegistroSedentarismoCard(
+                        reg = reg,
+                        onClick = { registroDetalle = reg },
+                        onDelete = { registroAEliminar = reg }
+                    )
                 }
             }
         }
     }
+
+    // ── Diálogo de detalle ──
+    registroDetalle?.let { reg ->
+        val (color, _, etiqueta) = when (reg.tipoEvento) {
+            "ALERTA_INACTIVIDAD"   -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Alerta de inactividad")
+            "MOVIMIENTO"           -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
+            "MOVIMIENTO_REGISTRADO" -> Triple(Color(0xFF43A047), Icons.Filled.DirectionsWalk, "Movimiento registrado")
+            "SIN_MOVIMIENTO"       -> Triple(Color(0xFFEF5350), Icons.Filled.DoNotDisturb, "Sin movimiento")
+            else -> Triple(Color(0xFF90A4AE), Icons.Filled.Info, reg.tipoEvento)
+        }
+        AlertDialog(
+            onDismissRequest = { registroDetalle = null },
+            title = { Text(etiqueta, color = color, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(reg.timestamp))}", color = Color.White)
+                    if (reg.minutosInactivo > 0) {
+                        Text("Tiempo: ${reg.minutosInactivo} min", color = Color.White.copy(0.8f))
+                    }
+                    if (reg.notas.isNotBlank()) {
+                        Text("Detalle: ${reg.notas}", color = Color.White.copy(0.8f))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { registroDetalle = null }) { Text("Cerrar", color = colorVerde) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        registroDetalle = null
+                        registroAEliminar = reg
+                    }
+                ) { Text("Eliminar", color = Color(0xFFEF5350)) }
+            },
+            containerColor = Color(0xFF0D2137)
+        )
+    }
+
+    // ── Diálogo de eliminación ──
+    registroAEliminar?.let { reg ->
+        AlertDialog(
+            onDismissRequest = { registroAEliminar = null },
+            title = { Text("Eliminar registro") },
+            text = { Text("¿Seguro que quieres eliminar este registro del historial?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch { db.sedentarismoDao().eliminarRegistro(reg.id) }
+                        registroAEliminar = null
+                    }
+                ) { Text("Eliminar", color = Color(0xFFEF5350)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { registroAEliminar = null }) { Text("Cancelar") }
+            },
+            containerColor = Color(0xFF0D2137)
+        )
+    }
 }
 
 @Composable
-private fun RegistroSedentarismoCard(reg: RegistroSedentarismo) {
+private fun RegistroSedentarismoCard(
+    reg: RegistroSedentarismo,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
     val (color, icono, etiqueta) = when (reg.tipoEvento) {
-        "ALERTA_INACTIVIDAD" -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Alerta de inactividad")
-        "MOVIMIENTO"         -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
+        "ALERTA_INACTIVIDAD"   -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Alerta de inactividad")
+        "MOVIMIENTO"           -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
+        "MOVIMIENTO_REGISTRADO" -> Triple(Color(0xFF43A047), Icons.Filled.DirectionsWalk, "Movimiento registrado")
+        "SIN_MOVIMIENTO"       -> Triple(Color(0xFFEF5350), Icons.Filled.DoNotDisturb, "Sin movimiento")
         else -> Triple(Color(0xFF90A4AE), Icons.Filled.Info, reg.tipoEvento)
     }
     Card(
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF0F2A12).copy(0.8f)),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -228,14 +332,42 @@ private fun RegistroSedentarismoCard(reg: RegistroSedentarismo) {
                 Spacer(Modifier.width(10.dp))
                 Column {
                     Text(etiqueta, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    if (reg.minutosInactivo > 0)
+                    if (reg.minutosInactivo > 0 && reg.tipoEvento != "MOVIMIENTO_REGISTRADO")
                         Text("${reg.minutosInactivo} min sin moverte", color = color.copy(0.8f), fontSize = 11.sp)
+                    if (reg.minutosInactivo > 0 && reg.tipoEvento == "MOVIMIENTO_REGISTRADO")
+                        Text("${reg.minutosInactivo} min de actividad", color = color.copy(0.8f), fontSize = 11.sp)
+                    if (reg.notas.isNotBlank())
+                        Text(reg.notas, color = Color.White.copy(0.5f), fontSize = 10.sp)
                 }
             }
-            Text(
-                SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(reg.timestamp)),
-                color = Color.White.copy(0.5f), fontSize = 11.sp
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(reg.timestamp)),
+                    color = Color.White.copy(0.5f), fontSize = 11.sp
+                )
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Eliminar", tint = Color.White.copy(0.5f), modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResumenFila(periodo: String, movimientos: Int, minMovimiento: Int, sinMovimiento: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(periodo, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+            Text("$movimientos", color = Color(0xFF66BB6A), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("$minMovimiento min", color = Color.White.copy(0.6f), fontSize = 10.sp)
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+            Text("$sinMovimiento", color = Color(0xFFFFA726), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("sin movimiento", color = Color.White.copy(0.6f), fontSize = 10.sp)
         }
     }
 }

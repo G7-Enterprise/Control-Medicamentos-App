@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.carlos.controlmedicamentos.data.local.MedicalAppointment
 import com.carlos.controlmedicamentos.data.local.MedicalReport
+import kotlinx.coroutines.flow.flowOf
 import com.carlos.controlmedicamentos.notifications.MedicalAppointmentScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,6 +65,18 @@ internal fun FormularioCitaMedicaPanel(
     var mostrarPanelCitasMedicas by mostrarPanelCitasMedicasState
     var mostrarFormularioCitaMedicaLocal by mostrarFormularioCitaMedicaState
 
+    val pacienteActivo by database.patientProfileDao().observarPerfilActivo().collectAsState(initial = null)
+    val profesionalesHabituales by remember(pacienteActivo?.id) {
+        val id = pacienteActivo?.id
+        if (id != null) database.medicalPractitionerDao().observarPorPaciente(id)
+        else flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
+    var expandedProfesionalCita by remember { mutableStateOf(false) }
+
+    val formatoMedico: (com.carlos.controlmedicamentos.data.local.MedicalPractitioner) -> String = {
+        if (it.specialty.isNotBlank()) "${it.name} — ${it.specialty}" else it.name
+    }
+
     if (mostrarFormularioCitaMedica) {
         MetallicMedicationCard(
             modifier = Modifier.fillMaxSize(),
@@ -78,12 +91,20 @@ internal fun FormularioCitaMedicaPanel(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(if (editingAppointmentId == null) "Nueva cita" else "Editar cita")
-                OutlinedTextField(
-                    value = profesionalCitaMedica,
-                    onValueChange = { profesionalCitaMedica = it },
-                    label = { Text("Profesional") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                val opcionesProfesionalesCita = profesionalesHabituales.map(formatoMedico)
+                val profesionalSeleccionadoCita = profesionalesHabituales.find { it.name == profesionalCitaMedica }?.let(formatoMedico) ?: profesionalCitaMedica
+                VademecumDropdown(
+                    label = "Profesional",
+                    options = opcionesProfesionalesCita,
+                    selectedValue = profesionalSeleccionadoCita,
+                    expanded = expandedProfesionalCita,
+                    onExpandedChange = { expandedProfesionalCita = !expandedProfesionalCita },
+                    onDismiss = { expandedProfesionalCita = false },
+                    onSelect = { selected ->
+                        profesionalesHabituales.find { formatoMedico(it) == selected }?.let { profesionalCitaMedica = it.name }
+                        expandedProfesionalCita = false
+                    },
+                    emptyOptionsText = "No hay médicos guardados"
                 )
                 OutlinedTextField(
                     value = onFormatDateTime(fechaCitaMedica),

@@ -14,6 +14,7 @@ import com.carlos.controlmedicamentos.data.local.RestockSource
 import com.carlos.controlmedicamentos.data.local.VaccinationRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -236,14 +237,26 @@ class AlarmReceiver : BroadcastReceiver() {
                             val cal = java.util.Calendar.getInstance()
                             val hora = cal.get(java.util.Calendar.HOUR_OF_DAY)
                             if (hora in config.horaInicioMonitoreo until config.horaFinMonitoreo) {
+                                val inicioHoy = Calendar.getInstance().apply {
+                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+                                    set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                                }.timeInMillis
+                                val alertasPrevias = db.sedentarismoDao().contarAlertasHoy(pid, inicioHoy).first()
+                                val intervaloMin = config.limiteInactividadMinutos
+                                val minutosInactivo = (alertasPrevias + 1) * intervaloMin
+                                val metaMinutos = when {
+                                    minutosInactivo >= 360 -> 30
+                                    minutosInactivo >= 180 -> 15
+                                    else -> 5
+                                }
                                 db.sedentarismoDao().insertarRegistro(
                                     com.carlos.controlmedicamentos.data.local.RegistroSedentarismo(
                                         patientId = pid,
                                         tipoEvento = "ALERTA_INACTIVIDAD",
-                                        minutosInactivo = config.limiteInactividadMinutos
+                                        minutosInactivo = minutosInactivo
                                     )
                                 )
-                                NotificacionHelper.mostrarAlertaSedentarismo(context, pid, config.limiteInactividadMinutos)
+                                NotificacionHelper.mostrarAlertaSedentarismo(context, pid, minutosInactivo, metaMinutos)
                             }
                             SedentarismoScheduler(context).programar(pid)
                         }

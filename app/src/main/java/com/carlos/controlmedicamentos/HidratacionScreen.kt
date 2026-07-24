@@ -104,6 +104,8 @@ fun HidratacionScreen(
     var showMeta by remember { mutableStateOf(false) }
     var metaTemp by remember { mutableStateOf(metaDiariaMl.toString()) }
     var showConfig by remember { mutableStateOf(false) }
+    var tomaAEliminar by remember { mutableStateOf<RegistroHidratacion?>(null) }
+    var showAvisoElectrolitos by remember { mutableStateOf(false) }
 
     val totalConsumo = totalHoy ?: 0
     val progreso = (totalConsumo.toFloat() / metaDiariaMl.toFloat()).coerceIn(0f, 1f)
@@ -141,6 +143,10 @@ fun HidratacionScreen(
     }
 
     fun registrarToma(ml: Int) {
+        // Aviso de electrólitos al superar 1 litro
+        if (totalConsumo < 1000 && totalConsumo + ml >= 1000) {
+            showAvisoElectrolitos = true
+        }
         scope.launch {
             hidratacionDao.registrarToma(
                 RegistroHidratacion(patientId = patientId, cantidadMl = ml, tipoBebida = tipoBebidaSeleccionado)
@@ -518,7 +524,7 @@ fun HidratacionScreen(
                                 }
                             }
                             IconButton(
-                                onClick = { scope.launch { hidratacionDao.eliminarToma(toma.id) } }
+                                onClick = { tomaAEliminar = toma }
                             ) {
                                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
                             }
@@ -614,6 +620,50 @@ fun HidratacionScreen(
             dismissButton = {
                 TextButton(onClick = { showMeta = false }) { Text("Cancelar") }
             },
+            containerColor = Color(0xFF0D2137)
+        )
+    }
+
+    // ====== Diálogo de eliminación ======
+    if (tomaAEliminar != null) {
+        AlertDialog(
+            onDismissRequest = { tomaAEliminar = null },
+            title = { Text("Eliminar toma") },
+            text = { Text("¿Seguro que quieres eliminar esta toma de ${tomaAEliminar?.cantidadMl} ml de ${tomaAEliminar?.tipoBebida}?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        tomaAEliminar?.let { scope.launch { hidratacionDao.eliminarToma(it.id) } }
+                        tomaAEliminar = null
+                    }
+                ) { Text("Eliminar", color = colorAgua) }
+            },
+            dismissButton = {
+                TextButton(onClick = { tomaAEliminar = null }) { Text("Cancelar") }
+            },
+            containerColor = Color(0xFF0D2137)
+        )
+    }
+
+    // ====== Aviso de electrólitos ======
+    if (showAvisoElectrolitos) {
+        AlertDialog(
+            onDismissRequest = { showAvisoElectrolitos = false },
+            title = { Text("Consejo de hidratación") },
+            text = {
+                Column {
+                    Text("Has registrado 1 litro de líquidos. Considera incluir una bebida con electrólitos.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Una ingesta elevada de agua puede eliminar minerales en exceso, por lo que reponer sodio, potasio y magnesio te ayudará a mantener el equilibrio.",
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAvisoElectrolitos = false }) { Text("Entendido", color = colorAgua) }
+            },
+            icon = { Icon(Icons.Filled.Info, contentDescription = null, tint = colorAgua) },
             containerColor = Color(0xFF0D2137)
         )
     }

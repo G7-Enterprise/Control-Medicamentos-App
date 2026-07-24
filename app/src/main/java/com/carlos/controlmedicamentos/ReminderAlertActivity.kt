@@ -1,6 +1,13 @@
 package com.carlos.controlmedicamentos
 
 import android.content.Context
+import android.content.Intent
+import android.media.MediaPlayer
+import androidx.core.content.ContextCompat
+import com.carlos.controlmedicamentos.EXTRA_META_MINUTOS
+import com.carlos.controlmedicamentos.EXTRA_ORIGEN
+import com.carlos.controlmedicamentos.EXTRA_PACIENTE_ID
+import com.carlos.controlmedicamentos.ORIGEN_SEDENTARISMO
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -48,7 +55,9 @@ class ReminderAlertActivity : ComponentActivity() {
     companion object {
         const val EXTRA_TYPE = "EXTRA_TYPE"
         const val EXTRA_PATIENT_NAME = "EXTRA_PATIENT_NAME"
+        const val EXTRA_PATIENT_ID = "EXTRA_PATIENT_ID"
         const val EXTRA_MINUTES_INACTIVE = "EXTRA_MINUTES_INACTIVE"
+        const val EXTRA_META_MINUTOS = "EXTRA_META_MINUTOS"
         const val EXTRA_STOCK_MESSAGE = "EXTRA_STOCK_MESSAGE"
         const val TYPE_HIDRATACION = "HIDRATACION"
         const val TYPE_SEDENTARISMO = "SEDENTARISMO"
@@ -56,6 +65,7 @@ class ReminderAlertActivity : ComponentActivity() {
     }
 
     private var wakeLock: PowerManager.WakeLock? = null
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +74,9 @@ class ReminderAlertActivity : ComponentActivity() {
 
         val type = intent.getStringExtra(EXTRA_TYPE) ?: TYPE_HIDRATACION
         val patientName = intent.getStringExtra(EXTRA_PATIENT_NAME) ?: "Usuario"
+        val patientId = intent.getIntExtra(EXTRA_PATIENT_ID, 0)
         val minutesInactive = intent.getIntExtra(EXTRA_MINUTES_INACTIVE, 0)
+        val metaMinutos = intent.getIntExtra(EXTRA_META_MINUTOS, 5)
         val stockMessage = intent.getStringExtra(EXTRA_STOCK_MESSAGE).orEmpty()
 
         setContent {
@@ -76,7 +88,22 @@ class ReminderAlertActivity : ComponentActivity() {
                     )
                     TYPE_SEDENTARISMO -> SedentarismoAlertScreen(
                         patientName = patientName,
+                        patientId = patientId,
                         minutesInactive = minutesInactive,
+                        metaMinutos = metaMinutos,
+                        onStartActivity = {
+                            releaseMediaPlayer()
+                            ContextCompat.startForegroundService(
+                                this@ReminderAlertActivity,
+                                Intent(this@ReminderAlertActivity, ActivityTrackingService::class.java).apply {
+                                    putExtra(EXTRA_PACIENTE_ID, patientId)
+                                    putExtra(EXTRA_ORIGEN, ORIGEN_SEDENTARISMO)
+                                    putExtra(EXTRA_META_MINUTOS, metaMinutos)
+                                    putExtra("tipo", "caminar")
+                                }
+                            )
+                            finish()
+                        },
                         onAccept = { finish() }
                     )
                     TYPE_STOCK_BAJO -> StockBajoAlertScreen(
@@ -94,11 +121,18 @@ class ReminderAlertActivity : ComponentActivity() {
                 }
             }
         }
+
+        when (type) {
+            TYPE_HIDRATACION -> playAlertSound(R.raw.water_sound)
+            TYPE_SEDENTARISMO -> playAlertSound(R.raw.heartbeat_sound)
+            else -> { /* silence */ }
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         releaseWakeLock()
+        releaseMediaPlayer()
     }
 
     private fun showWhenLockedAndTurnScreenOn() {
@@ -132,6 +166,28 @@ class ReminderAlertActivity : ComponentActivity() {
         try {
             wakeLock?.let { if (it.isHeld) it.release() }
             wakeLock = null
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun playAlertSound(rawResId: Int) {
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer.create(this, rawResId)?.apply {
+                isLooping = true
+                start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun releaseMediaPlayer() {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -313,7 +369,10 @@ private fun StockBajoAlertScreen(
 @Composable
 private fun SedentarismoAlertScreen(
     patientName: String,
+    patientId: Int,
     minutesInactive: Int,
+    metaMinutos: Int,
+    onStartActivity: () -> Unit,
     onAccept: () -> Unit
 ) {
     val transition = rememberInfiniteTransition(label = "sed_blink")
@@ -378,8 +437,9 @@ private fun SedentarismoAlertScreen(
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val mensaje = "Llevas $minutesInactive minutos sin moverte.\nDebes caminar al menos $metaMinutos minutos para reactivar la circulación."
                 Text(
-                    text = "Llevas $minutesInactive minutos sin moverte.",
+                    text = "$minutesInactive minutos sin moverte",
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
@@ -387,29 +447,55 @@ private fun SedentarismoAlertScreen(
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "Es un buen momento para levantarte,\nestirarte o dar una caminata corta.",
+                    text = mensaje,
                     color = Color.White.copy(alpha = 0.95f),
                     fontSize = 18.sp,
                     textAlign = TextAlign.Center,
                     lineHeight = 26.sp
                 )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Para registrar su actividad, lleve el teléfono con usted",
+                    color = Color(0xFF81D4FA),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 22.sp
+                )
             }
 
-            Button(
-                onClick = onAccept,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .scale(btnScale)
-            ) {
-                Text(
-                    text = "ACEPTAR",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = onStartActivity,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .scale(btnScale)
+                ) {
+                    Text(
+                        text = "INICIAR ACTIVIDAD",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF0D47A1)
+                    )
+                }
+                Button(
+                    onClick = onAccept,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                ) {
+                    Text(
+                        text = "ACEPTAR",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }

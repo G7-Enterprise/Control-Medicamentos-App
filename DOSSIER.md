@@ -1,5 +1,54 @@
 # Dossier del proyecto ControlMedicamentos
 
+## 24 de julio de 2026 (tercer ajuste) — Corrección completa del backup/restore
+
+### 1. Problema detectado
+
+Las copias de seguridad no respaldaban/restauraban correctamente:
+
+- **Foto de perfil:** no se restauraba en el destino.
+- **Documentos adjuntos de informes médicos:** no se mostraban tras restaurar en otro dispositivo.
+- **Signos vitales:** faltaban meses de datos por usar el `syncSnapshot` reducido en lugar del array de primer nivel.
+- **Nuevos módulos:** `sedentarismo`, `hidratación` y `alertas de caídas` no aparecían en los checkboxes ni en la lógica de backup/restore.
+
+### 2. Solución implementada
+
+**Archivos modificados:**
+
+- `app/src/main/java/com/carlos/controlmedicamentos/backup/BackupManager.kt`
+- `app/src/main/java/com/carlos/controlmedicamentos/DialogosPrincipalesPanel.kt`
+- `app/src/main/java/com/carlos/controlmedicamentos/data/local/HidratacionDao.kt`
+- `app/src/main/java/com/carlos/controlmedicamentos/data/local/FallAlertDao.kt`
+
+Cambios:
+
+1. Añadidos `registrosHidratacion` y `fallAlerts` a `BackupSelection` y `BackupSummary`.
+2. Incluidos los arrays `registrosHidratacion` y `fallAlerts` en `buildBackupJson` y `restoreFromJson`.
+3. Añadidos métodos masivos (`guardarTodos`, `obtenerTodosLista`, `eliminarTodos`) en `HidratacionDao` y `FallAlertDao`.
+4. Añadidas funciones de serialización/deserialización JSON para `RegistroHidratacion` y `FallAlert`.
+5. Actualizados los diálogos de backup/restore con checkboxes para:
+   - Sedentarismo (registros)
+   - Sedentarismo (configuración)
+   - Hidratación
+   - Alertas de caídas
+6. **Corrección de foto de perfil, documentos adjuntos y signos vitales:** en `restoreFromJson` se cambió la prioridad para usar los **arrays de primer nivel** del JSON (`patients`, `reports`, `vitalSigns`, etc.) antes de recurrir al `syncSnapshot`. Los arrays de primer nivel contienen la foto codificada en base64, los adjuntos embebidos y el campo `fechaRegistro`, evitando la pérdida de datos.
+
+### 3. Verificación
+
+- Compilación:
+  ```text
+  BUILD SUCCESSFUL
+  ```
+- APK generada en `app/build/outputs/apk/debug/app-debug.apk`.
+- Instalación: en el momento de la instalación el dispositivo no estaba conectado (`adb devices` devolvió lista vacía). El APK está listo para instalar con:
+  ```text
+  .\gradlew.bat :app:installDebug
+  ```
+  o manualmente con adb una vez se reconecte el dispositivo.
+- Se recomienda probar un ciclo completo: crear backup, desinstalar/instalar, restaurar y verificar foto de perfil, documentos de informes y signos vitales por meses.
+
+---
+
 ## 24 de julio de 2026 (continuación) — Reparación del botón "Ver listado de registros guardados" en signos vitales
 
 ### 1. Problema detectado
