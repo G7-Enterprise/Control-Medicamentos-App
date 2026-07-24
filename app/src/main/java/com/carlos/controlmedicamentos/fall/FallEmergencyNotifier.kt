@@ -160,14 +160,21 @@ object FallEmergencyNotifier {
             SmsManager.getDefault()
         } ?: return 0
 
+        val parts = smsManager.divideMessage(message)
+        Log.d(TAG, "Enviando SMS de ${message.length} caracteres en ${parts.size} parte(s)")
+
         var sentCount = 0
         for (phone in phones) {
             val cleanPhone = normalizePhoneNumber(phone)
             if (cleanPhone.isBlank()) continue
             try {
-                smsManager.sendTextMessage(cleanPhone, null, message, null, null)
+                if (parts.size > 1) {
+                    smsManager.sendMultipartTextMessage(cleanPhone, null, parts, null, null)
+                } else {
+                    smsManager.sendTextMessage(cleanPhone, null, message, null, null)
+                }
                 sentCount++
-                Log.d(TAG, "SMS enviado a $cleanPhone")
+                Log.d(TAG, "SMS enviado a $cleanPhone (${parts.size} parte(s))")
             } catch (e: Exception) {
                 Log.e(TAG, "Error enviando SMS a $cleanPhone", e)
             }

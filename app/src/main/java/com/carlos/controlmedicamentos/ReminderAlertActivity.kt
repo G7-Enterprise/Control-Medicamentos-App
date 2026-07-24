@@ -8,6 +8,11 @@ import com.carlos.controlmedicamentos.EXTRA_META_MINUTOS
 import com.carlos.controlmedicamentos.EXTRA_ORIGEN
 import com.carlos.controlmedicamentos.EXTRA_PACIENTE_ID
 import com.carlos.controlmedicamentos.ORIGEN_SEDENTARISMO
+import com.carlos.controlmedicamentos.data.local.RestockSource
+import com.carlos.controlmedicamentos.notifications.NotificacionHelper
+import com.carlos.controlmedicamentos.notifications.NotificacionHelper.StockOrderItem
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -59,6 +64,9 @@ class ReminderAlertActivity : ComponentActivity() {
         const val EXTRA_MINUTES_INACTIVE = "EXTRA_MINUTES_INACTIVE"
         const val EXTRA_META_MINUTOS = "EXTRA_META_MINUTOS"
         const val EXTRA_STOCK_MESSAGE = "EXTRA_STOCK_MESSAGE"
+        const val EXTRA_STOCK_ITEMS_JSON = "EXTRA_STOCK_ITEMS_JSON"
+        const val EXTRA_STOCK_WHATSAPP_PHONE = "EXTRA_STOCK_WHATSAPP_PHONE"
+        const val EXTRA_STOCK_RESTOCK_SOURCE = "EXTRA_STOCK_RESTOCK_SOURCE"
         const val TYPE_HIDRATACION = "HIDRATACION"
         const val TYPE_SEDENTARISMO = "SEDENTARISMO"
         const val TYPE_STOCK_BAJO = "STOCK_BAJO"
@@ -78,6 +86,17 @@ class ReminderAlertActivity : ComponentActivity() {
         val minutesInactive = intent.getIntExtra(EXTRA_MINUTES_INACTIVE, 0)
         val metaMinutos = intent.getIntExtra(EXTRA_META_MINUTOS, 5)
         val stockMessage = intent.getStringExtra(EXTRA_STOCK_MESSAGE).orEmpty()
+        val stockItemsJson = intent.getStringExtra(EXTRA_STOCK_ITEMS_JSON)
+        val stockWhatsappPhone = intent.getStringExtra(EXTRA_STOCK_WHATSAPP_PHONE).orEmpty()
+        val stockRestockSource = intent.getStringExtra(EXTRA_STOCK_RESTOCK_SOURCE) ?: RestockSource.WHATSAPP_NUMBER
+        val stockItems: List<StockOrderItem> = try {
+            if (stockItemsJson != null) {
+                val type = object : TypeToken<List<StockOrderItem>>() {}.type
+                Gson().fromJson(stockItemsJson, type) ?: emptyList()
+            } else emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
 
         setContent {
             MaterialTheme {
@@ -116,7 +135,18 @@ class ReminderAlertActivity : ComponentActivity() {
                                 }
                             )
                             finish()
-                        }
+                        },
+                        onOrderByWhatsapp = if (stockItems.isNotEmpty() && stockRestockSource != RestockSource.INSS) {
+                            {
+                                NotificacionHelper.abrirPedidoWhatsappAgrupado(
+                                    this@ReminderAlertActivity,
+                                    stockItems,
+                                    stockWhatsappPhone,
+                                    stockRestockSource
+                                )
+                                finish()
+                            }
+                        } else null
                     )
                 }
             }
@@ -288,7 +318,8 @@ private fun HidratacionAlertScreen(
 @Composable
 private fun StockBajoAlertScreen(
     message: String,
-    onAccept: () -> Unit
+    onAccept: () -> Unit,
+    onOrderByWhatsapp: (() -> Unit)? = null
 ) {
     val transition = rememberInfiniteTransition(label = "stock_pulse")
     val iconScale by transition.animateFloat(
@@ -345,22 +376,47 @@ private fun StockBajoAlertScreen(
                 lineHeight = 28.sp
             )
 
-            Button(
-                onClick = onAccept,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F)),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(112.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "VER MEDICAMENTOS\nEN USO",
-                    fontSize = 23.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF4A2500),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 29.sp
-                )
+                Button(
+                    onClick = onAccept,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F)),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                ) {
+                    Text(
+                        text = "VER MEDICAMENTOS\nEN USO",
+                        fontSize = 23.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF4A2500),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 29.sp
+                    )
+                }
+
+                onOrderByWhatsapp?.let { onClick ->
+                    Button(
+                        onClick = onClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                    ) {
+                        Text(
+                            text = "PEDIR POR\nWHATSAPP",
+                            fontSize = 23.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 29.sp
+                        )
+                    }
+                }
             }
         }
     }

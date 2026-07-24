@@ -106,6 +106,7 @@ fun HidratacionScreen(
     var showConfig by remember { mutableStateOf(false) }
     var tomaAEliminar by remember { mutableStateOf<RegistroHidratacion?>(null) }
     var showAvisoElectrolitos by remember { mutableStateOf(false) }
+    var litrosAviso by remember { mutableStateOf(0) }
 
     val totalConsumo = totalHoy ?: 0
     val progreso = (totalConsumo.toFloat() / metaDiariaMl.toFloat()).coerceIn(0f, 1f)
@@ -143,8 +144,11 @@ fun HidratacionScreen(
     }
 
     fun registrarToma(ml: Int) {
-        // Aviso de electrólitos al superar 1 litro
-        if (totalConsumo < 1000 && totalConsumo + ml >= 1000) {
+        // Aviso de hidratación al alcanzar cada nuevo litro
+        val litrosAntes = totalConsumo / 1000
+        val litrosDespues = (totalConsumo + ml) / 1000
+        if (litrosDespues > litrosAntes) {
+            litrosAviso = litrosDespues
             showAvisoElectrolitos = true
         }
         scope.launch {
@@ -645,19 +649,44 @@ fun HidratacionScreen(
         )
     }
 
-    // ====== Aviso de electrólitos ======
+    // ====== Aviso de hidratación ======
     if (showAvisoElectrolitos) {
         AlertDialog(
             onDismissRequest = { showAvisoElectrolitos = false },
-            title = { Text("Consejo de hidratación") },
+            title = { Text("¡Excelente hidratación! 💧") },
             text = {
-                Column {
-                    Text("Has registrado 1 litro de líquidos. Considera incluir una bebida con electrólitos.")
-                    Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
-                        "Una ingesta elevada de agua puede eliminar minerales en exceso, por lo que reponer sodio, potasio y magnesio te ayudará a mantener el equilibrio.",
-                        color = Color.White.copy(alpha = 0.8f)
+                        text = "Has registrado ${litrosAviso} litro${if (litrosAviso > 1) "s" else ""} de líquidos.",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = colorAgua
                     )
+                    HorizontalDivider(color = colorAgua.copy(alpha = 0.4f))
+                    Text(
+                        text = "Considera incluir una bebida con electrolitos para reponer minerales como sodio, potasio y magnesio.",
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                    Text(
+                        text = "Si es posible, elige opciones sin azúcar añadida. El consumo frecuente de azúcar refinada puede afectar tu salud y contribuir a la deshidratación.",
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                    Text(
+                        text = "Consejos:",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text("• Agua natural es la mejor opción.", color = Color.White.copy(alpha = 0.85f))
+                        Text("• Evita bebidas azucaradas y refrescos.", color = Color.White.copy(alpha = 0.85f))
+                        Text("• Reponer electrolitos si sudas mucho.", color = Color.White.copy(alpha = 0.85f))
+                    }
                 }
             },
             confirmButton = {

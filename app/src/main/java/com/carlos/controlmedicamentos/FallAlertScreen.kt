@@ -146,6 +146,8 @@ fun FallAlertScreen(
             prefs.getString(KEY_SMS_MESSAGE, "ALERTA DE CAÍDA\n\nSe ha detectado una posible caída. Por favor verifica la situación inmediatamente.\n\nUbicación: {maps}\n\nMagnitud del impacto: {magnitude} m/s²") 
         ) 
     }
+    var contactToDelete by remember { mutableStateOf<EmergencyContact?>(null) }
+    var alertToDelete by remember { mutableStateOf<FallAlert?>(null) }
 
     val alerts by database.fallAlertDao().observeByPatient(patientId).collectAsState(initial = emptyList())
 
@@ -203,12 +205,18 @@ fun FallAlertScreen(
         val postGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions[Manifest.permission.POST_NOTIFICATIONS] ?: true
         } else true
-        android.util.Log.d("FallAlertScreen", "postGranted=$postGranted")
+        val smsGranted = permissions[Manifest.permission.SEND_SMS] ?: (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+        )
+        android.util.Log.d("FallAlertScreen", "postGranted=$postGranted smsGranted=$smsGranted")
         if (postGranted) {
             val phonesString = contactPhones.map { it.phone }.joinToString(",")
             startMonitoring(context, patientId, phonesString, sensitivity, edadPaciente, alturaCmPaciente)
             if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == false) {
                 Toast.makeText(context, "Monitoreo activo. Concede permiso de ubicación para incluir GPS en la alerta.", Toast.LENGTH_LONG).show()
+            }
+            if (!smsGranted) {
+                Toast.makeText(context, "Monitoreo activo. Concede permiso SMS para envío automático de alertas.", Toast.LENGTH_LONG).show()
             }
         } else {
             showPermissionDeniedDialog = true
@@ -360,6 +368,54 @@ fun FallAlertScreen(
         )
     }
 
+    contactToDelete?.let { contact ->
+        AlertDialog(
+            onDismissRequest = { contactToDelete = null },
+            title = { Text("Eliminar contacto") },
+            text = { Text("¿Eliminar a ${contact.name.ifBlank { contact.phone }} de los contactos de emergencia?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val updatedContacts = contactPhones.toMutableList().apply { remove(contact) }
+                        saveEmergencyContacts(prefs, patientId, updatedContacts)
+                        contactReloadTrigger++
+                        contactToDelete = null
+                    }
+                ) {
+                    Text("Eliminar", color = Color(0xFFFF5252))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { contactToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    alertToDelete?.let { alert ->
+        AlertDialog(
+            onDismissRequest = { alertToDelete = null },
+            title = { Text("Eliminar registro") },
+            text = { Text("¿Eliminar este registro del historial de caídas?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch { database.fallAlertDao().deleteById(alert.id) }
+                        alertToDelete = null
+                    }
+                ) {
+                    Text("Eliminar", color = Color(0xFFFF5252))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alertToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -431,6 +487,9 @@ fun FallAlertScreen(
                                     }
                                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                                         neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                                    }
+                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                                        neededPermissions.add(Manifest.permission.SEND_SMS)
                                     }
                                     if (neededPermissions.isEmpty()) {
                                         val phonesString = contactPhones.map { it.phone }.joinToString(",")
@@ -579,11 +638,7 @@ fun FallAlertScreen(
                                     }
                                 }
                                 IconButton(
-                                    onClick = {
-                                        val updatedContacts = contactPhones.toMutableList().apply { removeAt(index) }
-                                        saveEmergencyContacts(prefs, patientId, updatedContacts)
-                                        contactReloadTrigger++
-                                    }
+                                    onClick = { contactToDelete = contact }
                                 ) {
                                     Icon(
                                         MaterialIcons.Filled.Delete,
@@ -714,8 +769,7 @@ fun FallAlertScreen(
                     items(alerts, key = { it.id }) { alert ->
                         AlertCard(
                             alert = alert,
-                            database = database,
-                            scope = scope
+                            onDeleteClick = { alertToDelete = alert }
                         )
                     }
                 }
@@ -736,8 +790,7 @@ fun FallAlertScreen(
 @Composable
 private fun AlertCard(
     alert: FallAlert,
-    database: AppDatabase,
-    scope: kotlinx.coroutines.CoroutineScope
+    onDeleteClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
@@ -796,7 +849,7 @@ private fun AlertCard(
                     }
                 }
             }
-            IconButton(onClick = { scope.launch { database.fallAlertDao().deleteById(alert.id) } }) {
+            IconButton(onClick = onDeleteClick) {
                 Icon(MaterialIcons.Filled.Delete, contentDescription = "Eliminar", tint = Color(0xFFFF5252))
             }
         }

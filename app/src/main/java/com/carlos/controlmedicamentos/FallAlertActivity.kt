@@ -309,9 +309,13 @@ class FallAlertActivity : ComponentActivity() {
         stopAlarm()
         stopVibration()
         if (emergencyPhone.isNotBlank()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                sendAlerts()
-                withContext(Dispatchers.Main) { finish() }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    sendAlerts()
+                    withContext(Dispatchers.Main) { finish() }
+                }
+            } else {
+                requestSmsPermission.launch(Manifest.permission.SEND_SMS)
             }
         } else {
             finish()

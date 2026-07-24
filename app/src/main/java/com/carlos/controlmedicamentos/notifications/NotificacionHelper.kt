@@ -16,9 +16,11 @@ import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.CountryCurrencyCatalog
 import com.carlos.controlmedicamentos.MainActivity
 import com.carlos.controlmedicamentos.R
+import com.carlos.controlmedicamentos.ReminderAlertActivity
 import com.carlos.controlmedicamentos.data.local.Medication
 import com.carlos.controlmedicamentos.data.local.RestockSource
 import com.carlos.controlmedicamentos.formatMoney
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -474,8 +476,8 @@ object NotificacionHelper {
         items: List<StockOrderItem>,
         whatsappPhone: String,
         restockSource: String
-    ) {
-        if (items.isEmpty()) return
+    ): Intent? {
+        if (items.isEmpty()) return null
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
@@ -520,6 +522,21 @@ object NotificacionHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val fullScreenIntent = Intent(context, ReminderAlertActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(ReminderAlertActivity.EXTRA_TYPE, ReminderAlertActivity.TYPE_STOCK_BAJO)
+            putExtra(ReminderAlertActivity.EXTRA_STOCK_MESSAGE, message)
+            putExtra(ReminderAlertActivity.EXTRA_STOCK_ITEMS_JSON, Gson().toJson(items))
+            putExtra(ReminderAlertActivity.EXTRA_STOCK_WHATSAPP_PHONE, whatsappPhone)
+            putExtra(ReminderAlertActivity.EXTRA_STOCK_RESTOCK_SOURCE, restockSource)
+        }
+        val fullScreenPendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId * 10 + 14,
+            fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(context, STOCK_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -535,6 +552,7 @@ object NotificacionHelper {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(contentPendingIntent)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
             .apply {
                 addAction(0, "Ver medicamentos", verMedicamentosPendingIntent)
                 whatsappPendingIntent?.let {
@@ -544,12 +562,7 @@ object NotificacionHelper {
             .build()
 
         manager.notify(notificationId, notification)
-        val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_STOCK_BAJO)
-            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_STOCK_MESSAGE, message)
-        }
-        context.startActivity(fullScreenIntent)
+        return fullScreenIntent
     }
 
     fun abrirPedidoWhatsapp(
@@ -691,7 +704,7 @@ object NotificacionHelper {
         return "Hay ${items.size} medicamentos con stock bajo listos para pedir juntos."
     }
 
-    suspend fun verificarYNotificarStockBajo(context: Context) {
+    suspend fun verificarYNotificarStockBajo(context: Context, launchFullScreen: Boolean = false) {
         val db = AppDatabase.getDatabase(context)
         val allMedications = db.medicationDao().obtenerTodosLista()
         val carritoTodos = db.carritoPendienteDao().obtenerTodosLista()
@@ -708,16 +721,26 @@ object NotificacionHelper {
                 else -> med.origenReposicion
             }
         }
+        var launched = false
         grouped.forEach { (groupKey, pairs) ->
             val items = pairs.map { it.second }.sortedBy { it.medicationName.lowercase() }
             val firstMed = pairs.first().first
-            mostrarStockBajoAgrupado(
+            val fullScreenIntent = mostrarStockBajoAgrupado(
                 context = context,
                 notificationId = groupKey.hashCode(),
                 items = items,
                 whatsappPhone = firstMed.telefonoPedidoWhatsapp,
                 restockSource = firstMed.origenReposicion
             )
+            if (launchFullScreen && !launched && fullScreenIntent != null) {
+                launched = true
+                withContext(Dispatchers.Main) {
+                    try {
+                        context.startActivity(fullScreenIntent)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
         }
     }
 
@@ -825,7 +848,7 @@ object NotificacionHelper {
         }
         val stock = medication.stockActual ?: return null
         val unitsPerTake = medication.dosis.toIntOrNull()?.coerceAtLeast(1) ?: 1
-        val threshold = medication.stockMinimo?.coerceAtLeast(unitsPerTake) ?: unitsPerTake
+        val threshold = (medication.stockMinimo ?: (unitsPerTake * 2)).coerceAtLeast(unitsPerTake)
         if (stock > threshold) {
             return null
         }

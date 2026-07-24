@@ -21,7 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.Medication
+import com.carlos.controlmedicamentos.data.local.RestockSource
 import com.carlos.controlmedicamentos.notifications.MedicationScheduler
+import com.carlos.controlmedicamentos.notifications.NotificacionHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -253,6 +255,14 @@ internal fun ListaInsumosPanel(
                 }
             }
 
+            LaunchedEffect(mostrarListaInsumos) {
+                if (mostrarListaInsumos) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        NotificacionHelper.verificarYNotificarStockBajo(context)
+                    }
+                }
+            }
+
             LaunchedEffect(mostrarListaInsumos, insumoSeleccionadoEnInventario, insumosGuardados) {
                 if (mostrarListaInsumos && insumoSeleccionadoEnInventario != null) {
                     val index = insumosGuardados.indexOfFirst { it.id == insumoSeleccionadoEnInventario }
@@ -273,6 +283,27 @@ internal fun ListaInsumosPanel(
                 ) {
                     Text("Ver lista de pedidos (${carritoItems.size} ${if (carritoItems.size == 1) "medicamento" else "medicamentos"})", color = Color.Black)
                 }
+            }
+
+            Button(
+                onClick = {
+                    NotificacionHelper.mostrarStockBajo(
+                        context = context,
+                        medicationId = 0,
+                        medicationName = "Medicamento de prueba",
+                        concentration = "500 mg",
+                        remainingUnits = 1,
+                        unitsPerTake = 1,
+                        lowStockThreshold = 2,
+                        unitPrice = 0.5,
+                        whatsappPhone = "",
+                        restockSource = RestockSource.WHATSAPP_CONTACT
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F), contentColor = Color.Black)
+            ) {
+                Text("Probar alerta de stock bajo", color = Color.Black)
             }
 
             Button(

@@ -2049,7 +2049,7 @@ fun MedicamentoForm(
             } catch (_: Exception) {
             }
 
-            NotificacionHelper.verificarYNotificarStockBajo(context)
+            NotificacionHelper.verificarYNotificarStockBajo(context, launchFullScreen = true)
             NotificacionHelper.verificarYNotificarTomasOlvidadas(context)
         }
     }
