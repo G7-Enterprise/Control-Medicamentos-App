@@ -376,7 +376,7 @@ object BackupManager {
             .put("exportedAt", exportedAt)
             .put("criticalAlertSettings", criticalAlertConfig.toJson())
             .put("syncSnapshot", syncSnapshot.toJson())
-            .put("patients", JSONArray().apply { patients.forEach { put(it.toJson()) } })
+            .put("patients", JSONArray().apply { patients.forEach { put(it.toJson(context)) } })
             .put("medications", JSONArray().apply { medications.forEach { put(it.toJson()) } })
             .put("intakes", JSONArray().apply { intakes.forEach { put(it.toJson()) } })
             .put("reports", JSONArray().apply { reports.forEach { put(it.toJson(context)) } })
@@ -850,6 +850,8 @@ private fun SyncVitalSigns.toJson(): JSONObject = JSONObject()
     .put("comentarioPresion", comentarioPresion)
     .put("latidos", latidos)
     .put("comentarioLatidos", comentarioLatidos)
+    .put("spo2", spo2)
+    .put("comentariosSpo2", comentariosSpo2)
     .put("glucemia", glucemia)
     .put("comentarioGlucemia", comentarioGlucemia)
     .put("temperatura", temperatura)
@@ -890,11 +892,11 @@ private fun JSONObject.toCriticalAlertConfig(): CriticalAlertConfig = CriticalAl
     soundUri = optString("soundUri")
 )
 
-private fun PatientProfile.toJson(): JSONObject {
+private fun PatientProfile.toJson(context: Context): JSONObject {
     val fotoBase64: String? = fotoPerfil?.let { ruta ->
-        runCatching {
-            Base64.encodeToString(File(ruta).readBytes(), Base64.NO_WRAP)
-        }.getOrNull()
+        openAttachmentBytes(context, Uri.parse(ruta))?.let { bytes ->
+            Base64.encodeToString(bytes, Base64.NO_WRAP)
+        }
     }
     return JSONObject()
         .put("id", id)
@@ -1078,6 +1080,7 @@ private fun buildSafeAttachmentFileName(originalName: String, index: Int): Strin
     val trimmed = originalName.substringAfterLast('/').substringAfterLast('\\').trim()
     val name = trimmed.substringBeforeLast('.', trimmed)
         .replace(Regex("[^A-Za-z0-9._-]"), "_")
+        .take(120)
         .takeIf { it.isNotBlank() }
         ?: "study_restored_${index + 1}"
     val extension = trimmed.substringAfterLast('.', "").lowercase(Locale.ROOT)
@@ -1148,6 +1151,8 @@ private fun SignosVitales.toJson(): JSONObject = JSONObject()
     .put("comentarioPresion", comentarioPresion)
     .put("latidos", latidos)
     .put("comentarioLatidos", comentarioLatidos)
+    .put("spo2", spo2)
+    .put("comentariosSpo2", comentariosSpo2)
     .put("glucemia", glucemia)
     .put("comentarioGlucemia", comentarioGlucemia)
     .put("temperatura", temperatura)
@@ -1343,6 +1348,8 @@ private fun JSONArray?.toVitalSigns(): List<SignosVitales> {
             comentarioPresion = json.optString("comentarioPresion"),
             latidos = json.optInt("latidos"),
             comentarioLatidos = json.optString("comentarioLatidos"),
+            spo2 = if (json.has("spo2") && !json.isNull("spo2")) json.optInt("spo2") else null,
+            comentariosSpo2 = json.optString("comentariosSpo2"),
             glucemia = if (json.has("glucemia") && !json.isNull("glucemia")) json.optInt("glucemia") else null,
             comentarioGlucemia = json.optString("comentarioGlucemia"),
             temperatura = if (json.has("temperatura") && !json.isNull("temperatura")) json.optDouble("temperatura") else null,
@@ -1503,6 +1510,8 @@ private fun JSONArray?.toSyncVitalSigns(): List<SyncVitalSigns> {
             comentarioPresion = json.optString("comentarioPresion"),
             latidos = json.optInt("latidos"),
             comentarioLatidos = json.optString("comentarioLatidos"),
+            spo2 = if (json.has("spo2") && !json.isNull("spo2")) json.optInt("spo2") else null,
+            comentariosSpo2 = json.optString("comentariosSpo2"),
             glucemia = if (json.has("glucemia") && !json.isNull("glucemia")) json.optInt("glucemia") else null,
             comentarioGlucemia = json.optString("comentarioGlucemia"),
             temperatura = if (json.has("temperatura") && !json.isNull("temperatura")) json.optDouble("temperatura") else null,
@@ -1627,6 +1636,8 @@ private fun SyncVitalSigns.toEntity(): SignosVitales = SignosVitales(
     comentarioPresion = comentarioPresion,
     latidos = latidos,
     comentarioLatidos = comentarioLatidos,
+    spo2 = spo2,
+    comentariosSpo2 = comentariosSpo2,
     glucemia = glucemia,
     comentarioGlucemia = comentarioGlucemia,
     temperatura = temperatura,

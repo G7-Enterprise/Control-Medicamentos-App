@@ -130,6 +130,8 @@ internal class MedicamentoFormState(
     val comentarioPresionInputState: MutableState<String>,
     val latidosInputState: MutableState<String>,
     val comentarioLatidosInputState: MutableState<String>,
+    val spo2InputState: MutableState<String>,
+    val comentariosSpo2InputState: MutableState<String>,
     val glucemiaInputState: MutableState<String>,
     val comentarioGlucemiaInputState: MutableState<String>,
     val temperaturaInputState: MutableState<String>,
@@ -239,6 +241,8 @@ internal val MedicamentoFormState.diastolicaInput get() = diastolicaInputState.v
 internal val MedicamentoFormState.comentarioPresionInput get() = comentarioPresionInputState.value
 internal val MedicamentoFormState.latidosInput get() = latidosInputState.value
 internal val MedicamentoFormState.comentarioLatidosInput get() = comentarioLatidosInputState.value
+internal val MedicamentoFormState.spo2Input get() = spo2InputState.value
+internal val MedicamentoFormState.comentariosSpo2Input get() = comentariosSpo2InputState.value
 internal val MedicamentoFormState.glucemiaInput get() = glucemiaInputState.value
 internal val MedicamentoFormState.comentarioGlucemiaInput get() = comentarioGlucemiaInputState.value
 internal val MedicamentoFormState.temperaturaInput get() = temperaturaInputState.value
@@ -437,6 +441,8 @@ internal fun rememberMedicamentoFormState(
     val comentarioPresionInputState = remember { mutableStateOf("") }
     val latidosInputState = remember { mutableStateOf("") }
     val comentarioLatidosInputState = remember { mutableStateOf("") }
+    val spo2InputState = remember { mutableStateOf("") }
+    val comentariosSpo2InputState = remember { mutableStateOf("") }
     val glucemiaInputState = remember { mutableStateOf("") }
     val comentarioGlucemiaInputState = remember { mutableStateOf("") }
     val temperaturaInputState = remember { mutableStateOf("") }
@@ -604,6 +610,8 @@ internal fun rememberMedicamentoFormState(
         comentarioPresionInputState = comentarioPresionInputState,
         latidosInputState = latidosInputState,
         comentarioLatidosInputState = comentarioLatidosInputState,
+        spo2InputState = spo2InputState,
+        comentariosSpo2InputState = comentariosSpo2InputState,
         glucemiaInputState = glucemiaInputState,
         comentarioGlucemiaInputState = comentarioGlucemiaInputState,
         temperaturaInputState = temperaturaInputState,

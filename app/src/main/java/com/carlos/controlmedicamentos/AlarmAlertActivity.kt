@@ -3,7 +3,9 @@ package com.carlos.controlmedicamentos
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
+import com.carlos.controlmedicamentos.notifications.AlarmActionExecutor
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -28,6 +30,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,22 +39,36 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlos.controlmedicamentos.notifications.AlarmReceiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import com.carlos.controlmedicamentos.notifications.NotificacionHelper
 import com.carlos.controlmedicamentos.ui.theme.ControlMedicamentosTheme
 
 class AlarmAlertActivity : ComponentActivity() {
+
+    // Scope propio para que el registro de tomas continúe incluso si la Activity finaliza.
+    private val actionScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         const val EXTRA_TITULO = "alarm_titulo"
@@ -133,40 +151,72 @@ class AlarmAlertActivity : ComponentActivity() {
                     onTomar = {
                         if (isAnticonceptivo && anticonceptivoId > 0) {
                             enviarAccionAnticonceptivo(notificationId, anticonceptivoId, anticonceptivoScheduled)
+                            finish()
                         } else {
-                            enviarAccion(AlarmReceiver.ACTION_ACCEPT, notificationId, reminderTokens)
+                            ejecutarAccionYFinalizar(AlarmReceiver.ACTION_ACCEPT, notificationId, reminderTokens)
                         }
-                        finish()
                     },
                     onTomadoProgramado = {
-                        enviarAccion(AlarmReceiver.ACTION_ACCEPT_SCHEDULED_TIME, notificationId, reminderTokens)
-                        finish()
+                        ejecutarAccionYFinalizar(AlarmReceiver.ACTION_ACCEPT_SCHEDULED_TIME, notificationId, reminderTokens)
                     },
                     onNoTomado = {
-                        enviarAccion(AlarmReceiver.ACTION_MARK_NOT_TAKEN, notificationId, reminderTokens)
-                        finish()
+                        ejecutarAccionYFinalizar(AlarmReceiver.ACTION_MARK_NOT_TAKEN, notificationId, reminderTokens)
                     },
-                    onPosponer = {
+                    onPosponer = { minutos ->
                         if (isAnticonceptivo && anticonceptivoId > 0) {
                             enviarAccionAnticonceptivoSnooze(notificationId, anticonceptivoId)
+                            finish()
                         } else {
-                            enviarAccion(AlarmReceiver.ACTION_SNOOZE, notificationId, reminderTokens)
+                            ejecutarAccionYFinalizar(AlarmReceiver.ACTION_SNOOZE, notificationId, reminderTokens, minutos)
                         }
-                        finish()
                     }
                 )
             }
         }
     }
 
-    private fun enviarAccion(action: String, notificationId: Int, reminderTokens: List<String>) {
-        val intent = Intent(this, AlarmReceiver::class.java).apply {
-            this.action = action
-            putExtra(AlarmReceiver.EXTRA_NOTIFICATION_ID, notificationId)
-            putExtra(NotificacionHelper.EXTRA_REMINDER_TOKENS, reminderTokens.toTypedArray())
+    private fun ejecutarAccionYFinalizar(action: String, notificationId: Int, reminderTokens: List<String>, snoozeMinutes: Int = 0) {
+        actionScope.launch {
+            try {
+                when (action) {
+                    AlarmReceiver.ACTION_ACCEPT -> {
+                        NotificacionHelper.cancelar(this@AlarmAlertActivity, notificationId)
+                        AlarmActionExecutor.cancelPendingReminders(this@AlarmAlertActivity, reminderTokens)
+                        AlarmActionExecutor.registerAcceptedTakes(this@AlarmAlertActivity, reminderTokens)
+                    }
+                    AlarmReceiver.ACTION_ACCEPT_SCHEDULED_TIME -> {
+                        NotificacionHelper.cancelar(this@AlarmAlertActivity, notificationId)
+                        AlarmActionExecutor.cancelPendingReminders(this@AlarmAlertActivity, reminderTokens)
+                        AlarmActionExecutor.registerAcceptedTakes(
+                            this@AlarmAlertActivity,
+                            reminderTokens,
+                            useScheduledTime = true
+                        )
+                    }
+                    AlarmReceiver.ACTION_MARK_NOT_TAKEN -> {
+                        NotificacionHelper.cancelar(this@AlarmAlertActivity, notificationId)
+                        AlarmActionExecutor.cancelPendingReminders(this@AlarmAlertActivity, reminderTokens)
+                        AlarmActionExecutor.registerNotTakenTakes(this@AlarmAlertActivity, reminderTokens)
+                    }
+                    AlarmReceiver.ACTION_SNOOZE -> {
+                        NotificacionHelper.cancelar(this@AlarmAlertActivity, notificationId)
+                        val firstToken = reminderTokens.firstOrNull()
+                            ?.let { AlarmActionExecutor.parseReminderToken(it) }
+                        AlarmActionExecutor.postponeReminders(
+                            context = this@AlarmAlertActivity,
+                            reminderTokens = reminderTokens,
+                            fallbackMedId = firstToken?.medicationId ?: 0,
+                            fallbackSlotIndex = firstToken?.slotIndex ?: 0,
+                            fallbackScheduledAt = firstToken?.scheduledAt ?: System.currentTimeMillis(),
+                            customDelayMinutes = snoozeMinutes
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AlarmAlertActivity", "Error executing action $action", e)
+            }
         }
-        sendBroadcast(intent)
-        NotificacionHelper.cancelar(this, notificationId)
+        finish()
     }
 
     private fun enviarAccionAnticonceptivo(notificationId: Int, metodoId: Int, scheduledAt: Long) {
@@ -237,11 +287,13 @@ private fun AlarmAlertScreen(
     onTomar: () -> Unit,
     onTomadoProgramado: () -> Unit,
     onNoTomado: () -> Unit,
-    onPosponer: () -> Unit
+    onPosponer: (Int) -> Unit
 ) {
     val backgroundColor = Color(0xFF4A4A4A)
     val cardColor = Color(0xFF2C2C2C)
     val accentCyan = Color(0xFF00BCD4)
+    var showSnoozeDialog by remember { mutableStateOf(false) }
+    var customMinutesText by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -438,7 +490,7 @@ private fun AlarmAlertScreen(
                 // Posponer
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(
-                        onClick = onPosponer,
+                        onClick = { showSnoozeDialog = true },
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
@@ -460,6 +512,49 @@ private fun AlarmAlertScreen(
                     )
                 }
             }
+        }
+
+        if (showSnoozeDialog) {
+            AlertDialog(
+                onDismissRequest = { showSnoozeDialog = false },
+                title = { Text("Posponer recordatorio") },
+                text = {
+                    Column {
+                        Text("\u00bfPor cu\u00e1nto tiempo deseas posponer?", color = Color.Black)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(5, 10, 15).forEach { minutos ->
+                                OutlinedButton(onClick = {
+                                    showSnoozeDialog = false
+                                    onPosponer(minutos)
+                                }) {
+                                    Text("$minutos min")
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = customMinutesText,
+                            onValueChange = { customMinutesText = it.filter(Char::isDigit) },
+                            label = { Text("Personalizado (minutos)") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val minutos = customMinutesText.toIntOrNull()
+                        if (minutos != null && minutos > 0) {
+                            showSnoozeDialog = false
+                            onPosponer(minutos)
+                        }
+                    }) { Text("Confirmar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSnoozeDialog = false }) { Text("Cancelar") }
+                }
+            )
         }
     }
 }

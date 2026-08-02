@@ -27,6 +27,7 @@ data class ResumenSignos(
     val sistolica: Int?,
     val diastolica: Int?,
     val latidos: Int?,
+    val spo2: Int?,
     val glucemia: Int?,
     val temperatura: Double?,
     val peso: Double?,
@@ -40,6 +41,18 @@ data class ResumenActividad(
     val distanciaKm: Double,
     val duracionMin: Long,
     val calorias: Int
+)
+
+data class ResumenHidratacion(
+    val fecha: Long,
+    val cantidadMl: Int,
+    val tipoBebida: String
+)
+
+data class ResumenSedentarismo(
+    val fecha: Long,
+    val tipoEvento: String,
+    val minutosInactivo: Int
 )
 
 data class ResumenMedicamento(
@@ -82,6 +95,9 @@ data class ReporteClinicoPayload(
     val medicamentos: List<ResumenMedicamento>,
     // Actividad física (ambos)
     val actividades: List<ResumenActividad>,
+    val hidratacion: List<ResumenHidratacion>,
+    val sedentarismo: List<ResumenSedentarismo>,
+    val configuracionSedentarismo: ConfigSedentarismo?,
     // Alertas (ambos)
     val alertas: List<AlertaSalud>
 )
@@ -163,7 +179,7 @@ suspend fun compilarReporteClinico(
     val signosResumen = if (incluirSignosVitales && patientId > 0) {
         database.signosVitalesDao().obtenerEnRango(patientId, fechaLimite, ahora)
             .sortedByDescending { it.fechaRegistro }
-            .map { sv -> ResumenSignos(sv.fechaRegistro, sv.sistolica, sv.diastolica, sv.latidos, sv.glucemia, sv.temperatura, sv.peso, sv.imc) }
+            .map { sv -> ResumenSignos(sv.fechaRegistro, sv.sistolica, sv.diastolica, sv.latidos, sv.spo2, sv.glucemia, sv.temperatura, sv.peso, sv.imc) }
     } else emptyList()
 
     // ── Medicamentos (ambos) ──────────────────────────────────────────
@@ -184,6 +200,15 @@ suspend fun compilarReporteClinico(
             .sortedByDescending { it.fechaInicio }
             .map { a -> ResumenActividad(a.fechaInicio, a.tipo, a.pasos, a.distanciaMetros / 1000.0, a.duracionSegundos / 60, a.calorias) }
     } else emptyList()
+    val hidratacionResumen = if (patientId > 0) {
+        database.hidratacionDao().obtenerEnRango(patientId, fechaLimite, ahora)
+            .map { registro -> ResumenHidratacion(registro.timestamp, registro.cantidadMl, registro.tipoBebida) }
+    } else emptyList()
+    val sedentarismoResumen = if (patientId > 0) {
+        database.sedentarismoDao().obtenerEnRango(patientId, fechaLimite, ahora)
+            .map { registro -> ResumenSedentarismo(registro.timestamp, registro.tipoEvento, registro.minutosInactivo) }
+    } else emptyList()
+    val configuracionSedentarismo = if (patientId > 0) database.sedentarismoDao().obtenerConfig(patientId) else null
 
     // ── Alertas (ambos) ───────────────────────────────────────────
     val alertas = mutableListOf<AlertaSalud>()
@@ -227,7 +252,9 @@ suspend fun compilarReporteClinico(
         notasInterrupcion = embarazoRef?.notasInterrupcion, visitasPrenatales = visitas,
         ultimoMac = ultimoMac, fechaSuspMac = fechaSuspMac,
         signosVitales = signosResumen, medicamentos = insResumen,
-        actividades = actResumen, alertas = alertas
+        actividades = actResumen, hidratacion = hidratacionResumen,
+        sedentarismo = sedentarismoResumen, configuracionSedentarismo = configuracionSedentarismo,
+        alertas = alertas
     )
 }
 
@@ -308,6 +335,7 @@ fun escribirReporteClinicoDocx(output: java.io.OutputStream, r: ReporteClinicoPa
         ultimo.sistolica?.let { sb.append(linea("Última PA: $it/${ultimo.diastolica ?: "?"} mmHg  (${sdf.format(Date(ultimo.fecha))})")) }
         ultimo.peso?.let { sb.append(linea("Último peso: ${"%.1f".format(it)} kg${ultimo.imc?.let { i -> "  IMC: ${"%.1f".format(i)}" } ?: ""}")) }
         ultimo.glucemia?.let { sb.append(linea("Última glucemia: $it mg/dL")) }
+        ultimo.spo2?.let { sb.append(linea("Último SpO2: $it%")) }
     }
     if (r.medicamentos.isNotEmpty()) {
         val activos = r.medicamentos.count { it.activo }
@@ -317,6 +345,16 @@ fun escribirReporteClinicoDocx(output: java.io.OutputStream, r: ReporteClinicoPa
         val totalPasos = r.actividades.sumOf { it.pasos }
         val totalKm = r.actividades.sumOf { it.distanciaKm }
         sb.append(linea("Actividad física: ${r.actividades.size} sesiones  |  $totalPasos pasos totales  |  ${"%.1f".format(totalKm)} km"))
+    }
+    if (r.hidratacion.isNotEmpty()) {
+        sb.append(linea("Hidratación: ${r.hidratacion.sumOf { it.cantidadMl }} ml en ${r.hidratacion.size} registros"))
+    }
+    if (r.sedentarismo.isNotEmpty()) {
+        val alertasInactividad = r.sedentarismo.count { it.tipoEvento == "ALERTA_INACTIVIDAD" }
+        sb.append(linea("Sedentarismo: $alertasInactividad alertas de inactividad registradas"))
+    }
+    r.configuracionSedentarismo?.let { config ->
+        sb.append(linea("Monitoreo de sedentarismo: ${if (config.activado) "activo" else "inactivo"}  |  límite ${config.limiteInactividadMinutos} min"))
     }
     sb.append(sep())
 
@@ -334,6 +372,7 @@ fun escribirReporteClinicoDocx(output: java.io.OutputStream, r: ReporteClinicoPa
             val partes = mutableListOf("${sdf.format(Date(sv.fecha))}")
             sv.sistolica?.let { partes.add("PA: $it/${sv.diastolica?:"?"} mmHg") }
             sv.latidos?.let { partes.add("FC: $it lpm") }
+            sv.spo2?.let { partes.add("SpO2: $it%") }
             sv.glucemia?.let { partes.add("Gluc: $it mg/dL") }
             sv.temperatura?.let { partes.add("Temp: ${"%.1f".format(it)}°C") }
             sv.peso?.let { partes.add("Peso: ${"%.1f".format(it)} kg") }
@@ -365,7 +404,29 @@ fun escribirReporteClinicoDocx(output: java.io.OutputStream, r: ReporteClinicoPa
         sb.append(sep())
     }
 
-    // VII. Visitas prenatales (solo mujer)
+    // VII. Hidratación
+    if (r.hidratacion.isNotEmpty()) {
+        sb.append(sub("HIDRATACIÓN (${r.hidratacion.size} registros)"))
+        r.hidratacion.forEach { registro ->
+            sb.append(linea("• ${sdfDt.format(Date(registro.fecha))}  ${registro.cantidadMl} ml  ${registro.tipoBebida}"))
+        }
+        sb.append(sep())
+    }
+
+    // VIII. Sedentarismo
+    if (r.sedentarismo.isNotEmpty() || r.configuracionSedentarismo != null) {
+        sb.append(sub("SEDENTARISMO (${r.sedentarismo.size} eventos)"))
+        r.configuracionSedentarismo?.let { config ->
+            sb.append(linea("Monitoreo: ${if (config.activado) "activo" else "inactivo"}  |  límite: ${config.limiteInactividadMinutos} min  |  horario: ${config.horaInicioMonitoreo}:00-${config.horaFinMonitoreo}:00"))
+        }
+        r.sedentarismo.forEach { registro ->
+            val detalle = if (registro.minutosInactivo > 0) "  ${registro.minutosInactivo} min inactivo" else ""
+            sb.append(linea("• ${sdfDt.format(Date(registro.fecha))}  ${registro.tipoEvento.replace('_', ' ')}$detalle"))
+        }
+        sb.append(sep())
+    }
+
+    // IX. Visitas prenatales (solo mujer)
     if (r.esMujer && r.visitasPrenatales.isNotEmpty()) {
         sb.append(sub("VISITAS PRENATALES (${r.visitasPrenatales.size})"))
         r.visitasPrenatales.sortedBy { it.fecha }.forEach { v ->
@@ -378,7 +439,7 @@ fun escribirReporteClinicoDocx(output: java.io.OutputStream, r: ReporteClinicoPa
         sb.append(sep())
     }
 
-    // VIII. Historial de ciclos menstruales (solo mujer)
+    // X. Historial de ciclos menstruales (solo mujer)
     if (r.esMujer && r.ciclos.isNotEmpty()) {
         sb.append(sub("HISTORIAL DE CICLOS MENSTRUALES (${r.ciclos.size})"))
         r.ciclos.forEach { c ->

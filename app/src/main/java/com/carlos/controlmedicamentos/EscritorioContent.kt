@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +36,10 @@ import com.carlos.controlmedicamentos.data.local.PatientProfile
 import com.carlos.controlmedicamentos.data.local.VaccinationRecord
 import com.carlos.controlmedicamentos.data.local.VisitaDentista
 import com.carlos.controlmedicamentos.data.local.unidadesPorToma
+import com.carlos.controlmedicamentos.license.ActivationDialog
+import com.carlos.controlmedicamentos.license.LicenseStatus
+import com.carlos.controlmedicamentos.license.LicenseViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -242,6 +247,36 @@ internal fun EscritorioContent(
                 text = fechaResumenEscritorioTexto,
                 isToday = escritorioEsHoy
             )
+
+            // ── Aviso de cuenta regresiva del periodo de prueba/licencia ──
+            val licenseViewModel: LicenseViewModel = viewModel()
+            val licenseStatus by licenseViewModel.status.collectAsState()
+            val licenseEndDate = (licenseStatus as? LicenseStatus.Valid)?.endDate
+            val context = LocalContext.current
+            var showActivationDialog by remember { mutableStateOf(false) }
+            licenseEndDate?.let { endDate ->
+                TrialCountdownBanner(
+                    endDate = endDate,
+                    onAcquireLicense = {
+                        context.startActivity(
+                            android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(LicenseManager.URL_LICENCIA)
+                            ).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                        )
+                    },
+                    onActivateKey = { showActivationDialog = true }
+                )
+            }
+            if (showActivationDialog) {
+                ActivationDialog(
+                    viewModel = licenseViewModel,
+                    onDismiss = { showActivationDialog = false }
+                )
+            }
+
             val proximaCitaState = remember { mutableStateOf<ProximaCitaInfo?>(null) }
             LaunchedEffect(pacienteActivo?.id) {
                 val pid = pacienteActivo?.id

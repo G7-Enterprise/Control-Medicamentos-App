@@ -5,7 +5,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,9 +30,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.media.MediaPlayer
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.HidratacionDao
 import com.carlos.controlmedicamentos.data.local.RegistroHidratacion
 import com.carlos.controlmedicamentos.notifications.HidratacionScheduler
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -107,6 +112,20 @@ fun HidratacionScreen(
     var tomaAEliminar by remember { mutableStateOf<RegistroHidratacion?>(null) }
     var showAvisoElectrolitos by remember { mutableStateOf(false) }
     var litrosAviso by remember { mutableStateOf(0) }
+    var sonidoActivado by remember { mutableStateOf(HidratacionScheduler.loadSoundEnabled(context)) }
+    var notaTexto by remember { mutableStateOf("") }
+    val notasPrefs = remember { context.getSharedPreferences("hidratacion_notas", android.content.Context.MODE_PRIVATE) }
+    val mesesConHistorial by hidratacionDao
+        .observarMesesConHistorial(patientId)
+        .collectAsState(initial = emptyList())
+    val mesActual = remember { SimpleDateFormat("yyyy-MM", Locale.US).format(Date()) }
+    val mesesExpandidos = remember { mutableStateMapOf<String, Boolean>() }
+
+    LaunchedEffect(mesesConHistorial) {
+        mesesConHistorial.forEach { mes ->
+            if (mes !in mesesExpandidos) mesesExpandidos[mes] = mes == mesActual
+        }
+    }
 
     val totalConsumo = totalHoy ?: 0
     val progreso = (totalConsumo.toFloat() / metaDiariaMl.toFloat()).coerceIn(0f, 1f)
@@ -143,6 +162,22 @@ fun HidratacionScreen(
         }
     }
 
+    fun probarSonido() {
+        try {
+            val mp = MediaPlayer.create(context, R.raw.water_sound)?.apply {
+                setOnCompletionListener { release() }
+                start()
+            }
+            if (mp != null) {
+                scope.launch {
+                    delay(5000)
+                    if (mp.isPlaying) mp.stop()
+                    mp.release()
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
     fun registrarToma(ml: Int) {
         // Aviso de hidratación al alcanzar cada nuevo litro
         val litrosAntes = totalConsumo / 1000
@@ -152,9 +187,14 @@ fun HidratacionScreen(
             showAvisoElectrolitos = true
         }
         scope.launch {
-            hidratacionDao.registrarToma(
+            val nota = notaTexto.trim()
+            val id = hidratacionDao.registrarToma(
                 RegistroHidratacion(patientId = patientId, cantidadMl = ml, tipoBebida = tipoBebidaSeleccionado)
             )
+            if (nota.isNotBlank()) {
+                notasPrefs.edit().putString("nota_${id}", nota).apply()
+            }
+            notaTexto = ""
             // Reiniciar temporizador de alarma tras beber
             if (recordatoriosActivados) {
                 scheduler.programar(patientId, paciente?.nombre ?: "Usuario")
@@ -341,6 +381,22 @@ fun HidratacionScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Nota opcional para la toma
+            OutlinedTextField(
+                value = notaTexto,
+                onValueChange = { notaTexto = it },
+                label = { Text("Nota (opcional)", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp) },
+                singleLine = false,
+                maxLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorAgua, unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                    focusedTextColor = Color.White, unfocusedTextColor = Color.White
+                )
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // ====== SECCIÓN C: Configuración (plegable) ======
@@ -371,13 +427,39 @@ fun HidratacionScreen(
                             )
                         }
 
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Sonido de alarma", color = Color.White, fontSize = 13.sp)
+                                Text("Escuchar tono al llegar el recordatorio", color = Color.White.copy(alpha = 0.5f), fontSize = 11.sp)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Switch(
+                                    checked = sonidoActivado,
+                                    onCheckedChange = { sonidoActivado = it; HidratacionScheduler.saveSoundEnabled(context, sonidoActivado) },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = colorAgua, checkedTrackColor = colorAgua.copy(0.4f))
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                TextButton(
+                                    onClick = { probarSonido() },
+                                    enabled = sonidoActivado
+                                ) {
+                                    Text("Probar sonido", color = if (sonidoActivado) colorAgua else Color.White.copy(alpha = 0.3f), fontSize = 12.sp)
+                                }
+                            }
+                        }
+
                         AnimatedVisibility(visible = recordatoriosActivados) {
                             Column {
                                 Spacer(Modifier.height(12.dp))
                                 // Frecuencia
                                 Text("Frecuencia:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 Spacer(Modifier.height(4.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                                     listOf(1 to "Cada hora", 2 to "Cada 2h", 3 to "Cada 3h", 4 to "Cada 4h").forEach { (h, label) ->
                                         FilterChip(
                                             selected = intervaloHoras == h,
@@ -484,56 +566,33 @@ fun HidratacionScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // ====== Historial del día ======
             Text(
-                "Tomas de hoy (${tomasDeHoy.size})",
+                "Historial",
                 color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (tomasDeHoy.isEmpty()) {
+            if (mesesConHistorial.isEmpty()) {
                 Text(
-                    "No has registrado ninguna toma hoy.\n¡Empieza a hidratarte!",
+                    "No hay registros todavía.\n¡Empieza a hidratarte!",
                     color = Color.White.copy(alpha = 0.5f), fontSize = 13.sp,
                     textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(16.dp)
                 )
             } else {
-                tomasDeHoy.forEach { toma ->
-                    val tomaColor = colorParaTipo(toma.tipoBebida)
-                    Card(
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2137).copy(alpha = 0.8f)),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier.size(36.dp).clip(CircleShape).background(tomaColor.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(iconoParaTipo(toma.tipoBebida), fontSize = 16.sp)
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text("${toma.cantidadMl} ml", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                                    Text(
-                                        "${toma.tipoBebida} · ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(toma.timestamp))}",
-                                        color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp
-                                    )
-                                }
-                            }
-                            IconButton(
-                                onClick = { tomaAEliminar = toma }
-                            ) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Eliminar", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
+                mesesConHistorial.forEach { mes ->
+                    HistorialMesHidratacion(
+                        patientId = patientId,
+                        mes = mes,
+                        expandido = mesesExpandidos[mes] == true,
+                        hidratacionDao = hidratacionDao,
+                        notasPrefs = notasPrefs,
+                        inicioDelDia = inicioDelDia,
+                        onToggle = { mesesExpandidos[mes] = !(mesesExpandidos[mes] == true) },
+                        onRequestDelete = { tomaAEliminar = it },
+                        colorParaTipo = ::colorParaTipo,
+                        iconoParaTipo = ::iconoParaTipo
+                    )
                 }
             }
 
@@ -637,7 +696,7 @@ fun HidratacionScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        tomaAEliminar?.let { scope.launch { hidratacionDao.eliminarToma(it.id) } }
+                        tomaAEliminar?.let { scope.launch { hidratacionDao.eliminarToma(it.id); notasPrefs.edit().remove("nota_${it.id}").apply() } }
                         tomaAEliminar = null
                     }
                 ) { Text("Eliminar", color = colorAgua) }
@@ -695,5 +754,176 @@ fun HidratacionScreen(
             icon = { Icon(Icons.Filled.Info, contentDescription = null, tint = colorAgua) },
             containerColor = Color(0xFF0D2137)
         )
+    }
+}
+
+@Composable
+private fun HistorialMesHidratacion(
+    patientId: Int,
+    mes: String,
+    expandido: Boolean,
+    hidratacionDao: HidratacionDao,
+    notasPrefs: android.content.SharedPreferences,
+    inicioDelDia: Long,
+    onToggle: () -> Unit,
+    onRequestDelete: (RegistroHidratacion) -> Unit,
+    colorParaTipo: (String) -> Color,
+    iconoParaTipo: (String) -> String
+) {
+    val limitesMes = remember(mes) { limitesMesHidratacion(mes) }
+    val tomasDelMes by hidratacionDao
+        .observarEnRango(patientId = patientId, desde = limitesMes.first, hasta = limitesMes.second)
+        .collectAsState(initial = emptyList())
+    val diasExpandidos = remember(mes) { mutableStateMapOf<Long, Boolean>() }
+    val tituloMes = remember(mes) {
+        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).apply { isLenient = false }
+            .format(SimpleDateFormat("yyyy-MM", Locale.US).parse(mes) ?: Date())
+            .replaceFirstChar { it.uppercase() }
+    }
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2137).copy(alpha = 0.78f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onToggle)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Folder, contentDescription = null, tint = Color(0xFF29B6F6))
+                Spacer(Modifier.width(10.dp))
+                Text(tituloMes, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Icon(
+                    if (expandido) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                    contentDescription = if (expandido) "Cerrar mes" else "Abrir mes",
+                    tint = Color.White.copy(alpha = 0.7f)
+                )
+            }
+            AnimatedVisibility(visible = expandido) {
+                Column(modifier = Modifier.padding(start = 10.dp, end = 10.dp, bottom = 10.dp)) {
+                    if (tomasDelMes.isEmpty()) {
+                        Text(
+                            "No hay tomas en este mes.",
+                            color = Color.White.copy(alpha = 0.55f),
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    } else {
+                        tomasDelMes.groupBy(::inicioDelDiaHidratacion)
+                            .toList()
+                            .sortedByDescending { it.first }
+                            .forEach { (dia, tomasDelDia) ->
+                                val diaExpandido = diasExpandidos[dia] == true
+                                val totalDia = tomasDelDia.sumOf { it.cantidadMl }
+                                Card(
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF102A45)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 6.dp)
+                                        .clickable { diasExpandidos[dia] = !diaExpandido }
+                                ) {
+                                    Column {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Filled.Folder, contentDescription = null, tint = Color(0xFF81D4FA), modifier = Modifier.size(20.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                "${tituloDiaHidratacion(dia, inicioDelDia)} · $totalDia ml",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 14.sp,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Icon(
+                                                if (diaExpandido) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                                                contentDescription = if (diaExpandido) "Cerrar fecha" else "Abrir fecha",
+                                                tint = Color.White.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        AnimatedVisibility(visible = diaExpandido) {
+                                            Column(modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+                                                tomasDelDia.forEach { toma ->
+                                                    val nota = notasPrefs.getString("nota_${toma.id}", "")?.takeIf { it.isNotBlank() }
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 7.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(34.dp)
+                                                                .clip(CircleShape)
+                                                                .background(colorParaTipo(toma.tipoBebida).copy(alpha = 0.2f)),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Text(iconoParaTipo(toma.tipoBebida), fontSize = 15.sp)
+                                                        }
+                                                        Spacer(Modifier.width(9.dp))
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                            Text("${toma.cantidadMl} ml", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                                            Text(
+                                                                "${toma.tipoBebida} · ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(toma.timestamp))}",
+                                                                color = Color.White.copy(alpha = 0.55f),
+                                                                fontSize = 12.sp
+                                                            )
+                                                            nota?.let {
+                                                                Text(it, color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                                                            }
+                                                        }
+                                                        IconButton(onClick = { onRequestDelete(toma) }) {
+                                                            Icon(Icons.Filled.Delete, contentDescription = "Eliminar", tint = Color.White.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun limitesMesHidratacion(mes: String): Pair<Long, Long> {
+    val calendario = Calendar.getInstance().apply {
+        time = SimpleDateFormat("yyyy-MM", Locale.US).parse(mes) ?: Date()
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val inicio = calendario.timeInMillis
+    calendario.add(Calendar.MONTH, 1)
+    return inicio to calendario.timeInMillis - 1
+}
+
+private fun inicioDelDiaHidratacion(toma: RegistroHidratacion): Long {
+    return Calendar.getInstance().apply {
+        timeInMillis = toma.timestamp
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+}
+
+private fun tituloDiaHidratacion(dia: Long, inicioDelDia: Long): String {
+    return when (dia) {
+        inicioDelDia -> "Hoy"
+        inicioDelDia - 86_400_000L -> "Ayer"
+        else -> SimpleDateFormat("EEEE d 'de' MMMM", Locale.getDefault()).format(Date(dia)).replaceFirstChar { it.uppercase() }
     }
 }

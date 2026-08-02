@@ -13,6 +13,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.health.connect.client.PermissionController
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -2357,7 +2358,21 @@ internal fun DashboardMedicationPage(
                                                 )
                                             )
                                         } else if (noTomada) {
-                                            return@clickable
+                                            coroutineScope.launch(Dispatchers.IO) {
+                                                database.medicationIntakeDao().guardar(
+                                                    registroToma!!.copy(
+                                                        acceptedAt = System.currentTimeMillis(),
+                                                        status = MEDICATION_INTAKE_STATUS_TAKEN
+                                                    )
+                                                )
+                                                val med = database.medicationDao().findById(medication.id)
+                                                if (med?.stockActual != null) {
+                                                    database.medicationDao().actualizarStock(
+                                                        med.id,
+                                                        med.stockActual - medication.unidadesPorToma()
+                                                    )
+                                                }
+                                            }
                                         } else if (yaVencida) {
                                             tomaVencidaConfirmacion = ConfirmacionTomaVencida(
                                                 medicationId = medication.id,
@@ -5688,6 +5703,8 @@ internal fun PanelSignosVitalesContent(
     comentarioPresionInput: String, onComentarioPresionChange: (String) -> Unit,
     latidosInput: String, onLatidosChange: (String) -> Unit,
     comentarioLatidosInput: String, onComentarioLatidosChange: (String) -> Unit,
+    spo2Input: String, onSpo2Change: (String) -> Unit,
+    comentariosSpo2Input: String, onComentariosSpo2Change: (String) -> Unit,
     glucemiaInput: String, onGlucemiaChange: (String) -> Unit,
     comentarioGlucemiaInput: String, onComentarioGlucemiaChange: (String) -> Unit,
     temperaturaInput: String, onTemperaturaChange: (String) -> Unit,
@@ -5714,6 +5731,8 @@ internal fun PanelSignosVitalesContent(
     onComentarioPresionClear: () -> Unit,
     onLatidosInputClear: () -> Unit,
     onComentarioLatidosClear: () -> Unit,
+    onSpo2InputClear: () -> Unit,
+    onComentariosSpo2Clear: () -> Unit,
     onGlucemiaInputClear: () -> Unit,
     onComentarioGlucemiaClear: () -> Unit,
     onTemperaturaInputClear: () -> Unit,
@@ -5723,16 +5742,64 @@ internal fun PanelSignosVitalesContent(
     onVolver: () -> Unit
 ) {
     val context = LocalContext.current
+    val healthConnectManager = remember(context) { HealthConnectManager(context) }
+
+    suspend fun sincronizarDatosDelReloj() {
+        val valores = healthConnectManager.readLatestToday()
+        val valoresEncontrados = listOfNotNull(valores.sistolica, valores.diastolica, valores.latidos, valores.spo2).size
+        if (valoresEncontrados == 0) {
+            Toast.makeText(context, "No se encontraron signos vitales de hoy en Health Connect", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (sistolicaInput.isBlank()) valores.sistolica?.let { onSistolicaChange(it.toString()) }
+        if (diastolicaInput.isBlank()) valores.diastolica?.let { onDiastolicaChange(it.toString()) }
+        if (latidosInput.isBlank()) valores.latidos?.let { onLatidosChange(it.toString()) }
+        if (spo2Input.isBlank()) valores.spo2?.let { onSpo2Change(it.toString()) }
+        Toast.makeText(context, "Datos del reloj sincronizados. Puedes editarlos antes de guardar.", Toast.LENGTH_SHORT).show()
+    }
+
+    val healthConnectPermissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract()
+    ) { grantedPermissions ->
+        if (grantedPermissions.containsAll(healthConnectManager.requiredPermissions)) {
+            coroutineScope.launch { sincronizarDatosDelReloj() }
+        } else {
+            Toast.makeText(context, "Necesitas autorizar los signos vitales en Health Connect", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun solicitarSincronizacionConReloj() {
+        if (!healthConnectManager.isAvailable()) {
+            Toast.makeText(context, "Health Connect no está disponible en este dispositivo", Toast.LENGTH_LONG).show()
+            return
+        }
+        coroutineScope.launch {
+            if (healthConnectManager.hasRequiredPermissions()) {
+                sincronizarDatosDelReloj()
+            } else {
+                healthConnectPermissionLauncher.launch(healthConnectManager.requiredPermissions)
+            }
+        }
+    }
+
     MetallicRedVitalSignsCard(modifier = Modifier.fillMaxWidth(), verticalSpacing = 10) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 48.dp, bottom = 48.dp),
+                .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(text = "Seguimiento diario", fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Text("Registra valores diarios, ritmo, niveles de azúcar y temperatura.")
+            TextButton(
+                onClick = ::solicitarSincronizacionConReloj,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 36.dp)
+            ) {
+                Text("Sincronizar con Reloj", maxLines = 1)
+            }
 
             OutlinedTextField(
                 value = sistolicaInput,
@@ -5756,6 +5823,15 @@ internal fun PanelSignosVitalesContent(
             OutlinedTextField(
                 value = comentarioLatidosInput, onValueChange = onComentarioLatidosChange,
                 label = { Text("Comentarios de latidos") }, modifier = Modifier.fillMaxWidth(), minLines = 2
+            )
+            OutlinedTextField(
+                value = spo2Input,
+                onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,3}$"))) onSpo2Change(it) },
+                label = { Text("SpO2 (%)") }, modifier = Modifier.fillMaxWidth(), singleLine = true
+            )
+            OutlinedTextField(
+                value = comentariosSpo2Input, onValueChange = onComentariosSpo2Change,
+                label = { Text("Comentarios de SpO2") }, modifier = Modifier.fillMaxWidth(), minLines = 2
             )
             OutlinedTextField(
                 value = glucemiaInput,
@@ -5821,11 +5897,12 @@ internal fun PanelSignosVitalesContent(
                     val sistolica = sistolicaInput.toIntOrNull()
                     val diastolica = diastolicaInput.toIntOrNull()
                     val latidos = latidosInput.toIntOrNull()
+                    val spo2 = spo2Input.toIntOrNull()
                     val glucemia = glucemiaInput.toIntOrNull()
                     val temperatura = temperaturaInput.replace(',', '.').toDoubleOrNull()
                     val peso = pesoInput.replace(',', '.').toDoubleOrNull()
                     val hayPresion = sistolica != null && diastolica != null
-                    val hayAlgoDato = hayPresion || latidos != null || glucemia != null || temperatura != null || peso != null
+                    val hayAlgoDato = hayPresion || latidos != null || spo2 != null || glucemia != null || temperatura != null || peso != null
                     if (!hayAlgoDato) {
                         Toast.makeText(context, "Rellena al menos un campo antes de guardar", Toast.LENGTH_SHORT).show()
                         return@VitalSignsMetallicButton
@@ -5846,6 +5923,7 @@ internal fun PanelSignosVitalesContent(
                                 sistolica = sistolica, diastolica = diastolica,
                                 comentarioPresion = comentarioPresionInput,
                                 latidos = latidos, comentarioLatidos = comentarioLatidosInput,
+                                spo2 = spo2, comentariosSpo2 = comentariosSpo2Input,
                                 glucemia = glucemia, comentarioGlucemia = comentarioGlucemiaInput,
                                 temperatura = temperatura, comentarioTemperatura = comentarioTemperaturaInput,
                                 peso = peso, pesoUnidad = pesoUnidadActual, imc = imcCalculado
@@ -5865,8 +5943,8 @@ internal fun PanelSignosVitalesContent(
                                 onPesoUnidadPacienteChange(if (pesoUnidadKg) "kg" else "lbs")
                             }
                             onSistolicaInputClear(); onDiastolicaInputClear(); onComentarioPresionClear()
-                            onLatidosInputClear(); onComentarioLatidosClear(); onGlucemiaInputClear()
-                            onComentarioGlucemiaClear(); onTemperaturaInputClear(); onComentarioTemperaturaClear()
+                            onLatidosInputClear(); onComentarioLatidosClear(); onSpo2InputClear()
+                            onComentariosSpo2Clear(); onGlucemiaInputClear(); onComentarioGlucemiaClear(); onTemperaturaInputClear(); onComentarioTemperaturaClear()
                             onPesoInputClear()
                             Toast.makeText(context, "Métricas guardadas", Toast.LENGTH_SHORT).show()
                         }

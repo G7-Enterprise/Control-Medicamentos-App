@@ -10,6 +10,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.carlos.controlmedicamentos.AlarmAlertActivity
 import com.carlos.controlmedicamentos.data.local.AppDatabase
@@ -20,9 +23,6 @@ import com.carlos.controlmedicamentos.ReminderAlertActivity
 import com.carlos.controlmedicamentos.data.local.Medication
 import com.carlos.controlmedicamentos.data.local.RestockSource
 import com.carlos.controlmedicamentos.formatMoney
-import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -476,8 +476,8 @@ object NotificacionHelper {
         items: List<StockOrderItem>,
         whatsappPhone: String,
         restockSource: String
-    ): Intent? {
-        if (items.isEmpty()) return null
+    ) {
+        if (items.isEmpty()) return
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
@@ -526,13 +526,10 @@ object NotificacionHelper {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(ReminderAlertActivity.EXTRA_TYPE, ReminderAlertActivity.TYPE_STOCK_BAJO)
             putExtra(ReminderAlertActivity.EXTRA_STOCK_MESSAGE, message)
-            putExtra(ReminderAlertActivity.EXTRA_STOCK_ITEMS_JSON, Gson().toJson(items))
-            putExtra(ReminderAlertActivity.EXTRA_STOCK_WHATSAPP_PHONE, whatsappPhone)
-            putExtra(ReminderAlertActivity.EXTRA_STOCK_RESTOCK_SOURCE, restockSource)
         }
         val fullScreenPendingIntent = PendingIntent.getActivity(
             context,
-            notificationId * 10 + 14,
+            notificationId * 10 + 12,
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -551,8 +548,7 @@ object NotificacionHelper {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-            .setContentIntent(contentPendingIntent)
-            .setFullScreenIntent(fullScreenPendingIntent, true)
+            .setContentIntent(fullScreenPendingIntent)
             .apply {
                 addAction(0, "Ver medicamentos", verMedicamentosPendingIntent)
                 whatsappPendingIntent?.let {
@@ -562,7 +558,13 @@ object NotificacionHelper {
             .build()
 
         manager.notify(notificationId, notification)
-        return fullScreenIntent
+        Handler(Looper.getMainLooper()).post {
+            try {
+                context.startActivity(fullScreenIntent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error alerta stock: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     fun abrirPedidoWhatsapp(
@@ -704,7 +706,7 @@ object NotificacionHelper {
         return "Hay ${items.size} medicamentos con stock bajo listos para pedir juntos."
     }
 
-    suspend fun verificarYNotificarStockBajo(context: Context, launchFullScreen: Boolean = false) {
+    suspend fun verificarYNotificarStockBajo(context: Context) {
         val db = AppDatabase.getDatabase(context)
         val allMedications = db.medicationDao().obtenerTodosLista()
         val carritoTodos = db.carritoPendienteDao().obtenerTodosLista()
@@ -712,6 +714,9 @@ object NotificacionHelper {
         val lowStockPairs = allMedications.mapNotNull { med ->
             toStockOrderItem(db, med)?.let { med to it }
         }.filter { (med, _) -> med.id !in carritoMedicationIds }
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Stock bajo detectado: ${lowStockPairs.size} medicamentos", Toast.LENGTH_LONG).show()
+        }
         if (lowStockPairs.isEmpty()) return
 
         val grouped = lowStockPairs.groupBy { (med, _) ->
@@ -721,26 +726,19 @@ object NotificacionHelper {
                 else -> med.origenReposicion
             }
         }
-        var launched = false
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "Grupos stock bajo: ${grouped.size}", Toast.LENGTH_LONG).show()
+        }
         grouped.forEach { (groupKey, pairs) ->
             val items = pairs.map { it.second }.sortedBy { it.medicationName.lowercase() }
             val firstMed = pairs.first().first
-            val fullScreenIntent = mostrarStockBajoAgrupado(
+            mostrarStockBajoAgrupado(
                 context = context,
                 notificationId = groupKey.hashCode(),
                 items = items,
                 whatsappPhone = firstMed.telefonoPedidoWhatsapp,
                 restockSource = firstMed.origenReposicion
             )
-            if (launchFullScreen && !launched && fullScreenIntent != null) {
-                launched = true
-                withContext(Dispatchers.Main) {
-                    try {
-                        context.startActivity(fullScreenIntent)
-                    } catch (_: Exception) {
-                    }
-                }
-            }
         }
     }
 
@@ -843,12 +841,12 @@ object NotificacionHelper {
     }
 
     private suspend fun toStockOrderItem(db: AppDatabase, medication: Medication): StockOrderItem? {
-        if (!medication.estaActivo || medication.origenReposicion == RestockSource.INSS) {
+        if (!medication.estaActivo) {
             return null
         }
         val stock = medication.stockActual ?: return null
         val unitsPerTake = medication.dosis.toIntOrNull()?.coerceAtLeast(1) ?: 1
-        val threshold = (medication.stockMinimo ?: (unitsPerTake * 2)).coerceAtLeast(unitsPerTake)
+        val threshold = medication.stockMinimo?.coerceAtLeast(unitsPerTake) ?: unitsPerTake
         if (stock > threshold) {
             return null
         }
@@ -997,6 +995,27 @@ object NotificacionHelper {
             )
         }
 
+        val hidratacionChannel = NotificationChannel(
+            HIDRATACION_CHANNEL_ID,
+            "Recordatorios de hidratación",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Alertas a pantalla completa y sonido del recordatorio de hidratación"
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 200, 100, 200)
+            setSound(
+                Uri.parse("android.resource://${context.packageName}/${R.raw.water_sound}"),
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 && manager.isNotificationPolicyAccessGranted) {
+                setBypassDnd(true)
+            }
+        }
+
         val fallDetectionChannel = NotificationChannel(
             FALL_DETECTION_CHANNEL_ID,
             "Detección de caídas",
@@ -1013,6 +1032,7 @@ object NotificacionHelper {
         manager.createNotificationChannel(vaccinationChannel)
         manager.createNotificationChannel(stockChannel)
         manager.createNotificationChannel(signosChannel)
+        manager.createNotificationChannel(hidratacionChannel)
         manager.createNotificationChannel(fallDetectionChannel)
     }
 
@@ -1085,14 +1105,16 @@ object NotificacionHelper {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
 
-        val contentIntent = Intent(context, MainActivity::class.java).apply {
+        val fullScreenIntent = Intent(context, ReminderAlertActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra(EXTRA_LAUNCH_CRITICAL_ALERT, true)
+            putExtra(ReminderAlertActivity.EXTRA_TYPE, ReminderAlertActivity.TYPE_TOMAS_PENDIENTES)
+            putExtra(ReminderAlertActivity.EXTRA_TITULO_ALERTA, titulo)
+            putExtra(ReminderAlertActivity.EXTRA_MENSAJE_ALERTA, mensaje)
         }
-        val contentPendingIntent = PendingIntent.getActivity(
+        val fullScreenPendingIntent = PendingIntent.getActivity(
             context,
             notificationId * 10 + 9,
-            contentIntent,
+            fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -1109,7 +1131,7 @@ object NotificacionHelper {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-            .setContentIntent(contentPendingIntent)
+            .setContentIntent(fullScreenPendingIntent)
             .build()
 
         manager.notify(notificationId, notification)
@@ -1123,27 +1145,34 @@ object NotificacionHelper {
     fun mostrarRecordatorioHidratacion(context: Context, patientId: Int, patientName: String) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
-        // Notificación base para compatibilidad
+        val soundEnabled = HidratacionScheduler.loadSoundEnabled(context)
+
         val openIntent = Intent(context, com.carlos.controlmedicamentos.MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
         val pi = PendingIntent.getActivity(context, 75_000 + patientId, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val n = NotificationCompat.Builder(context, SIGNOS_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Hora de hidratarte 💧 · $patientName")
-            .setContentText("Llevas un rato sin tomar agua. Recuerda tu meta diaria de hidratacion.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .setContentIntent(pi)
-            .build()
-        manager.notify(75_000 + patientId, n)
-        // Lanzar actividad a pantalla completa
+
         val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_HIDRATACION)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_ID, patientId)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_NAME, patientName)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_SOUND_ENABLED, soundEnabled)
         }
-        context.startActivity(fullScreenIntent)
+        val fullScreenPi = PendingIntent.getActivity(context, 75_100 + patientId, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(context, HIDRATACION_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Hora de hidratarte 💧 · $patientName")
+            .setContentText("Llevas un rato sin tomar agua. Recuerda tu meta diaria de hidratacion.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(fullScreenPi)
+            .setFullScreenIntent(fullScreenPi, true)
+        if (!soundEnabled) builder.setSilent(true)
+        manager.notify(75_000 + patientId, builder.build())
     }
 
     // ── Sedentarismo ─────────────────────────────────────────────────────────
@@ -1151,21 +1180,6 @@ object NotificacionHelper {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannels(context)
         val recomendacion = "Llevas $minutosInactivo minutos sin moverte. Camina al menos ${metaMinutos} minutos para reactivar la circulación."
-        // Notificación base para compatibilidad
-        val openIntent = Intent(context, com.carlos.controlmedicamentos.MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-        val pi = PendingIntent.getActivity(context, 76_000 + patientId, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val n = NotificationCompat.Builder(context, SIGNOS_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Llevas $minutosInactivo minutos sin moverte 🚶")
-            .setContentText(recomendacion)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .setContentIntent(pi)
-            .build()
-        manager.notify(76_000 + patientId, n)
-        // Lanzar actividad a pantalla completa
         val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_SEDENTARISMO)
@@ -1174,7 +1188,59 @@ object NotificacionHelper {
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_MINUTES_INACTIVE, minutosInactivo)
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_META_MINUTOS, metaMinutos)
         }
-        context.startActivity(fullScreenIntent)
+        val fullScreenPi = PendingIntent.getActivity(context, 76_100 + patientId, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val n = NotificationCompat.Builder(context, SIGNOS_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Llevas $minutosInactivo minutos sin moverte 🚶")
+            .setContentText(recomendacion)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(recomendacion))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(fullScreenPi)
+            .setFullScreenIntent(fullScreenPi, true)
+            .build()
+        manager.notify(76_000 + patientId, n)
+    }
+
+    // ── Sedentarismo: Horarios Especiales ────────────────────────────────────
+    fun mostrarAlertaEspecial(context: Context, patientId: Int, nivel: Int) {
+        val (titulo, mensaje, metaMinutos) = when (nivel) {
+            1 -> Triple(
+                "Alerta de salud",
+                "Alerta de salud: Llevas 3 horas de jornada. El sedentarismo prolongado es un peligro silencioso que causa infartos y accidentes cerebrovasculares (ictus). Levántate y camina al menos 15 minutos AHORA MISMO para proteger tu corazón y tu cerebro.",
+                15
+            )
+            else -> Triple(
+                "Alerta crítica",
+                "Alerta crítica: Has acumulado demasiado tiempo estático. El riesgo de trombosis, ictus o infarto es inminente si no reaccionas. Tu vida depende de esto: debes caminar al menos 30 minutos continuos sin excusas. Muévete ya.",
+                30
+            )
+        }
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        ensureChannels(context)
+        val fullScreenIntent = Intent(context, com.carlos.controlmedicamentos.ReminderAlertActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TYPE, com.carlos.controlmedicamentos.ReminderAlertActivity.TYPE_SEDENTARISMO)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_NAME, "Usuario")
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_PATIENT_ID, patientId)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_META_MINUTOS, metaMinutos)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_TITULO_ALERTA, titulo)
+            putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_MENSAJE_ALERTA, mensaje)
+        }
+        val fullScreenPi = PendingIntent.getActivity(context, 76_600 + patientId + nivel, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val n = NotificationCompat.Builder(context, CRITICAL_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(titulo)
+            .setContentText(mensaje)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(mensaje))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setContentIntent(fullScreenPi)
+            .setFullScreenIntent(fullScreenPi, true)
+            .build()
+        manager.notify(76_500 + patientId + nivel, n)
     }
 
     // ── Dentista ─────────────────────────────────────────────────────────────

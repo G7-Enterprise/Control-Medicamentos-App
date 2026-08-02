@@ -134,6 +134,8 @@ data class SyncVitalSigns(
     val comentarioPresion: String,
     val latidos: Int?,
     val comentarioLatidos: String,
+    val spo2: Int?,
+    val comentariosSpo2: String,
     val glucemia: Int?,
     val comentarioGlucemia: String,
     val temperatura: Double?,

@@ -50,6 +50,15 @@ interface SedentarismoDao {
     @Query("SELECT * FROM registros_sedentarismo WHERE patientId = :patientId ORDER BY timestamp DESC LIMIT 100")
     fun observarHistorial(patientId: Int): Flow<List<RegistroSedentarismo>>
 
+    @Query("SELECT DISTINCT strftime('%Y-%m', timestamp / 1000, 'unixepoch', 'localtime') FROM registros_sedentarismo WHERE patientId = :patientId ORDER BY 1 DESC")
+    fun observarMesesConHistorial(patientId: Int): Flow<List<String>>
+
+    @Query("SELECT * FROM registros_sedentarismo WHERE patientId = :patientId AND timestamp BETWEEN :desde AND :hasta ORDER BY timestamp DESC")
+    fun observarEnRango(patientId: Int, desde: Long, hasta: Long): Flow<List<RegistroSedentarismo>>
+
+    @Query("SELECT * FROM registros_sedentarismo WHERE patientId = :patientId AND timestamp BETWEEN :desde AND :hasta ORDER BY timestamp DESC")
+    suspend fun obtenerEnRango(patientId: Int, desde: Long, hasta: Long): List<RegistroSedentarismo>
+
     @Query("SELECT COUNT(*) FROM registros_sedentarismo WHERE patientId = :patientId AND tipoEvento = 'ALERTA_INACTIVIDAD' AND timestamp >= :desde")
     fun contarAlertasHoy(patientId: Int, desde: Long): Flow<Int>
 

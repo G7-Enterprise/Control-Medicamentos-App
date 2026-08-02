@@ -818,16 +818,16 @@ internal fun FichaPacientePanel(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    "Documentos",
+                    "Informes médicos",
                     fontSize = 28.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                 )
                 if (pacienteActivo == null) {
-                    Text("Selecciona un usuario para ver sus documentos.")
+                    Text("Selecciona un usuario para ver sus informes médicos.")
                 } else if (reportesSalud.isEmpty()) {
-                    Text("Este usuario aun no tiene documentos registrados.")
+                    Text("Este usuario aún no tiene informes médicos registrados.")
                 } else {
                     // Filtro por contacto
                     val profesionalesConInformes = profesionalesHabituales.filter { m ->

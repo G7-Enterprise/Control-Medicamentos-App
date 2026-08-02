@@ -93,6 +93,7 @@ class BootReceiver : BroadcastReceiver() {
                 val perfilActivo = perfiles.find { it.isActive } ?: perfiles.firstOrNull()
                 if (perfilActivo != null) {
                     SedentarismoScheduler(context).programar(perfilActivo.id)
+                    HorariosEspecialesScheduler(context).programar(perfilActivo.id)
                 }
 
                 // Reprogramar citas dentistas pendientes

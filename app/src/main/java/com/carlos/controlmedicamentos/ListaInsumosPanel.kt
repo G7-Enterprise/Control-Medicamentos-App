@@ -286,27 +286,6 @@ internal fun ListaInsumosPanel(
             }
 
             Button(
-                onClick = {
-                    NotificacionHelper.mostrarStockBajo(
-                        context = context,
-                        medicationId = 0,
-                        medicationName = "Medicamento de prueba",
-                        concentration = "500 mg",
-                        remainingUnits = 1,
-                        unitsPerTake = 1,
-                        lowStockThreshold = 2,
-                        unitPrice = 0.5,
-                        whatsappPhone = "",
-                        restockSource = RestockSource.WHATSAPP_CONTACT
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD54F), contentColor = Color.Black)
-            ) {
-                Text("Probar alerta de stock bajo", color = Color.Black)
-            }
-
-            Button(
                 onClick = { onCerrarPanelesSecundarios() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(contentColor = Color.Black)

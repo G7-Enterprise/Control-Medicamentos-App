@@ -4,6 +4,8 @@ package com.carlos.controlmedicamentos
 
 import com.carlos.controlmedicamentos.BuildConfig
 import com.carlos.controlmedicamentos.backup.BackupSelection
+import com.carlos.controlmedicamentos.license.LicenseGate
+import com.carlos.controlmedicamentos.license.LicenseViewModel
 import android.Manifest
 import android.app.Activity
 import android.app.AlarmManager
@@ -364,15 +366,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ControlMedicamentosTheme {
-                // ── Bloqueo por expiración del APK (configurable con APP_EXPIRATION_DAYS) ──
-                val trialExpired = remember { LicenseManager.isExpired(this@MainActivity) }
-                if (trialExpired) {
-                    TrialExpiredScreen()
-                    return@ControlMedicamentosTheme
-                }
+                val licenseViewModel: LicenseViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
-                // ── Contenido principal de la app ────────────────────────
-                var mostrarPortadaInicial by remember { mutableStateOf(true) }
+                LicenseGate(
+                    viewModel = licenseViewModel,
+                    lemonSqueezyUrl = LicenseManager.URL_LICENCIA
+                ) {
+                    // ── Contenido principal de la app ────────────────────────
+                    var mostrarPortadaInicial by remember { mutableStateOf(true) }
                 var birthdayPreviewRequest by remember { mutableStateOf<BirthdayCelebrationRequest?>(null) }
 
                 val context = LocalContext.current
@@ -412,6 +413,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -2049,7 +2051,7 @@ fun MedicamentoForm(
             } catch (_: Exception) {
             }
 
-            NotificacionHelper.verificarYNotificarStockBajo(context, launchFullScreen = true)
+            NotificacionHelper.verificarYNotificarStockBajo(context)
             NotificacionHelper.verificarYNotificarTomasOlvidadas(context)
         }
     }

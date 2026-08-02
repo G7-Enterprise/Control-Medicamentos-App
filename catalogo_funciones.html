@@ -289,7 +289,8 @@
     <div class="bloque">
       <p><strong>Para que sirve:</strong> Llevar la cuenta de cuanta agua o liquidos bebes durante el dia y asegurarte de llegar a tu meta diaria.</p>
       <p><strong>Como funciona:</strong> Cada vez que tomas un vaso, una botella o cualquier cantidad de liquido, lo registras con un toque. La app va sumando y te muestra una barra de progreso: &quot;Llevas 1.2 litros de 2 que necesitas&quot;.</p>
-      <p><strong>Recordatorios:</strong> Si llevas mucho tiempo sin registrar nada, la app te manda un toque para que no te olvides de hidratarte.</p>
+      <p><strong>Recordatorios:</strong> Si llevas mucho tiempo sin registrar nada, la app te manda un toque para que no te olvides de hidratarte. Puedes elegir el intervalo y el horario activo.</p>
+      <p><strong>Sonido:</strong> Cuenta con un interruptor para encender o apagar el tono del recordatorio y un boton de prueba. La prueba de sonido se limita a 5 segundos y el aviso real a 15 segundos.</p>
       <p><strong>Especialmente util para:</strong> Personas mayores que a veces no sienten sed, pacientes con indicacion medica de controlar liquidos (riñon, corazon), o cualquier persona que quiera crear el habito de tomar mas agua.</p>
     </div>
     <a class="volver" href="#inicio">&#8593; Volver al indice</a>
@@ -362,12 +363,13 @@
 
   <!-- 22. ASISTENTE -->
   <div class="seccion" id="asistente">
-    <h2><span><span class="num">22</span> Asistente IA (Guia dentro de la app)</span></h2>
+    <h2><span><span class="num">22</span> Asistente IA y Catalogo de Funciones</span></h2>
     <span class="etiqueta">Tu guia personal</span>
     <div class="bloque">
       <p><strong>Para que sirve:</strong> Un asistente de chat dentro de la app que te explica como funciona cada modulo, responde preguntas frecuentes y te guia si no sabes como hacer algo.</p>
       <p><strong>El directorio:</strong> Muestra todos los modulos de la app como tarjetas. Tocas cualquiera y te da una explicacion detallada de como usarlo.</p>
       <p><strong>El chat:</strong> Puedes escribir preguntas como &quot;como configuro una alarma?&quot; o &quot;para que sirve el modulo infantil?&quot; y el asistente te responde.</p>
+      <p><strong>Catalogo de funciones:</strong> El asistente tiene acceso a un catalogo completo (como este documento) que se actualiza cada vez que se agregan nuevas funciones, para que siempre de respuestas precisas.</p>
       <p><strong>Voz:</strong> Las respuestas se pueden escuchar en voz alta, util si tienes las manos ocupadas o tienes dificultad para leer en pantalla.</p>
       <p><strong>No necesita internet:</strong> El asistente funciona completamente sin conexion a internet. Todo esta guardado dentro de la app.</p>
     </div>
@@ -394,13 +396,17 @@
   <!-- 24. SEDENTARISMO -->
   <div class="seccion" id="sedentarismo">
     <h2><span><span class="num">24</span> Sedentarismo</span></h2>
-    <span class="etiqueta">Alertas de inactividad</span>
+    <span class="etiqueta">Alertas de inactividad y cuidado cardiovascular</span>
     <div class="bloque">
-      <p><strong>Para que sirve:</strong> Detectar cuando llevas mucho tiempo sin moverte y avisarte para que te levantes, camines o estires un rato. Ideal si pasas muchas horas sentado o trabajando frente al telefono.</p>
-      <p><strong>Como funciona:</strong> La app monitorea tu actividad basica del dispositivo. Si no detecta movimiento durante el tiempo que configures, te envia una alerta para que actives el cuerpo.</p>
-      <p><strong>Configuracion:</strong> Puedes elegir cuantos minutos de inactividad deben pasar antes de la alerta, el horario de monitoreo (por ejemplo, de 7:00 a 22:00) y los dias de la semana en los que quieres que este activo.</p>
-      <p><strong>Registro de eventos:</strong> Guarda un historial con movimientos, alertas de inactividad y notas. Asi puedes ver patrones y mejorar tus habitos.</p>
-      <p><strong>En la vida real:</strong> Llevas dos horas sentado viendo videos. La app te avisa: &quot;Llevas mucho tiempo inactivo, camina unos minutos&quot;. Te levantas, caminas y la app registra el movimiento.</p>
+      <p><strong>Para que sirve:</strong> Detectar periodos prolongados sin movimiento y enviarte alertas para que actives la circulacion. Especialmente util para quienes pasan muchas horas sentados, ya que el sedentarismo prolongado aumenta el riesgo de infarto, ictus y trombosis.</p>
+      <p><strong>Como funciona:</strong> Usa la API nativa de Activity Recognition de Android para reconocer cuando caminas, corres o estas quieto, sin consumir bateria. No depende de sensores manuales.</p>
+      <p><strong>Alertas progresivas:</strong> Si detecta inactividad continua durante el tiempo que configures, te pide caminar para reactivar la circulacion.</p>
+      <p><strong>Alertas especiales de jornada (3h, 6h, 9h...):</strong> Un cronometro independiente corre desde la hora de inicio que configures. A las 3 horas te pide 15 minutos de caminata; a las 6, 9 y cada 3 horas siguientes te exige 30 minutos. Estos mensajes son contundentes y no se guardan en el historial.</p>
+      <p><strong>Ejercicio especial:</strong> Si caminas o corres continuos los minutos que pide la alerta especial, se guarda en el historial como &quot;Ejercicio especial realizado: X minutos&quot;. Si no alcanzas la meta, no se registra.</p>
+      <p><strong>Movimientos cotidianos:</strong> Si caminas o corres mas de 5 minutos seguidos, guarda un movimiento en el historial.</p>
+      <p><strong>Configuracion:</strong> Elige horario de monitoreo, dias activos, permiso de reconocimiento de actividad y un interruptor de sonido con boton de prueba.</p>
+      <p><strong>Sonido:</strong> Puedes encender o apagar el tono de alerta y probarlo. La prueba dura 5 segundos y la alerta real se limita a 15 segundos.</p>
+      <p><strong>En la vida real:</strong> A las 3 horas de jornada la app muestra un aviso urgente sobre el riesgo cardiovascular; te levantas, caminas 15 min y la app guarda el ejercicio especial.</p>
     </div>
     <a class="volver" href="#inicio">&#8593; Volver al indice</a>
   </div>

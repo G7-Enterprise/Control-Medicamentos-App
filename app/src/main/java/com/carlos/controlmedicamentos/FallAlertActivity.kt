@@ -4,9 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
@@ -14,7 +11,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Looper
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -341,10 +337,12 @@ class FallAlertActivity : ComponentActivity() {
     }
 
     private fun saveAlert(status: String) {
-        val location = getLastKnownLocation()
         val db = AppDatabase.getDatabase(applicationContext)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                val location = FallEmergencyNotifier.resolveLocationForAlert(
+                    applicationContext, simulatedLatitude, simulatedLongitude
+                )
                 db.fallAlertDao().insert(
                     FallAlert(
                         patientId = patientId,
@@ -362,67 +360,14 @@ class FallAlertActivity : ComponentActivity() {
         }
     }
 
-    @Suppress("MissingPermission")
-    private fun getLastKnownLocation(): Location? {
-        if (simulatedLatitude != null && simulatedLongitude != null) {
-            return Location("simulated").apply {
-                latitude = simulatedLatitude!!
-                longitude = simulatedLongitude!!
-                accuracy = 10.0f
-                time = System.currentTimeMillis()
-            }
-        }
-        
-        return try {
-            val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-            
-            if (!isGpsEnabled && !isNetworkEnabled) {
-                android.util.Log.w("FallAlertActivity", "GPS y red desactivados")
-                return null
-            }
-            
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                android.util.Log.w("FallAlertActivity", "Sin permiso de ubicación")
-                return null
-            }
-            
-            val providers = locationManager.getProviders(true)
-            var bestLocation: Location? = null
-            for (provider in providers) {
-                val location = locationManager.getLastKnownLocation(provider) ?: continue
-                if (bestLocation == null || location.accuracy < bestLocation.accuracy) {
-                    bestLocation = location
-                }
-            }
-            
-            if (bestLocation == null && isGpsEnabled) {
-                android.util.Log.d("FallAlertActivity", "No hay última ubicación conocida, solicitando actualización...")
-                locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, object : LocationListener {
-                    override fun onLocationChanged(location: Location) {}
-                    override fun onProviderDisabled(provider: String) {}
-                    override fun onProviderEnabled(provider: String) {}
-                    @Suppress("DEPRECATION")
-                    override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
-                }, Looper.getMainLooper())
-            }
-            
-            bestLocation
-        } catch (e: Exception) {
-            android.util.Log.e("FallAlertActivity", "Error obteniendo ubicación", e)
-            null
-        }
-    }
-
-    private fun sendAlerts() {
+    private suspend fun sendAlerts() {
         try {
             android.util.Log.d("FallAlertActivity", "sendAlerts called")
             if (emergencyPhone.isBlank()) return
 
             val ctx = applicationContext
-            val location = getLastKnownLocation()
+            val location = FallEmergencyNotifier.resolveLocationForAlert(ctx, simulatedLatitude, simulatedLongitude)
+            android.util.Log.d("FallAlertActivity", "Ubicacion resuelta para alerta: ${location?.latitude}, ${location?.longitude}")
             val customMessage = FallEmergencyNotifier.loadCustomMessage(ctx)
             val message = FallEmergencyNotifier.buildEmergencyMessage(customMessage, location, impactMagnitude)
             val phones = emergencyPhone.split(",").map { it.trim() }.filter { it.isNotBlank() }

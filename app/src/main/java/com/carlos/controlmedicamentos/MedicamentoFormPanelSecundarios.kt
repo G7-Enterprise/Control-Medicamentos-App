@@ -97,6 +97,8 @@ internal fun MedicamentoFormPanelSecundarios(
     val comentarioPresionInput = s.comentarioPresionInputState.value
     val latidosInput = s.latidosInputState.value
     val comentarioLatidosInput = s.comentarioLatidosInputState.value
+    val spo2Input = s.spo2InputState.value
+    val comentariosSpo2Input = s.comentariosSpo2InputState.value
     val glucemiaInput = s.glucemiaInputState.value
     val comentarioGlucemiaInput = s.comentarioGlucemiaInputState.value
     val temperaturaInput = s.temperaturaInputState.value
@@ -231,6 +233,8 @@ internal fun MedicamentoFormPanelSecundarios(
     val onComentarioPresionChange: (String) -> Unit = { s.comentarioPresionInputState.value = it }
     val onLatidosChange: (String) -> Unit = { s.latidosInputState.value = it }
     val onComentarioLatidosChange: (String) -> Unit = { s.comentarioLatidosInputState.value = it }
+    val onSpo2Change: (String) -> Unit = { s.spo2InputState.value = it }
+    val onComentariosSpo2Change: (String) -> Unit = { s.comentariosSpo2InputState.value = it }
     val onGlucemiaChange: (String) -> Unit = { s.glucemiaInputState.value = it }
     val onComentarioGlucemiaChange: (String) -> Unit = { s.comentarioGlucemiaInputState.value = it }
     val onTemperaturaChange: (String) -> Unit = { s.temperaturaInputState.value = it }
@@ -561,6 +565,8 @@ internal fun MedicamentoFormPanelSecundarios(
                 comentarioPresionInput = comentarioPresionInput, onComentarioPresionChange = onComentarioPresionChange,
                 latidosInput = latidosInput, onLatidosChange = onLatidosChange,
                 comentarioLatidosInput = comentarioLatidosInput, onComentarioLatidosChange = onComentarioLatidosChange,
+                spo2Input = spo2Input, onSpo2Change = onSpo2Change,
+                comentariosSpo2Input = comentariosSpo2Input, onComentariosSpo2Change = onComentariosSpo2Change,
                 glucemiaInput = glucemiaInput, onGlucemiaChange = onGlucemiaChange,
                 comentarioGlucemiaInput = comentarioGlucemiaInput, onComentarioGlucemiaChange = onComentarioGlucemiaChange,
                 temperaturaInput = temperaturaInput, onTemperaturaChange = onTemperaturaChange,
@@ -587,6 +593,8 @@ internal fun MedicamentoFormPanelSecundarios(
                 onComentarioPresionClear = { onComentarioPresionChange("") },
                 onLatidosInputClear = { onLatidosChange("") },
                 onComentarioLatidosClear = { onComentarioLatidosChange("") },
+                onSpo2InputClear = { onSpo2Change("") },
+                onComentariosSpo2Clear = { onComentariosSpo2Change("") },
                 onGlucemiaInputClear = { onGlucemiaChange("") },
                 onComentarioGlucemiaClear = { onComentarioGlucemiaChange("") },
                 onTemperaturaInputClear = { onTemperaturaChange("") },

@@ -1,6 +1,14 @@
 package com.carlos.controlmedicamentos
 
+import android.Manifest
 import android.app.TimePickerDialog
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,13 +25,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.ConfigSedentarismo
 import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
+import com.carlos.controlmedicamentos.data.local.SedentarismoDao
 import com.carlos.controlmedicamentos.notifications.SedentarismoScheduler
+import com.carlos.controlmedicamentos.notifications.HorariosEspecialesScheduler
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,6 +55,56 @@ fun SedentarismoScreen(
     val configFlow by db.sedentarismoDao().observarConfig(patientId).collectAsState(initial = null)
     val config = configFlow ?: ConfigSedentarismo(patientId = patientId)
 
+    fun guardar(nuevo: ConfigSedentarismo) {
+        scope.launch {
+            db.sedentarismoDao().guardarConfig(nuevo)
+            if (nuevo.activado) {
+                SedentarismoScheduler(context).programar(patientId)
+                HorariosEspecialesScheduler(context).programar(patientId)
+            } else {
+                SedentarismoScheduler(context).cancelar(patientId)
+                HorariosEspecialesScheduler(context).cancelar(patientId)
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            guardar(config.copy(activado = true))
+        } else {
+            Toast.makeText(context, "Permiso de reconocimiento de actividad necesario", Toast.LENGTH_LONG).show()
+            guardar(config.copy(activado = false))
+        }
+    }
+
+    fun onToggleActivado(activado: Boolean) {
+        if (activado && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        } else {
+            guardar(config.copy(activado = activado))
+        }
+    }
+
+    fun probarSonido() {
+        try {
+            val mp = MediaPlayer.create(context, R.raw.heartbeat_sound)?.apply {
+                setOnCompletionListener { release() }
+                start()
+            }
+            if (mp != null) {
+                scope.launch {
+                    delay(5000)
+                    if (mp.isPlaying) mp.stop()
+                    mp.release()
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
     val inicioHoy = remember {
         Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
@@ -56,26 +118,25 @@ fun SedentarismoScreen(
         }.timeInMillis
     }
     val historial by db.sedentarismoDao().observarHistorial(patientId).collectAsState(initial = emptyList())
+    val mesesConHistorial by db.sedentarismoDao().observarMesesConHistorial(patientId).collectAsState(initial = emptyList())
+    val mesActual = remember { SimpleDateFormat("yyyy-MM", Locale.US).format(Date()) }
+    val mesesExpandidos = remember { mutableStateMapOf<String, Boolean>() }
     val alertasHoy by db.sedentarismoDao().contarAlertasHoy(patientId, inicioHoy).collectAsState(initial = 0)
+
+    LaunchedEffect(mesesConHistorial) {
+        mesesConHistorial.forEach { mes ->
+            if (mes !in mesesExpandidos) mesesExpandidos[mes] = mes == mesActual
+        }
+    }
 
     var registroDetalle by remember { mutableStateOf<RegistroSedentarismo?>(null) }
     var registroAEliminar by remember { mutableStateOf<RegistroSedentarismo?>(null) }
+    var sonidoActivado by remember { mutableStateOf(SedentarismoScheduler.loadSoundEnabled(context)) }
 
     val movimientosHoy = historial.filter { it.timestamp >= inicioHoy && it.tipoEvento == "MOVIMIENTO_REGISTRADO" }
     val sinMovimientoHoy = historial.filter { it.timestamp >= inicioHoy && it.tipoEvento == "SIN_MOVIMIENTO" }
     val movimientosMes = historial.filter { it.timestamp >= inicioMes && it.tipoEvento == "MOVIMIENTO_REGISTRADO" }
     val sinMovimientoMes = historial.filter { it.timestamp >= inicioMes && it.tipoEvento == "SIN_MOVIMIENTO" }
-
-    fun guardar(nuevo: ConfigSedentarismo) {
-        scope.launch {
-            db.sedentarismoDao().guardarConfig(nuevo)
-            if (nuevo.activado) {
-                SedentarismoScheduler(context).programar(patientId)
-            } else {
-                SedentarismoScheduler(context).cancelar(patientId)
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -167,9 +228,36 @@ fun SedentarismoScreen(
                             }
                             Switch(
                                 checked = config.activado,
-                                onCheckedChange = { guardar(config.copy(activado = it)) },
+                                onCheckedChange = { onToggleActivado(it) },
                                 colors = SwitchDefaults.colors(checkedThumbColor = colorVerde, checkedTrackColor = colorVerde.copy(0.4f))
                             )
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color.White.copy(0.1f))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Sonido de alerta", color = Color.White, fontSize = 15.sp)
+                                Text("Escuchar tono al activarse una alerta", color = Color.White.copy(0.5f), fontSize = 11.sp)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Switch(
+                                    checked = sonidoActivado,
+                                    onCheckedChange = { sonidoActivado = it; SedentarismoScheduler.saveSoundEnabled(context, it) },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = colorVerde, checkedTrackColor = colorVerde.copy(0.4f))
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                TextButton(
+                                    onClick = { probarSonido() },
+                                    enabled = sonidoActivado
+                                ) {
+                                    Text("Probar sonido", color = if (sonidoActivado) colorVerde else Color.White.copy(alpha = 0.3f), fontSize = 12.sp)
+                                }
+                            }
                         }
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color.White.copy(0.1f))
@@ -226,17 +314,23 @@ fun SedentarismoScreen(
                 }
             }
 
-            // ── Historial ──
-            if (historial.isNotEmpty()) {
+            if (mesesConHistorial.isNotEmpty()) {
                 item {
-                    Text("Historial reciente", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Historial", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
-                items(historial.take(30)) { reg ->
-                    RegistroSedentarismoCard(
-                        reg = reg,
-                        onClick = { registroDetalle = reg },
-                        onDelete = { registroAEliminar = reg }
-                    )
+                mesesConHistorial.forEach { mes ->
+                    item(key = "historial-mes-$mes") {
+                        HistorialMesSedentarismo(
+                            patientId = patientId,
+                            mes = mes,
+                            expandido = mesesExpandidos[mes] == true,
+                            sedentarismoDao = db.sedentarismoDao(),
+                            inicioHoy = inicioHoy,
+                            onToggle = { mesesExpandidos[mes] = !(mesesExpandidos[mes] == true) },
+                            onDetalle = { registroDetalle = it },
+                            onEliminar = { registroAEliminar = it }
+                        )
+                    }
                 }
             }
         }
@@ -327,10 +421,13 @@ private fun RegistroSedentarismoCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(icono, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(etiqueta, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     if (reg.minutosInactivo > 0 && reg.tipoEvento != "MOVIMIENTO_REGISTRADO")
                         Text("${reg.minutosInactivo} min sin moverte", color = color.copy(0.8f), fontSize = 11.sp)
@@ -343,7 +440,9 @@ private fun RegistroSedentarismoCard(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(reg.timestamp)),
-                    color = Color.White.copy(0.5f), fontSize = 11.sp
+                    color = Color.White.copy(0.5f),
+                    fontSize = 11.sp,
+                    maxLines = 1
                 )
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Filled.Delete, contentDescription = "Eliminar", tint = Color.White.copy(0.5f), modifier = Modifier.size(20.dp))
@@ -369,5 +468,139 @@ private fun ResumenFila(periodo: String, movimientos: Int, minMovimiento: Int, s
             Text("$sinMovimiento", color = Color(0xFFFFA726), fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Text("sin movimiento", color = Color.White.copy(0.6f), fontSize = 10.sp)
         }
+    }
+}
+
+@Composable
+private fun HistorialMesSedentarismo(
+    patientId: Int,
+    mes: String,
+    expandido: Boolean,
+    sedentarismoDao: SedentarismoDao,
+    inicioHoy: Long,
+    onToggle: () -> Unit,
+    onDetalle: (RegistroSedentarismo) -> Unit,
+    onEliminar: (RegistroSedentarismo) -> Unit
+) {
+    val limitesMes = remember(mes) { limitesMesSedentarismo(mes) }
+    val registrosDelMes by sedentarismoDao
+        .observarEnRango(patientId, limitesMes.first, limitesMes.second)
+        .collectAsState(initial = emptyList())
+    val diasExpandidos = remember(mes) { mutableStateMapOf<Long, Boolean>() }
+    val tituloMes = remember(mes) {
+        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).apply { isLenient = false }
+            .format(SimpleDateFormat("yyyy-MM", Locale.US).parse(mes) ?: Date())
+            .replaceFirstChar { it.uppercase() }
+    }
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F2A12)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Folder, contentDescription = null, tint = Color(0xFF66BB6A))
+                Spacer(Modifier.width(10.dp))
+                Text(tituloMes, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Icon(
+                    if (expandido) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                    contentDescription = if (expandido) "Cerrar mes" else "Abrir mes",
+                    tint = Color.White.copy(alpha = 0.7f)
+                )
+            }
+            AnimatedVisibility(visible = expandido) {
+                Column(modifier = Modifier.padding(start = 10.dp, end = 10.dp, bottom = 10.dp)) {
+                    registrosDelMes.groupBy(::inicioDiaSedentarismo)
+                        .toList()
+                        .sortedByDescending { it.first }
+                        .forEach { (dia, registrosDelDia) ->
+                            val diaExpandido = diasExpandidos[dia] == true
+                            Card(
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF16351A)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp)
+                                    .clickable { diasExpandidos[dia] = !diaExpandido }
+                            ) {
+                                Column {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Filled.Folder, contentDescription = null, tint = Color(0xFFA5D6A7), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "${tituloDiaSedentarismo(dia, inicioHoy)} · ${registrosDelDia.size} registros",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Icon(
+                                            if (diaExpandido) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                                            contentDescription = if (diaExpandido) "Cerrar fecha" else "Abrir fecha",
+                                            tint = Color.White.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    AnimatedVisibility(visible = diaExpandido) {
+                                        Column(
+                                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            registrosDelDia.forEach { registro ->
+                                                RegistroSedentarismoCard(
+                                                    reg = registro,
+                                                    onClick = { onDetalle(registro) },
+                                                    onDelete = { onEliminar(registro) }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+        }
+    }
+}
+
+private fun limitesMesSedentarismo(mes: String): Pair<Long, Long> {
+    val calendario = Calendar.getInstance().apply {
+        time = SimpleDateFormat("yyyy-MM", Locale.US).parse(mes) ?: Date()
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val inicio = calendario.timeInMillis
+    calendario.add(Calendar.MONTH, 1)
+    return inicio to calendario.timeInMillis - 1
+}
+
+private fun inicioDiaSedentarismo(registro: RegistroSedentarismo): Long {
+    return Calendar.getInstance().apply {
+        timeInMillis = registro.timestamp
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+}
+
+private fun tituloDiaSedentarismo(dia: Long, inicioHoy: Long): String {
+    return when (dia) {
+        inicioHoy -> "Hoy"
+        inicioHoy - 86_400_000L -> "Ayer"
+        else -> SimpleDateFormat("EEEE d 'de' MMMM", Locale.getDefault()).format(Date(dia)).replaceFirstChar { it.uppercase() }
     }
 }

@@ -31,6 +31,7 @@ import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.MetodoAnticonceptivo
 import com.carlos.controlmedicamentos.data.local.TipoAnticonceptivo
 import com.carlos.controlmedicamentos.data.local.AnticonceptivoIntake
+import com.carlos.controlmedicamentos.notifications.AnticonceptivoScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -325,10 +326,16 @@ fun AnticonceptivosScreen(
             onDismiss = { mostrarDialogoNuevo = false },
             onGuardar = { metodo ->
                 coroutineScope.launch(Dispatchers.IO) {
-                    // Desactivar métodos anteriores
+                    // Desactivar métodos anteriores y cancelar sus alarmas programadas
                     val activos = database.metodoAnticonceptivoDao().obtenerActivos(pacienteId)
-                    activos.forEach { database.metodoAnticonceptivoDao().desactivar(it.id) }
-                    database.metodoAnticonceptivoDao().insertar(metodo.copy(patientId = pacienteId))
+                    val schedulerAnterior = AnticonceptivoScheduler(context)
+                    activos.forEach {
+                        database.metodoAnticonceptivoDao().desactivar(it.id)
+                        schedulerAnterior.cancelar(it.id)
+                    }
+                    val nuevoId = database.metodoAnticonceptivoDao().insertar(metodo.copy(patientId = pacienteId))
+                    val nuevoMetodo = database.metodoAnticonceptivoDao().obtenerPorId(nuevoId.toInt())
+                    nuevoMetodo?.let { AnticonceptivoScheduler(context).programarAlarma(it) }
                     withContext(Dispatchers.Main) {
                         mostrarDialogoNuevo = false
                         Toast.makeText(context, "Método registrado", Toast.LENGTH_SHORT).show()
@@ -350,6 +357,7 @@ fun AnticonceptivosScreen(
                     mostrarConfirmarDesactivar = false
                     coroutineScope.launch(Dispatchers.IO) {
                         database.metodoAnticonceptivoDao().desactivar(id)
+                        AnticonceptivoScheduler(context).cancelar(id)
                         withContext(Dispatchers.Main) { Toast.makeText(context, "Método desactivado", Toast.LENGTH_SHORT).show() }
                     }
                 }) { Text("Desactivar", color = AcRed, fontWeight = FontWeight.Bold) }

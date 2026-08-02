@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.carlos.controlmedicamentos.data.local.ControlEmbarazo
 import com.carlos.controlmedicamentos.data.local.NinoEntity
 import com.carlos.controlmedicamentos.data.local.PatientProfile
+import com.carlos.controlmedicamentos.license.LicenseInfoDialog
 import com.carlos.controlmedicamentos.notifications.CriticalAlertSettings
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -71,6 +72,7 @@ internal fun MenuHamburguesaEscritorio(
     var alarmaSonidoNombre by alarmaSonidoNombreState
     var intervaloReintentoSeleccionado by intervaloReintentoSeleccionadoState
     var numeroIntentosCriticosSeleccionado by numeroIntentosCriticosSeleccionadoState
+    var mostrarLicencia by remember { mutableStateOf(false) }
 
     val menuShape = RoundedCornerShape(24.dp)
     val menuItemColors = MenuDefaults.itemColors(
@@ -324,5 +326,20 @@ internal fun MenuHamburguesaEscritorio(
             colors = menuItemColors,
             onClick = { mostrarMenuHamburguesa = false; onCerrarPanelesSecundarios(); onMostrarPanelDiario(true) }
         )
+        DropdownMenuItem(
+            text = { Text("Compartir con un amigo") },
+            leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+            colors = menuItemColors,
+            onClick = { mostrarMenuHamburguesa = false; compartirAppPorWhatsApp(context) }
+        )
+        DropdownMenuItem(
+            text = { Text("Mi Licencia") },
+            leadingIcon = { Icon(Icons.Filled.VerifiedUser, contentDescription = null) },
+            colors = menuItemColors,
+            onClick = { mostrarMenuHamburguesa = false; mostrarLicencia = true }
+        )
+    }
+    if (mostrarLicencia) {
+        LicenseInfoDialog(onDismiss = { mostrarLicencia = false })
     }
 }

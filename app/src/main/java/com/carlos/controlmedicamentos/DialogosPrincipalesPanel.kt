@@ -18,6 +18,7 @@ import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.PatientProfile
 import com.carlos.controlmedicamentos.backup.AutoBackupScheduler
 import com.carlos.controlmedicamentos.backup.BackupSelection
+import com.carlos.controlmedicamentos.notifications.AnticonceptivoScheduler
 import com.carlos.controlmedicamentos.notifications.MedicalAppointmentScheduler
 import com.carlos.controlmedicamentos.notifications.MedicationScheduler
 import com.carlos.controlmedicamentos.notifications.VaccinationScheduler
@@ -121,7 +122,11 @@ internal fun DialogosPrincipalesPanel(
                             database.controlEmbarazoDao().eliminarPorPaciente(perfilAEliminar.id)
                             database.carritoPendienteDao().limpiarPorPaciente(perfilAEliminar.id)
                             val metodos = database.metodoAnticonceptivoDao().obtenerActivos(perfilAEliminar.id)
-                            metodos.forEach { database.anticonceptivoIntakeDao().eliminarPorMetodoId(it.id) }
+                            val anticonceptivoScheduler = AnticonceptivoScheduler(context)
+                            metodos.forEach {
+                                database.anticonceptivoIntakeDao().eliminarPorMetodoId(it.id)
+                                anticonceptivoScheduler.cancelar(it.id)
+                            }
                             database.metodoAnticonceptivoDao().eliminarPorPaciente(perfilAEliminar.id)
                             database.bebeRecienNacidoDao().eliminarPorPaciente(perfilAEliminar.id)
                             database.ninoDao().eliminarPorPaciente(perfilAEliminar.id)

@@ -33,6 +33,9 @@
     <uses-permission android:name="android.permission.health.READ_DISTANCE" />
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
+    <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
@@ -49,6 +52,7 @@
         android:theme="@style/Theme.ControlMedicamentos">
 
         <receiver android:name=".notifications.AlarmReceiver" android:enabled="true" android:exported="false" />
+        <receiver android:name=".notifications.ActivityRecognitionReceiver" android:enabled="true" android:exported="false" />
         <service
             android:name=".ActivityTrackingService"
             android:enabled="true"

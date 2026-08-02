@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 interface HidratacionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun registrarToma(registro: RegistroHidratacion)
+    suspend fun registrarToma(registro: RegistroHidratacion): Long
 
     @Query("DELETE FROM registro_hidratacion WHERE id = :id")
     suspend fun eliminarToma(id: Int)
@@ -21,8 +21,14 @@ interface HidratacionDao {
     @Query("SELECT * FROM registro_hidratacion WHERE patientId = :patientId AND timestamp >= :inicioDelDia ORDER BY timestamp DESC")
     fun obtenerTomasDeHoy(patientId: Int, inicioDelDia: Long): Flow<List<RegistroHidratacion>>
 
-    @Query("SELECT * FROM registro_hidratacion WHERE patientId = :patientId ORDER BY timestamp DESC LIMIT 50")
-    fun obtenerHistorial(patientId: Int): Flow<List<RegistroHidratacion>>
+    @Query("SELECT DISTINCT strftime('%Y-%m', timestamp / 1000, 'unixepoch', 'localtime') FROM registro_hidratacion WHERE patientId = :patientId ORDER BY 1 DESC")
+    fun observarMesesConHistorial(patientId: Int): Flow<List<String>>
+
+    @Query("SELECT * FROM registro_hidratacion WHERE patientId = :patientId AND timestamp BETWEEN :desde AND :hasta ORDER BY timestamp DESC")
+    fun observarEnRango(patientId: Int, desde: Long, hasta: Long): Flow<List<RegistroHidratacion>>
+
+    @Query("SELECT * FROM registro_hidratacion WHERE patientId = :patientId AND timestamp BETWEEN :desde AND :hasta ORDER BY timestamp DESC")
+    suspend fun obtenerEnRango(patientId: Int, desde: Long, hasta: Long): List<RegistroHidratacion>
 
     @Query("DELETE FROM registro_hidratacion WHERE patientId = :patientId")
     suspend fun eliminarTodos(patientId: Int)

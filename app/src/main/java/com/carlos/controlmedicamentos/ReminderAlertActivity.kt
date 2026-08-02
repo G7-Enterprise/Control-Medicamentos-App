@@ -9,12 +9,16 @@ import com.carlos.controlmedicamentos.EXTRA_ORIGEN
 import com.carlos.controlmedicamentos.EXTRA_PACIENTE_ID
 import com.carlos.controlmedicamentos.ORIGEN_SEDENTARISMO
 import com.carlos.controlmedicamentos.data.local.RestockSource
+import com.carlos.controlmedicamentos.notifications.ActivityRecognitionReceiver
 import com.carlos.controlmedicamentos.notifications.NotificacionHelper
+import com.carlos.controlmedicamentos.notifications.SedentarismoScheduler
 import com.carlos.controlmedicamentos.notifications.NotificacionHelper.StockOrderItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -29,12 +33,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -42,18 +48,31 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
+import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.RegistroHidratacion
+import com.carlos.controlmedicamentos.notifications.HidratacionScheduler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ReminderAlertActivity : ComponentActivity() {
 
@@ -67,13 +86,19 @@ class ReminderAlertActivity : ComponentActivity() {
         const val EXTRA_STOCK_ITEMS_JSON = "EXTRA_STOCK_ITEMS_JSON"
         const val EXTRA_STOCK_WHATSAPP_PHONE = "EXTRA_STOCK_WHATSAPP_PHONE"
         const val EXTRA_STOCK_RESTOCK_SOURCE = "EXTRA_STOCK_RESTOCK_SOURCE"
+        const val EXTRA_SOUND_ENABLED = "EXTRA_SOUND_ENABLED"
+        const val EXTRA_TITULO_ALERTA = "EXTRA_TITULO_ALERTA"
+        const val EXTRA_MENSAJE_ALERTA = "EXTRA_MENSAJE_ALERTA"
         const val TYPE_HIDRATACION = "HIDRATACION"
         const val TYPE_SEDENTARISMO = "SEDENTARISMO"
         const val TYPE_STOCK_BAJO = "STOCK_BAJO"
+        const val TYPE_TOMAS_PENDIENTES = "TOMAS_PENDIENTES"
     }
 
     private var wakeLock: PowerManager.WakeLock? = null
     private var mediaPlayer: MediaPlayer? = null
+    private val soundHandler = Handler(Looper.getMainLooper())
+    private val stopSoundRunnable = Runnable { releaseMediaPlayer() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +110,13 @@ class ReminderAlertActivity : ComponentActivity() {
         val patientId = intent.getIntExtra(EXTRA_PATIENT_ID, 0)
         val minutesInactive = intent.getIntExtra(EXTRA_MINUTES_INACTIVE, 0)
         val metaMinutos = intent.getIntExtra(EXTRA_META_MINUTOS, 5)
+        val soundEnabled = when (type) {
+            TYPE_HIDRATACION -> intent.getBooleanExtra(EXTRA_SOUND_ENABLED, true)
+            TYPE_SEDENTARISMO -> SedentarismoScheduler.loadSoundEnabled(this)
+            else -> true
+        }
+        val tituloAlerta = intent.getStringExtra(EXTRA_TITULO_ALERTA).orEmpty()
+        val mensajeAlerta = intent.getStringExtra(EXTRA_MENSAJE_ALERTA).orEmpty()
         val stockMessage = intent.getStringExtra(EXTRA_STOCK_MESSAGE).orEmpty()
         val stockItemsJson = intent.getStringExtra(EXTRA_STOCK_ITEMS_JSON)
         val stockWhatsappPhone = intent.getStringExtra(EXTRA_STOCK_WHATSAPP_PHONE).orEmpty()
@@ -103,6 +135,9 @@ class ReminderAlertActivity : ComponentActivity() {
                 when (type) {
                     TYPE_HIDRATACION -> HidratacionAlertScreen(
                         patientName = patientName,
+                        onRegisterIntake = { cantidadMl, tipoBebida ->
+                            registrarTomaHidratacion(patientId, patientName, cantidadMl, tipoBebida)
+                        },
                         onAccept = { finish() }
                     )
                     TYPE_SEDENTARISMO -> SedentarismoAlertScreen(
@@ -110,20 +145,27 @@ class ReminderAlertActivity : ComponentActivity() {
                         patientId = patientId,
                         minutesInactive = minutesInactive,
                         metaMinutos = metaMinutos,
+                        titulo = tituloAlerta,
+                        mensaje = mensajeAlerta,
                         onStartActivity = {
                             releaseMediaPlayer()
-                            ContextCompat.startForegroundService(
-                                this@ReminderAlertActivity,
-                                Intent(this@ReminderAlertActivity, ActivityTrackingService::class.java).apply {
-                                    putExtra(EXTRA_PACIENTE_ID, patientId)
-                                    putExtra(EXTRA_ORIGEN, ORIGEN_SEDENTARISMO)
-                                    putExtra(EXTRA_META_MINUTOS, metaMinutos)
-                                    putExtra("tipo", "caminar")
-                                }
-                            )
+                            ActivityRecognitionReceiver.iniciarMonitoreoDespuesAlerta(this@ReminderAlertActivity, patientId, metaMinutos)
                             finish()
                         },
                         onAccept = { finish() }
+                    )
+                    TYPE_TOMAS_PENDIENTES -> InfoAlertScreen(
+                        title = tituloAlerta.ifBlank { "Tomas pendientes" },
+                        message = mensajeAlerta,
+                        onAccept = {
+                            startActivity(
+                                Intent(this@ReminderAlertActivity, MainActivity::class.java).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                    putExtra(NotificacionHelper.EXTRA_LAUNCH_CRITICAL_ALERT, true)
+                                }
+                            )
+                            finish()
+                        }
                     )
                     TYPE_STOCK_BAJO -> StockBajoAlertScreen(
                         message = stockMessage,
@@ -153,9 +195,30 @@ class ReminderAlertActivity : ComponentActivity() {
         }
 
         when (type) {
-            TYPE_HIDRATACION -> playAlertSound(R.raw.water_sound)
-            TYPE_SEDENTARISMO -> playAlertSound(R.raw.heartbeat_sound)
+            TYPE_HIDRATACION -> if (soundEnabled) playAlertSound(R.raw.water_sound)
+            TYPE_SEDENTARISMO -> if (soundEnabled) playAlertSound(R.raw.heartbeat_sound)
             else -> { /* silence */ }
+        }
+    }
+
+    private fun registrarTomaHidratacion(
+        patientId: Int,
+        patientName: String,
+        cantidadMl: Int,
+        tipoBebida: String
+    ) {
+        if (patientId <= 0 || cantidadMl <= 0) return
+        releaseMediaPlayer()
+        lifecycleScope.launch(Dispatchers.IO) {
+            AppDatabase.getDatabase(this@ReminderAlertActivity).hidratacionDao().registrarToma(
+                RegistroHidratacion(
+                    patientId = patientId,
+                    cantidadMl = cantidadMl,
+                    tipoBebida = tipoBebida
+                )
+            )
+            HidratacionScheduler(this@ReminderAlertActivity).programar(patientId, patientName)
+            runOnUiThread { finish() }
         }
     }
 
@@ -203,17 +266,19 @@ class ReminderAlertActivity : ComponentActivity() {
 
     private fun playAlertSound(rawResId: Int) {
         try {
-            mediaPlayer?.release()
+            releaseMediaPlayer()
             mediaPlayer = MediaPlayer.create(this, rawResId)?.apply {
                 isLooping = true
                 start()
             }
+            soundHandler.postDelayed(stopSoundRunnable, 15_000)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
     private fun releaseMediaPlayer() {
+        soundHandler.removeCallbacks(stopSoundRunnable)
         try {
             mediaPlayer?.stop()
             mediaPlayer?.release()
@@ -227,8 +292,11 @@ class ReminderAlertActivity : ComponentActivity() {
 @Composable
 private fun HidratacionAlertScreen(
     patientName: String,
+    onRegisterIntake: (Int, String) -> Unit,
     onAccept: () -> Unit
 ) {
+    var tipoBebida by remember { mutableStateOf("Agua") }
+    var cantidadPersonalizada by remember { mutableStateOf("") }
     val transition = rememberInfiniteTransition(label = "water_pulse")
     val iconScale by transition.animateFloat(
         initialValue = 1f,
@@ -296,17 +364,133 @@ private fun HidratacionAlertScreen(
                 )
             }
 
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Registrar toma rápida",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Agua", "Electrolitos", "Té / Infusiones").forEach { tipo ->
+                        Button(
+                            onClick = { tipoBebida = tipo },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (tipoBebida == tipo) Color(0xFF00B0FF) else Color.White.copy(alpha = 0.18f)
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(tipo, fontSize = 11.sp)
+                        }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(150, 250, 500, 1000).forEach { cantidad ->
+                        Button(
+                            onClick = { onRegisterIntake(cantidad, tipoBebida) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("${cantidad} ml", fontSize = 12.sp)
+                        }
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = cantidadPersonalizada,
+                        onValueChange = { cantidadPersonalizada = it.filter(Char::isDigit) },
+                        label = { Text("ml personalizado") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF00E5FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.6f),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.75f)
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = { cantidadPersonalizada.toIntOrNull()?.takeIf { it > 0 }?.let { onRegisterIntake(it, tipoBebida) } },
+                        enabled = cantidadPersonalizada.toIntOrNull()?.let { it > 0 } == true,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
+                    ) {
+                        Text("Añadir")
+                    }
+                }
+                Button(
+                    onClick = onAccept,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(
+                        text = "ACEPTAR SIN REGISTRAR",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF0D47A1)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoAlertScreen(
+    title: String,
+    message: String,
+    onAccept: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF1A237E), Color(0xFF1976D2), Color(0xFF1A237E))))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 28.dp, vertical = 50.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("💊", fontSize = 82.sp)
+                Spacer(Modifier.height(18.dp))
+                Text(
+                    text = title.uppercase(),
+                    color = Color.White,
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Text(
+                text = message,
+                color = Color.White,
+                fontSize = 19.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 28.sp
+            )
             Button(
                 onClick = onAccept,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
+                    .height(76.dp)
             ) {
                 Text(
                     text = "ACEPTAR",
-                    fontSize = 26.sp,
+                    fontSize = 23.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF0D47A1)
                 )
@@ -428,6 +612,8 @@ private fun SedentarismoAlertScreen(
     patientId: Int,
     minutesInactive: Int,
     metaMinutos: Int,
+    titulo: String = "",
+    mensaje: String = "",
     onStartActivity: () -> Unit,
     onAccept: () -> Unit
 ) {
@@ -450,6 +636,10 @@ private fun SedentarismoAlertScreen(
         ),
         label = "btnScale"
     )
+    val esPersonalizado = mensaje.isNotBlank()
+    val tituloMostrado = titulo.takeIf { it.isNotBlank() } ?: "ALERTA DE INACTIVIDAD"
+    val mensajeMostrado = mensaje.takeIf { it.isNotBlank() }
+        ?: "Llevas $minutesInactive minutos sin moverte.\nDebes caminar al menos $metaMinutos minutos para reactivar la circulación."
 
     Box(
         modifier = Modifier
@@ -476,7 +666,7 @@ private fun SedentarismoAlertScreen(
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "ALERTA DE INACTIVIDAD",
+                    text = tituloMostrado,
                     color = Color.White,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -493,17 +683,18 @@ private fun SedentarismoAlertScreen(
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val mensaje = "Llevas $minutesInactive minutos sin moverte.\nDebes caminar al menos $metaMinutos minutos para reactivar la circulación."
+                if (!esPersonalizado) {
+                    Text(
+                        text = "$minutesInactive minutos sin moverte",
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
                 Text(
-                    text = "$minutesInactive minutos sin moverte",
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = mensaje,
+                    text = mensajeMostrado,
                     color = Color.White.copy(alpha = 0.95f),
                     fontSize = 18.sp,
                     textAlign = TextAlign.Center,
@@ -531,7 +722,7 @@ private fun SedentarismoAlertScreen(
                         .scale(btnScale)
                 ) {
                     Text(
-                        text = "INICIAR ACTIVIDAD",
+                        text = "ENTERADO",
                         fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF0D47A1)

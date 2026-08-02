@@ -1,56 +1,38 @@
 package com.carlos.controlmedicamentos
 
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
+import android.provider.Settings
 
 /**
- * Gestiona la caducidad de la aplicación a partir de la fecha de instalación.
- * La duración se configura en build.gradle.kts mediante la propiedad
- * APP_EXPIRATION_DAYS (por defecto 3650 días, es decir, ~10 años).
+ * Constantes y utilidades relacionadas con la licencia de la aplicación.
  *
- * Para generar un APK de prueba de 6 meses:
- *   ./gradlew assembleRelease -PAPP_EXPIRATION_DAYS=180
- *
- * Para generar el APK de pago con 1 año de uso:
- *   ./gradlew assembleRelease -PAPP_EXPIRATION_DAYS=365
- *
- * Al instalar la actualización de pago sobre la versión de prueba, la base de datos
- * y todos los datos se conservan porque comparten el mismo applicationId.
+ * La validación principal ahora se realiza mediante [com.carlos.controlmedicamentos.license.LicenseRepository]
+ * y Firestore. Este objeto conserva únicamente la URL de pago y helpers comunes.
  */
 object LicenseManager {
 
-    private const val MS_PER_DAY = 24L * 60L * 60L * 1000L
+    /** Enlace real de pago del producto en Lemon Squeezy. */
+    const val URL_LICENCIA = "https://g7-enterprise.lemonsqueezy.com/checkout/buy/cc8aeac9-a916-40e1-bcad-bdaeed690925"
 
-    /** Fecha de instalación del APK (timestamp en ms). */
-    private fun installDateMillis(context: Context): Long {
+    /**
+     * Identificador único del dispositivo basado en [Settings.Secure.ANDROID_ID].
+     * No requiere permisos de telefonía.
+     */
+    fun deviceId(context: Context): String? {
         return try {
-            val packageName = context.packageName
-            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0L))
-            } else {
-                @Suppress("DEPRECATION")
-                context.packageManager.getPackageInfo(packageName, 0)
-            }
-            packageInfo.firstInstallTime
-        } catch (e: Exception) {
-            BuildConfig.BUILD_TIMESTAMP
+            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+        } catch (_: Exception) {
+            null
         }
     }
 
-    /** Fecha de caducidad de este APK (timestamp en ms). */
-    fun expirationDateMillis(context: Context): Long {
-        return installDateMillis(context) + (BuildConfig.APP_EXPIRATION_DAYS * MS_PER_DAY)
-    }
-
-    /** Devuelve true si el periodo de uso ha expirado. */
-    fun isExpired(context: Context): Boolean {
-        return System.currentTimeMillis() > expirationDateMillis(context)
-    }
-
-    /** Días restantes de uso (0 si ya expiró). */
-    fun remainingDays(context: Context): Long {
-        val rem = expirationDateMillis(context) - System.currentTimeMillis()
-        return (rem / MS_PER_DAY).coerceAtLeast(0L)
+    fun formatDate(timestamp: Long): String {
+        val calendar = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+        return String.format(
+            "%02d/%02d/%04d",
+            calendar.get(java.util.Calendar.DAY_OF_MONTH),
+            calendar.get(java.util.Calendar.MONTH) + 1,
+            calendar.get(java.util.Calendar.YEAR)
+        )
     }
 }

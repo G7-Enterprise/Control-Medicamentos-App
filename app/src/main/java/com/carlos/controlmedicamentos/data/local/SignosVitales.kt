@@ -12,6 +12,8 @@ data class SignosVitales(
     val comentarioPresion: String = "",
     val latidos: Int? = null,
     val comentarioLatidos: String = "",
+    val spo2: Int? = null,
+    val comentariosSpo2: String = "",
     val glucemia: Int? = null,
     val comentarioGlucemia: String = "",
     val temperatura: Double? = null,

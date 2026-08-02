@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.carlos.controlmedicamentos.data.local.PatientProfile
+import com.carlos.controlmedicamentos.license.LicenseInfoDialog
 import com.carlos.controlmedicamentos.notifications.CriticalAlertSettings
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -69,6 +70,7 @@ internal fun MenuHamburguesaFlotante(
     var alarmaSonidoNombre by alarmaSonidoNombreState
     var intervaloReintentoSeleccionado by intervaloReintentoSeleccionadoState
     var numeroIntentosCriticosSeleccionado by numeroIntentosCriticosSeleccionadoState
+    var mostrarLicencia by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -178,7 +180,7 @@ internal fun MenuHamburguesaFlotante(
                 }
             )
             DropdownMenuItem(
-                text = { Text("Documentos") },
+                text = { Text("Informes médicos") },
                 leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
                 colors = floatMenuItemColors,
                 onClick = {
@@ -339,7 +341,22 @@ internal fun MenuHamburguesaFlotante(
                     onClick = { mostrarMenuHamburguesa = false; onCerrarPanelesSecundarios(); onMostrarPanelCicloMenstrual(true) }
                 )
             }
+            DropdownMenuItem(
+                text = { Text("Compartir con un amigo") },
+                leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                colors = floatMenuItemColors,
+                onClick = { mostrarMenuHamburguesa = false; compartirAppPorWhatsApp(context) }
+            )
+            DropdownMenuItem(
+                text = { Text("Mi Licencia") },
+                leadingIcon = { Icon(Icons.Filled.VerifiedUser, contentDescription = null) },
+                colors = floatMenuItemColors,
+                onClick = { mostrarMenuHamburguesa = false; mostrarLicencia = true }
+            )
         }
     }
     } // outer Box
+    if (mostrarLicencia) {
+        LicenseInfoDialog(onDismiss = { mostrarLicencia = false })
+    }
 }

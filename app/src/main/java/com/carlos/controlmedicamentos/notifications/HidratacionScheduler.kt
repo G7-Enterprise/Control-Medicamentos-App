@@ -20,6 +20,7 @@ class HidratacionScheduler(private val context: Context) {
         private const val KEY_END_HOUR      = "end_hour"
         private const val KEY_PATIENT_ID    = "patient_id"
         private const val KEY_PATIENT_NAME  = "patient_name"
+        private const val KEY_SOUND_ENABLED = "sound_enabled"
 
         fun saveSettings(context: Context, enabled: Boolean, intervalHours: Int, startHour: Int, endHour: Int) {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().apply {
@@ -53,6 +54,16 @@ class HidratacionScheduler(private val context: Context) {
         fun loadPatientInfo(context: Context): Pair<Int, String> {
             val p = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             return Pair(p.getInt(KEY_PATIENT_ID, 0), p.getString(KEY_PATIENT_NAME, "Usuario").orEmpty())
+        }
+
+        fun saveSoundEnabled(context: Context, enabled: Boolean) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_SOUND_ENABLED, enabled).apply()
+        }
+
+        fun loadSoundEnabled(context: Context): Boolean {
+            return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(KEY_SOUND_ENABLED, true)
         }
 
         data class Settings(val enabled: Boolean, val intervalHours: Int, val startHour: Int, val endHour: Int)

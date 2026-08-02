@@ -5,10 +5,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.google.android.gms.location.ActivityRecognition
+import com.google.android.gms.location.ActivityRecognitionClient
 
 class SedentarismoScheduler(private val context: Context) {
 
@@ -16,45 +14,62 @@ class SedentarismoScheduler(private val context: Context) {
         const val ACTION_SEDENTARISMO_CHECK = "com.carlos.controlmedicamentos.notifications.SEDENTARISMO_CHECK"
         const val EXTRA_PATIENT_ID = "SED_PATIENT_ID"
         private const val RC_BASE = 900_000
-    }
+        private const val PREFS_NAME = "sedentarismo_sound_prefs"
+        private const val KEY_SOUND_ENABLED = "sound_enabled"
 
-    private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        fun saveSoundEnabled(context: Context, enabled: Boolean) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_SOUND_ENABLED, enabled).apply()
+        }
 
-    fun programar(patientId: Int) {
-        cancelar(patientId)
-        CoroutineScope(Dispatchers.IO).launch {
-            val config = AppDatabase.getDatabase(context).sedentarismoDao().obtenerConfig(patientId) ?: return@launch
-            if (!config.activado) return@launch
-            val intervalMs = config.limiteInactividadMinutos * 60_000L
-            val triggerAt = System.currentTimeMillis() + intervalMs
-            val intent = Intent(context, AlarmReceiver::class.java).apply {
-                action = ACTION_SEDENTARISMO_CHECK
-                putExtra(EXTRA_PATIENT_ID, patientId)
-            }
-            val pi = PendingIntent.getBroadcast(
-                context, RC_BASE + patientId, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            try {
-                when {
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && alarmManager.canScheduleExactAlarms() ->
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-                    else -> alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-                }
-            } catch (_: SecurityException) {
-                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-            }
+        fun loadSoundEnabled(context: Context): Boolean {
+            return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(KEY_SOUND_ENABLED, true)
+        }
+
+        private val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
         }
     }
 
+    private val client: ActivityRecognitionClient = ActivityRecognition.getClient(context)
+
+    fun programar(patientId: Int) {
+        cancelarAlarmasLegacy(patientId)
+        ActivityRecognitionReceiver.guardarPacienteActivo(context, patientId)
+        val intent = Intent(context, ActivityRecognitionReceiver::class.java).apply {
+            action = ActivityRecognitionReceiver.ACTION
+        }
+        val pi = PendingIntent.getBroadcast(context, 0, intent, pendingIntentFlags)
+        try {
+            client.requestActivityUpdates(60_000L, pi)
+        } catch (_: SecurityException) { }
+    }
+
     fun cancelar(patientId: Int) {
+        cancelarAlarmasLegacy(patientId)
+        val intent = Intent(context, ActivityRecognitionReceiver::class.java).apply {
+            action = ActivityRecognitionReceiver.ACTION
+        }
+        val pi = PendingIntent.getBroadcast(context, 0, intent, pendingIntentFlags)
+        try {
+            client.removeActivityUpdates(pi)
+        } catch (_: SecurityException) { }
+        pi.cancel()
+    }
+
+    private fun cancelarAlarmasLegacy(patientId: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pi = PendingIntent.getBroadcast(
             context, RC_BASE + patientId,
             Intent(context, AlarmReceiver::class.java).apply { action = ACTION_SEDENTARISMO_CHECK },
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
-        if (pi != null) { alarmManager.cancel(pi); pi.cancel() }
+        if (pi != null) {
+            alarmManager.cancel(pi)
+            pi.cancel()
+        }
     }
 }

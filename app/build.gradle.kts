@@ -6,8 +6,14 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// Aplica el plugin de Google Services solo cuando exista el google-services.json.
+// Descárgalo desde Firebase Console (Project settings > Your apps) y colócalo en app/google-services.json.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Usar versionCode fijo - ignorar local.properties para evitar conflictos
-val appVersionCode = 41
+val appVersionCode = 45
 val appVersionName = providers.gradleProperty("APP_VERSION_NAME").orElse("1.0.0").get()
 val appExpirationDays = providers.gradleProperty("APP_EXPIRATION_DAYS").orElse("3650").get().toLong()
 
@@ -64,6 +70,7 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 
@@ -74,6 +81,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
@@ -116,9 +128,16 @@ dependencies {
     // Gson para serialización
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // OkHttp para validación de licencias Lemon Squeezy
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     // Coil para cargar imágenes
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     // Almacenamiento cifrado
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Firebase BOM y Firestore
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
 }

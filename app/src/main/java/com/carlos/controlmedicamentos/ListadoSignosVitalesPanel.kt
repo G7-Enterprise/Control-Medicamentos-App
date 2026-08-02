@@ -195,6 +195,8 @@ internal fun ListadoSignosVitalesPanel(
                             if (registro.comentarioPresion.isNotBlank()) Text("Comentario presion: ${registro.comentarioPresion}", color = Color.White)
                             if (registro.latidos != null) Text("Latidos: ${registro.latidos} lpm", color = Color.White)
                             if (registro.comentarioLatidos.isNotBlank()) Text("Comentario latidos: ${registro.comentarioLatidos}", color = Color.White)
+                            if (registro.spo2 != null) Text("SpO2: ${registro.spo2}%", color = Color.White)
+                            if (registro.comentariosSpo2.isNotBlank()) Text("Comentarios SpO2: ${registro.comentariosSpo2}", color = Color.White)
                             if (registro.glucemia != null) Text("Glucemia: ${registro.glucemia}", color = Color.White)
                             if (registro.comentarioGlucemia.isNotBlank()) Text("Comentario glucemia: ${registro.comentarioGlucemia}", color = Color.White)
                             if (registro.temperatura != null) Text("Temperatura: ${formatTemperature(registro.temperatura)}", color = Color.White)

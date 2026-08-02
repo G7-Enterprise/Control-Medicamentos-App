@@ -47,6 +47,58 @@ data class ModuloDirectorio(
     val explicacionDetallada: String
 )
 
+private fun prepararTextoParaVoz(texto: String): String {
+    val correcciones = mapOf(
+        "módulos" to "módulos",
+        "modulos" to "módulos",
+        "módulo" to "módulo",
+        "modulo" to "módulo",
+        "métricas" to "métricas",
+        "metricas" to "métricas",
+        "gestación" to "gestación",
+        "gestacion" to "gestación",
+        "presión" to "presión",
+        "presion" to "presión",
+        "sistólica" to "sistólica",
+        "sistolica" to "sistólica",
+        "diastólica" to "diastólica",
+        "diastolica" to "diastólica",
+        "oxígeno" to "oxígeno",
+        "oxigeno" to "oxígeno",
+        "saturación" to "saturación",
+        "saturacion" to "saturación",
+        "notificaciones" to "notificaciones",
+        "notificaciónes" to "notificaciones",
+        "repetición" to "repetición",
+        "repeticion" to "repetición",
+        "explicación" to "explicación",
+        "explicacion" to "explicación",
+        "guía" to "guía",
+        "guia" to "guía",
+        "cámara" to "cámara",
+        "camara" to "cámara",
+        "galería" to "galería",
+        "galeria" to "galería",
+        "información" to "información",
+        "informacion" to "información",
+        "atención" to "atención",
+        "atencion" to "atención",
+        "médicos" to "médicos",
+        "medicos" to "médicos",
+        "médico" to "médico",
+        "medico" to "médico"
+    )
+    var resultado = texto
+    correcciones.forEach { (sinAcento, conAcento) ->
+        resultado = resultado.replace(Regex("(?i)\\b${Regex.escape(sinAcento)}\\b"), conAcento)
+    }
+    return resultado
+        .replace(Regex("[📋📦✅⏰📅📊🤰🌙👶🛒📝💾•]"), "")
+        .replace(Regex("\\n+"), ". ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIChatScreen(
@@ -78,9 +130,9 @@ fun AIChatScreen(
         val textToSpeech = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts?.let { ttsInstance ->
-                    val result = ttsInstance.setLanguage(Locale("es", "ES"))
+                    val result = ttsInstance.setLanguage(Locale("es", "MX"))
                     if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                        ttsInstance.setLanguage(Locale.US)
+                        ttsInstance.setLanguage(Locale("es", "ES"))
                     }
                     ttsInstance.setSpeechRate(speechRate)
                     
@@ -120,11 +172,7 @@ fun AIChatScreen(
     // Function to speak text
     fun speakText(text: String) {
         if (ttsEnabled && ttsReady && tts != null) {
-            val cleanText = text
-                .replace(Regex("[📋📦✅⏰📅📊🤰🌙👶🛒📝💾•]"), "")
-                .replace(Regex("\\n+"), ". ")
-                .replace(Regex("\\s+"), " ")
-                .trim()
+            val cleanText = prepararTextoParaVoz(text)
             
             if (cleanText.isNotEmpty()) {
                 lastSpokenMessage = cleanText
@@ -658,17 +706,17 @@ Herramienta para generar un documento Word (.docx) con un resumen de la informac
 Como usarlo:
 1. Selecciona un perfil activo
 2. Ve a Exportar Resumen desde el menu hamburguesa
-3. Elige que secciones incluir: metricas, inventario, citas, etc.
+3. Elige qué secciones incluir: métricas, inventario, citas, hidratación, sedentarismo y actividad.
 4. Toca 'Exportar'
 5. Guarda o comparte el archivo .docx
 
 Funciones:
-• Seleccion de secciones a incluir
+• Incluye signos vitales, hidratación, sedentarismo y actividad física
 • Formato Word editable
 • Listo para compartir o imprimir
 
-Para que sirve:
-Llevar un resumen completo de la información a una consulta, reunion o para tenerlo en archivo."""
+Para qué sirve:
+Llevar un resumen completo de la información a una consulta, reunión o para tenerlo en archivo."""
             ),
             ModuloDirectorio(
                 id = "estadísticas",
@@ -914,9 +962,9 @@ Tener toda la documentacion medica organizada y accesible para consultas, segund
     LaunchedEffect(Unit) {
         if (messages.isEmpty()) {
             val mensajeBienvenida = if (perfilActivoNombre != null) {
-                "¡Hola ${perfilActivoNombre}! Soy tu asistente virtual de Control médicamentos. Estoy aquí para ayudarte con tu perfil activo. Selecciona un módulo del directorio para ver la guía completa, o pregúntame lo que necesites."
+                "¡Hola ${perfilActivoNombre}! Soy tu asistente virtual de Control Medicamentos. Estoy aquí para ayudarte con tu perfil activo. Selecciona un módulo del directorio para ver la guía completa o pregúntame lo que necesites."
             } else {
-                "¡Hola! Soy tu asistente virtual de Control médicamentos. Para una experiencia personalizada, crea o selecciona un perfil primero. Mientras tanto, selecciona un modulo del directorio para ver la guia completa."
+                "¡Hola! Soy tu asistente virtual de Control Medicamentos. Para una experiencia personalizada, crea o selecciona un perfil primero. Mientras tanto, selecciona un módulo del directorio para ver la guía completa."
             }
             messages = listOf(
                 ChatMessage(
@@ -1386,28 +1434,31 @@ private suspend fun sendMessage(
                 "El módulo de Inventario te permite: Registrar artículos con nombre, presentación y cantidad. Agregar fotos para identificarlos. Configurar stock y alertas. Buscar y filtrar elementos. Ver detalles completos de cada artículo."
 
             message.contains("perfil", ignoreCase = true) || message.contains("usuario", ignoreCase = true) || message.contains("persona", ignoreCase = true) ->
-                "El modulo de Perfiles te permite: Registrar usuarios con datos personales y contacto. Agregar foto. Cada usuario tiene su propio inventario y registros. Puedes cambiar entre perfiles fácilmente. Editar y eliminar perfiles."
+                "El módulo de Perfiles te permite registrar usuarios con datos personales y contacto, agregar una foto, mantener inventario y registros por perfil, cambiar entre perfiles fácilmente, editar y eliminar perfiles."
+
+            message.contains("hidratación", ignoreCase = true) || message.contains("hidratacion", ignoreCase = true) || message.contains("agua", ignoreCase = true) ->
+                "Control de Hidratación permite registrar cada bebida con cantidad en mililitros y tipo de bebida, consultar el historial y llevar el total diario. Sus registros se incluyen en el resumen clínico y en las copias de seguridad."
 
             message.contains("toma", ignoreCase = true) || message.contains("registro", ignoreCase = true) || message.contains("uso", ignoreCase = true) ->
                 "El Registro de Consumo te permite: Marcar cuándo usas un artículo del inventario. Ver historial por fecha. Filtrar por artículo o período. Exportar tu registro. Estadísticas de uso."
 
             message.contains("alarma", ignoreCase = true) || message.contains("recordatorio", ignoreCase = true) || message.contains("notificación", ignoreCase = true) ->
-                "El sistema de Alarmas te permite: Configurar horarios para recordatorios. Recibir notificaciónes en el momento indicado. Configurar repeticion (diaria, por intervalos, etc). Activar o desactivar alarmas individuales. Ver lista de próximas alertas."
+                "El sistema de Alarmas te permite configurar horarios para recordatorios, recibir notificaciones en el momento indicado, configurar repetición diaria o por intervalos, activar o desactivar alarmas individuales y ver la lista de próximas alertas."
 
             message.contains("cita", ignoreCase = true) || message.contains("agenda", ignoreCase = true) || message.contains("reunion", ignoreCase = true) ->
                 "El módulo de Agenda te permite: Registrar reuniones y eventos. Guardar fecha, hora y lugar. Agregar notas. Recibir recordatorios antes del evento. Ver historial de citas. Sincronizar con calendarios externos."
 
-            message.contains("reporte", ignoreCase = true) || message.contains("estadistica", ignoreCase = true) || message.contains("resumen", ignoreCase = true) ->
-                "Los Reportes generan: Historial de consumo. Estadísticas de cumplimiento. Gráficos por período. Exportación en Word (.docx). Resumen por perfil de usuario."
+            message.contains("reporte", ignoreCase = true) || message.contains("estadistica", ignoreCase = true) || message.contains("resumen", ignoreCase = true) || message.contains("exportar", ignoreCase = true) ->
+                "Los Reportes generan historial de consumo, estadísticas de cumplimiento, gráficos por período y un resumen Word (.docx) por perfil. El reporte clínico incluye signos vitales, actividad física, hidratación y eventos de sedentarismo."
 
             message.contains("presion", ignoreCase = true) || message.contains("frecuencia", ignoreCase = true) || message.contains("metrica", ignoreCase = true) ->
                 "El módulo de Métricas Diarias te permite: Registrar valores como presión, frecuencia cardíaca, temperatura, peso. Ver gráficos de tendencia. Comparativas por período. Alertas si los valores están fuera de rango."
 
             message.contains("embarazo", ignoreCase = true) || message.contains("gestacion", ignoreCase = true) ->
-                "El modulo de Gestacion te permite: Seguimiento semana a semana. Registro de visitas de control. Peso y valores registrados. Cálculo de fecha. Alertas de citas. Al finalizar, crea automáticamente el perfil del bebé."
+                "El módulo de Gestación te permite llevar seguimiento semana a semana, registrar visitas de control, peso y valores, calcular fechas, recibir alertas de citas y crear automáticamente el perfil del bebé al finalizar."
 
             message.contains("ciclo", ignoreCase = true) || message.contains("regla", ignoreCase = true) || message.contains("menstrual", ignoreCase = true) ->
-                "El modulo de Ciclo te permite: Registrar inicio y fin del periodo. Marcar intensidad y síntomas. Cálculo automático de duración. Predicción del siguiente ciclo. Estadísticas de regularidad."
+                "El módulo de Ciclo te permite registrar el inicio y fin del período, marcar intensidad y síntomas, calcular la duración, predecir el siguiente ciclo y consultar estadísticas de regularidad."
 
             message.contains("infantil", ignoreCase = true) || message.contains("bebe", ignoreCase = true) || message.contains("nino", ignoreCase = true) || message.contains("vacuna", ignoreCase = true) ->
                 "El módulo Infantil incluye: Seguimiento de crecimiento con gráficos. Registro de peso y estatura. Calendario de vacunación. Controles programados. Datos desde el nacimiento."
@@ -1419,13 +1470,13 @@ private suspend fun sendMessage(
                 "El Diario Personal te permite: Escribir notas con fecha. Adjuntar fotos. Buscador por palabras clave. Exportar entradas. Respaldo incluido en la copia de seguridad."
 
             message.contains("backup", ignoreCase = true) || message.contains("respaldo", ignoreCase = true) || message.contains("restaurar", ignoreCase = true) ->
-                "El sistema de Respaldo permite: Crear copia de seguridad en archivo .cmed. Guarda todo: perfiles con fotos, inventario, registros, citas, diario con imágenes y más. Restaurar desde archivo. Compartir por WhatsApp, email, etc."
+                "El sistema de Respaldo permite crear una copia de seguridad en archivo .cmed. Conserva perfiles con fotos, informes y sus adjuntos, diario e imágenes dentales, hidratación, sedentarismo, signos vitales, actividad, inventario, registros y citas. Al restaurar, recupera los archivos incluidos y los datos asociados."
 
             message.contains("dental", ignoreCase = true) || message.contains("odontograma", ignoreCase = true) || message.contains("ortodoncia", ignoreCase = true) || message.contains("dentista", ignoreCase = true) ->
                 "El Módulo Dental incluye: Panel de resumen, agenda de citas, odontograma interactivo por diente, seguimiento de ortodoncia, diario de sonrisa con fotos, control de finanzas dentales y directorio de dentistas. Toca el módulo en el Directorio para ver la guía completa."
 
             message.contains("sedentarismo", ignoreCase = true) || message.contains("sedentario", ignoreCase = true) || message.contains("inactividad", ignoreCase = true) ->
-                "El módulo Sedentarismo te ayuda a reducir el tiempo inactivo: configura el tiempo máximo sin movimiento, recibe alertas para levantarte y muevete, consulta historial de alertas y posponé recordatorios cuando sea necesario."
+                "El módulo Sedentarismo te ayuda a reducir el tiempo inactivo: configura el tiempo máximo sin movimiento, recibe alertas para levantarte y moverte, consulta el historial de alertas y pospone recordatorios cuando sea necesario. Los eventos registrados se incluyen en el resumen clínico y en las copias de seguridad."
 
             message.contains("medico", ignoreCase = true) || message.contains("especialista", ignoreCase = true) || message.contains("contacto", ignoreCase = true) ->
                 "Médicos y especialistas es el directorio de contactos de salud: guarda nombre, especialidad, teléfono, dirección y notas, busca por nombre o especialidad, y vincula contactos a citas e informes médicos."
@@ -1434,7 +1485,7 @@ private suspend fun sendMessage(
                 "Informes médicos te permite adjuntar y organizar documentos, estudios, recetas y resultados de laboratorio. Puedes escanear con la cámara, adjuntar desde la galería, vincular con profesionales o citas y visualizarlos en cualquier momento."
 
             message.contains("como funciona", ignoreCase = true) || message.contains("funcionamiento", ignoreCase = true) ->
-                "La app funciona asi: 1) Crea perfiles de usuario. 2) Agrega artículos al inventario de cada perfil. 3) Configura recordatorios con alarmas. 4) Cuando suena la alarma, registra el uso. 5) Consulta reportes y estadísticas. 6) Usa también la agenda, metricas y diario. Que modulo quieres explorar?"
+                "La aplicación funciona así: 1) Crea perfiles de usuario. 2) Agrega artículos al inventario de cada perfil. 3) Configura recordatorios con alarmas. 4) Cuando suena la alarma, registra el uso. 5) Consulta reportes y estadísticas. 6) Usa también la agenda, métricas y diario. ¿Qué módulo quieres explorar?"
 
             message.contains("empezar", ignoreCase = true) || message.contains("inicio", ignoreCase = true) || message.contains("configurar", ignoreCase = true) ->
                 "Para empezar: 1) Ve a Perfiles y crea tu primer usuario. 2) Ve a Inventario y agrega los artículos para ese perfil. 3) Configura recordatorios para cada artículo. 4) ¡Listo! Recibirás alertas cuando corresponda."
@@ -1443,7 +1494,7 @@ private suspend fun sendMessage(
                 "Puedo ayudarte con: Perfiles de Usuario, Inventario, Registros de Consumo, Alarmas, Agenda, Médicos y especialistas, Informes médicos, Métricas Diarias, Gestación, Ciclo, Infantil, Compras, Diario, Respaldo, Actividad Física, Hidratación, Sedentarismo, Alerta de Caídas, Vacunas, Anticonceptivos, Estadísticas, Exportar Resumen, Verificador, Medicamentos Suspendidos y Módulo Dental. También puedes usar el Directorio tocando cualquier módulo para ver la guía completa."
 
             contexto.isNotEmpty() ->
-                "Entiendo tu pregunta sobre $contexto Estoy aqui para aclarar cualquier duda sobre lo que lei en la explicacion. Si algo no quedo claro, preguntame específicamente sobre ese punto y te ayudo."
+                "Entiendo tu pregunta sobre $contexto. Estoy aquí para aclarar cualquier duda sobre lo que leí en la explicación. Si algo no quedó claro, pregúntame específicamente sobre ese punto y te ayudo."
 
             else ->
                 "Entiendo tu consulta. ¿Te gustaría que te explique cómo funciona algún módulo específico? Puedo ayudarte con Inventario, Perfiles, Alarmas, Agenda, Médicos y especialistas, Informes médicos, Métricas, Gestación, Ciclo, Infantil, Compras, Diario, Respaldo, Actividad Física, Hidratación, Sedentarismo, Alerta de Caídas, Vacunas, Anticonceptivos, Estadísticas, Exportar Resumen, Verificador, Medicamentos Suspendidos o Módulo Dental. También puedes usar el Directorio tocando el módulo que te interese!"
@@ -1459,7 +1510,7 @@ private suspend fun sendMessage(
     } catch (e: Exception) {
         val errorMessage = ChatMessage(
             id = (System.currentTimeMillis() + 1).toString(),
-            content = "Lo siento, hubo un error procesando tu consulta. Por favor, intentalo de nuevo.",
+            content = "Lo siento, hubo un error al procesar tu consulta. Por favor, inténtalo de nuevo.",
             isUser = false
         )
         onResponseReceived(errorMessage)

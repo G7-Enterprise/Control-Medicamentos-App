@@ -3,14 +3,12 @@ package com.carlos.controlmedicamentos.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.carlos.controlmedicamentos.CountryCurrencyCatalog
 import com.carlos.controlmedicamentos.data.local.AppDatabase
-import com.carlos.controlmedicamentos.data.local.MEDICATION_INTAKE_STATUS_NOT_TAKEN
-import com.carlos.controlmedicamentos.data.local.MEDICATION_INTAKE_STATUS_TAKEN
 import com.carlos.controlmedicamentos.data.local.Medication
 import com.carlos.controlmedicamentos.data.local.MedicationIntake
 import com.carlos.controlmedicamentos.data.local.unidadesPorToma
-import com.carlos.controlmedicamentos.data.local.RestockSource
 import com.carlos.controlmedicamentos.data.local.VaccinationRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +27,7 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_SNOOZE_ANTICONCEPTIVO = "com.carlos.controlmedicamentos.notifications.SNOOZE_ANTICONCEPTIVO"
         const val ACTION_ACCEPT_SIGNOS_VITALES = "com.carlos.controlmedicamentos.notifications.ACCEPT_SIGNOS_VITALES"
         const val EXTRA_NOTIFICATION_ID = "NOTIFICATION_ID"
+        const val EXTRA_SNOOZE_MINUTES = "SNOOZE_MINUTES"
         const val EXTRA_ANTICONCEPTIVO_ID = "ANTICONCEPTIVO_ID"
         const val EXTRA_ANTICONCEPTIVO_SCHEDULED = "ANTICONCEPTIVO_SCHEDULED"
         private const val PREFS_NAME = "alarm_receiver_state"
@@ -39,7 +38,7 @@ class AlarmReceiver : BroadcastReceiver() {
         private const val MAX_OVERDUE_TAKES_IN_ALERT = 8
     }
 
-    private data class ReminderCandidate(
+    internal data class ReminderCandidate(
         val medication: Medication,
         val slotIndex: Int,
         val scheduledAt: Long,
@@ -68,6 +67,7 @@ class AlarmReceiver : BroadcastReceiver() {
         // Ejecutamos en un hilo de fondo (Coroutine)
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                Log.d("AlarmReceiver", "Received action=${intent.action} notificationId=$notificationId tokens=${reminderTokens.size}")
                 val db = AppDatabase.getDatabase(context)
                 if (appointmentId > 0) {
                     val appointment = db.medicalAppointmentDao().buscarPorId(appointmentId)
@@ -228,39 +228,27 @@ class AlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // ── Sedentarismo ───────────────────────────────────────────
+                // ── Sedentarismo (legacy: ahora gestionado por ActivityRecognitionReceiver) ──
                 if (intent.action == SedentarismoScheduler.ACTION_SEDENTARISMO_CHECK) {
-                    val pid = intent.getIntExtra(SedentarismoScheduler.EXTRA_PATIENT_ID, 0)
-                    if (pid > 0) {
-                        val config = db.sedentarismoDao().obtenerConfig(pid)
-                        if (config != null && config.activado) {
-                            val cal = java.util.Calendar.getInstance()
-                            val hora = cal.get(java.util.Calendar.HOUR_OF_DAY)
-                            if (hora in config.horaInicioMonitoreo until config.horaFinMonitoreo) {
-                                val inicioHoy = Calendar.getInstance().apply {
-                                    set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-                                    set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-                                }.timeInMillis
-                                val alertasPrevias = db.sedentarismoDao().contarAlertasHoy(pid, inicioHoy).first()
-                                val intervaloMin = config.limiteInactividadMinutos
-                                val minutosInactivo = (alertasPrevias + 1) * intervaloMin
-                                val metaMinutos = when {
-                                    minutosInactivo >= 360 -> 30
-                                    minutosInactivo >= 180 -> 15
-                                    else -> 5
-                                }
-                                db.sedentarismoDao().insertarRegistro(
-                                    com.carlos.controlmedicamentos.data.local.RegistroSedentarismo(
-                                        patientId = pid,
-                                        tipoEvento = "ALERTA_INACTIVIDAD",
-                                        minutosInactivo = minutosInactivo
-                                    )
-                                )
-                                NotificacionHelper.mostrarAlertaSedentarismo(context, pid, minutosInactivo, metaMinutos)
-                            }
-                            SedentarismoScheduler(context).programar(pid)
-                        }
+                    // No se guardan alertas en el historial; el monitoreo físico es nativo.
+                    return@launch
+                }
+
+                // ── Sedentarismo: Horarios Especiales 3h/6h/9h ─────────────────
+                if (intent.action == HorariosEspecialesScheduler.ACTION_HORARIO_ESPECIAL) {
+                    val pid = intent.getIntExtra(HorariosEspecialesScheduler.EXTRA_PATIENT_ID, 0)
+                    val nivel = intent.getIntExtra(HorariosEspecialesScheduler.EXTRA_NIVEL, 1)
+                    if (pid > 0 && ActivityRecognitionReceiver.haPermanecidoInactivo(context, pid, nivel * 3 * 60)) {
+                        val metaMinutos = if (nivel == 1) 15 else 30
+                        ActivityRecognitionReceiver.activarEjercicioEspecial(context, pid, metaMinutos)
+                        NotificacionHelper.mostrarAlertaEspecial(context, pid, nivel)
                     }
+                    return@launch
+                }
+
+                if (intent.action == HorariosEspecialesScheduler.ACTION_REPROGRAMAR_HORARIOS) {
+                    val pid = intent.getIntExtra(HorariosEspecialesScheduler.EXTRA_PATIENT_ID, 0)
+                    if (pid > 0) HorariosEspecialesScheduler(context).programar(pid)
                     return@launch
                 }
 
@@ -287,28 +275,32 @@ class AlarmReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_ACCEPT -> {
                         NotificacionHelper.cancelar(context, notificationId)
-                        cancelarRecordatoriosPendientes(context, db, reminderTokens)
-                        registrarTomasAceptadas(context, db, reminderTokens)
+                        AlarmActionExecutor.cancelPendingReminders(context, reminderTokens)
+                        AlarmActionExecutor.registerAcceptedTakes(context, reminderTokens)
                         return@launch
                     }
 
                     ACTION_ACCEPT_SCHEDULED_TIME -> {
                         NotificacionHelper.cancelar(context, notificationId)
-                        cancelarRecordatoriosPendientes(context, db, reminderTokens)
-                        registrarTomasAceptadas(context, db, reminderTokens, useScheduledTime = true)
+                        AlarmActionExecutor.cancelPendingReminders(context, reminderTokens)
+                        AlarmActionExecutor.registerAcceptedTakes(context, reminderTokens, useScheduledTime = true)
                         return@launch
                     }
 
                     ACTION_MARK_NOT_TAKEN -> {
                         NotificacionHelper.cancelar(context, notificationId)
-                        cancelarRecordatoriosPendientes(context, db, reminderTokens)
-                        registrarTomasNoTomadas(db, reminderTokens)
+                        AlarmActionExecutor.cancelPendingReminders(context, reminderTokens)
+                        AlarmActionExecutor.registerNotTakenTakes(context, reminderTokens)
                         return@launch
                     }
 
                     ACTION_SNOOZE -> {
                         NotificacionHelper.cancelar(context, notificationId)
-                        posponerRecordatorios(context, db, reminderTokens, medId, slotIndex, scheduledAt)
+                        val customSnoozeMinutes = intent.getIntExtra(EXTRA_SNOOZE_MINUTES, 0)
+                        AlarmActionExecutor.postponeReminders(
+                            context, reminderTokens, medId, slotIndex, scheduledAt,
+                            customDelayMinutes = customSnoozeMinutes
+                        )
                         return@launch
                     }
                 }
@@ -326,7 +318,11 @@ class AlarmReceiver : BroadcastReceiver() {
                 // Verificar si el medicamento ya fue tomado en este horario
                 val intake = db.medicationIntakeDao().buscarPorMedicamentoYHorario(medId, scheduledAt)
                 if (intake != null) {
-                    MedicationScheduler(context).cancelarAlarma(medId)
+                    val schedulerParaTomaRegistrada = MedicationScheduler(context)
+                    schedulerParaTomaRegistrada.cancelarRecordatoriosPendientes(medId, slotIndex)
+                    if (!isSnooze && !isRetry) {
+                        schedulerParaTomaRegistrada.programarSiguienteToma(medication, slotIndex)
+                    }
                     return@launch
                 }
 
@@ -340,7 +336,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 val grupo = if (isRetry || isSnooze) {
                     listOf(MedicationTrigger(medication, slotIndex))
                 } else {
-                    obtenerGrupoDeTomas(db, medication, slotIndex, minuteBucket)
+                    obtenerGrupoDeTomas(db, medication, slotIndex, scheduledAt)
                 }
                 val patientNamesById = grupo.map { it.medication.patientId }.distinct().associateWith { patientId ->
                     db.patientProfileDao().buscarPorId(patientId)?.let(::formatPatientFullName) ?: "Usuario $patientId"
@@ -365,7 +361,7 @@ class AlarmReceiver : BroadcastReceiver() {
                         )
                     }
                     val currentTokenKeys = currentCandidates
-                        .map { tokenFor(it.medication.id, it.slotIndex, it.scheduledAt) }
+                        .map { AlarmActionExecutor.tokenFor(it.medication.id, it.slotIndex, it.scheduledAt) }
                         .toSet()
                     val overdueCandidates = obtenerTomasVencidasSinRegistrar(
                         db = db,
@@ -392,7 +388,7 @@ class AlarmReceiver : BroadcastReceiver() {
                         buildMedicationTitle(grupo.size, patientNames),
                         mensajeBase,
                         grupo.firstOrNull()?.medication?.alarmaSonidoUri ?: criticalAlertConfig.soundUri,
-                        reminderTokens = currentCandidates.map { tokenFor(it.medication.id, it.slotIndex, it.scheduledAt) },
+                        reminderTokens = currentCandidates.map { AlarmActionExecutor.tokenFor(it.medication.id, it.slotIndex, it.scheduledAt) },
                         notificationId = notificationIdToUse,
                         retryActionLabel = retryActionLabel,
                         lineasDetalle = currentCandidates.map { candidate ->
@@ -410,7 +406,7 @@ class AlarmReceiver : BroadcastReceiver() {
                         patientName = firstPatientName
                     )
                     if (!isRetry && !isSnooze && overdueCandidates.isNotEmpty()) {
-                        val overdueTokens = overdueCandidates.map { tokenFor(it.medication.id, it.slotIndex, it.scheduledAt) }
+                        val overdueTokens = overdueCandidates.map { AlarmActionExecutor.tokenFor(it.medication.id, it.slotIndex, it.scheduledAt) }
                         val overdueNotificationId = buildNotificationId("overdue|${overdueTokens.joinToString("|")}")
                         val overdueHourLabel = formatHora(overdueCandidates.firstOrNull()?.scheduledAt ?: scheduledAt)
                         val overduePatientName = patientNames.firstOrNull() ?: ""
@@ -459,6 +455,8 @@ class AlarmReceiver : BroadcastReceiver() {
                 if (!isSnooze && !isRetry) {
                     scheduler.programarSiguienteToma(medication, slotIndex)
                 }
+            } catch (e: Exception) {
+                Log.e("AlarmReceiver", "Unhandled error in onReceive for action=${intent.action}", e)
             } finally {
                 pendingResult.finish()
             }
@@ -505,49 +503,6 @@ class AlarmReceiver : BroadcastReceiver() {
         return details.joinToString(". ")
     }
 
-    private suspend fun posponerRecordatorios(
-        context: Context,
-        db: AppDatabase,
-        reminderTokens: List<String>,
-        fallbackMedId: Int,
-        fallbackSlotIndex: Int,
-        fallbackScheduledAt: Long
-    ) {
-        val scheduler = MedicationScheduler(context)
-        val tokens = reminderTokens.ifEmpty {
-            listOf(tokenFor(fallbackMedId, fallbackSlotIndex, fallbackScheduledAt))
-        }
-        tokens.forEach { token ->
-            val parsedToken = parseReminderToken(token) ?: return@forEach
-            val medicationId = parsedToken.medicationId
-            val slotIndex = parsedToken.slotIndex
-            val medication = db.medicationDao().findById(medicationId) ?: return@forEach
-            if (medication.estaActivo && medication.alarmaActiva) {
-                scheduler.cancelarRecordatoriosPendientes(medicationId, slotIndex)
-                scheduler.programarRecordatorioPospuesto(
-                    medication = medication,
-                    slotIndex = slotIndex,
-                    scheduledAtMillis = parsedToken.scheduledAt,
-                    delayMinutes = CriticalAlertSettings.normalizeRetryInterval(
-                        medication.retryIntervalMinutes
-                    )
-                )
-            }
-        }
-    }
-
-    private suspend fun cancelarRecordatoriosPendientes(
-        context: Context,
-        db: AppDatabase,
-        reminderTokens: List<String>
-    ) {
-        val scheduler = MedicationScheduler(context)
-        reminderTokens.mapNotNull(::parseReminderToken).forEach { token ->
-            db.medicationDao().findById(token.medicationId) ?: return@forEach
-            scheduler.cancelarRecordatoriosPendientes(token.medicationId, token.slotIndex)
-        }
-    }
-
     private suspend fun obtenerTomasVencidasSinRegistrar(
         db: AppDatabase,
         patientIds: List<Int>,
@@ -567,7 +522,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 .forEach { medication ->
                     scheduledDoseTimesInRange(medication, start, now).forEach { (slotIndex, scheduledAt) ->
                         if (scheduledAt >= now) return@forEach
-                        if (tokenFor(medication.id, slotIndex, scheduledAt) in excludedTokenKeys) return@forEach
+                        if (AlarmActionExecutor.tokenFor(medication.id, slotIndex, scheduledAt) in excludedTokenKeys) return@forEach
                         val intake = db.medicationIntakeDao().buscarPorMedicamentoYHorario(
                             medication.id,
                             scheduledAt
@@ -590,120 +545,19 @@ class AlarmReceiver : BroadcastReceiver() {
             .toList()
     }
 
-    private suspend fun registrarTomasAceptadas(
-        context: Context,
-        db: AppDatabase,
-        reminderTokens: List<String>,
-        useScheduledTime: Boolean = false
-    ) {
-        reminderTokens.mapNotNull(::parseReminderToken).forEach { token ->
-            val existing = db.medicationIntakeDao().buscarPorMedicamentoYHorario(
-                token.medicationId,
-                token.scheduledAt
-            )
-            if (existing != null) {
-                return@forEach
-            }
-
-            val medication = db.medicationDao().findById(token.medicationId) ?: return@forEach
-            val unitsPerTake = medication.unidadesPorToma()
-            db.medicationIntakeDao().guardar(
-                MedicationIntake(
-                    medicationId = token.medicationId,
-                    patientId = medication.patientId,
-                    scheduledAt = token.scheduledAt,
-                    acceptedAt = if (useScheduledTime) token.scheduledAt else System.currentTimeMillis(),
-                    medicationName = medication.nombre,
-                    dosis = unitsPerTake.toString(),
-                    status = MEDICATION_INTAKE_STATUS_TAKEN
-                )
-            )
-            val currentStock = medication.stockActual ?: return@forEach
-            val updatedStock = currentStock - unitsPerTake
-            db.medicationDao().actualizarStock(medication.id, updatedStock)
-
-            val lowStockThreshold = medication.stockMinimo?.coerceAtLeast(unitsPerTake) ?: unitsPerTake
-
-            if (currentStock > lowStockThreshold && updatedStock <= lowStockThreshold) {
-                val carritoMedicationIds = db.carritoPendienteDao().obtenerTodosLista()
-                    .map { it.medicationId }.toSet()
-                val groupedLowStockItems = buildList {
-                    db.medicationDao().obtenerTodosLista()
-                        .filter { buildRestockGroupKey(it) == buildRestockGroupKey(medication) }
-                        .forEach { candidate ->
-                            toStockOrderItem(db, candidate)?.let(::add)
-                        }
-                }.filter { it.medicationId !in carritoMedicationIds }
-                    .sortedBy { it.medicationName.lowercase() }
-                    .toList()
-
-                if (groupedLowStockItems.isEmpty()) return@forEach
-
-                NotificacionHelper.mostrarStockBajoAgrupado(
-                    context = context,
-                    notificationId = buildStockNotificationId(medication),
-                    items = groupedLowStockItems.ifEmpty {
-                        listOf(
-                            NotificacionHelper.StockOrderItem(
-                                medicationId = medication.id,
-                                medicationName = medication.nombre,
-                                concentration = medication.concentracion,
-                                remainingUnits = updatedStock,
-                                lowStockThreshold = lowStockThreshold,
-                                unitsPerTake = unitsPerTake,
-                                unitPrice = medication.precioPorUnidad,
-                                currencySymbol = currencySymbolFor(db, medication.patientId)
-                            )
-                        )
-                    },
-                    whatsappPhone = medication.telefonoPedidoWhatsapp,
-                    restockSource = medication.origenReposicion
-                )
-            }
-        }
-    }
-
-    private suspend fun registrarTomasNoTomadas(
-        db: AppDatabase,
-        reminderTokens: List<String>
-    ) {
-        reminderTokens.mapNotNull(::parseReminderToken).forEach { token ->
-            val existing = db.medicationIntakeDao().buscarPorMedicamentoYHorario(
-                token.medicationId,
-                token.scheduledAt
-            )
-            if (existing != null) {
-                return@forEach
-            }
-
-            val medication = db.medicationDao().findById(token.medicationId) ?: return@forEach
-            db.medicationIntakeDao().guardar(
-                MedicationIntake(
-                    medicationId = token.medicationId,
-                    patientId = medication.patientId,
-                    scheduledAt = token.scheduledAt,
-                    acceptedAt = token.scheduledAt,
-                    medicationName = medication.nombre,
-                    dosis = medication.dosis,
-                    status = MEDICATION_INTAKE_STATUS_NOT_TAKEN
-                )
-            )
-        }
-    }
-
     private suspend fun obtenerGrupoDeTomas(
         db: AppDatabase,
         medication: Medication,
         slotIndex: Int,
-        now: Long
+        scheduledAt: Long
     ): List<MedicationTrigger> {
-        val minuteBucket = truncateToMinute(now)
+        val scheduledMinute = truncateToMinute(scheduledAt)
         val activos = db.medicationDao().obtenerActivosConAlarma()
         val grupo = activos.mapNotNull { candidata ->
-            resolveTriggeredSlot(candidata, minuteBucket)?.let { triggeredSlot ->
+            resolveTriggeredSlot(candidata, scheduledMinute)?.let { triggeredSlot ->
                 MedicationTrigger(candidata, triggeredSlot)
             }
-        }.filter { it.slotIndex == slotIndex || it.medication.id != medication.id }
+        }
 
         return grupo.ifEmpty { listOf(MedicationTrigger(medication, slotIndex)) }
             .sortedBy { it.medication.nombre.lowercase() }
@@ -880,21 +734,11 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     private fun buildGroupKey(grupo: List<MedicationTrigger>, minuteBucket: Long): String {
-        val ids = grupo.map { tokenFor(it.medication.id, it.slotIndex, minuteBucket) }.sorted().joinToString("|")
+        val ids = grupo.map { AlarmActionExecutor.tokenFor(it.medication.id, it.slotIndex, minuteBucket) }.sorted().joinToString("|")
         return "$minuteBucket|$ids"
     }
 
     private fun buildNotificationId(groupKey: String): Int = groupKey.hashCode()
-
-    private fun buildStockNotificationId(medication: Medication): Int = buildRestockGroupKey(medication).hashCode()
-
-    private fun buildRestockGroupKey(medication: Medication): String {
-        val phoneKey = medication.telefonoPedidoWhatsapp.filter(Char::isDigit)
-        return when (medication.origenReposicion) {
-            RestockSource.WHATSAPP_NUMBER -> "${medication.origenReposicion}|$phoneKey"
-            else -> medication.origenReposicion
-        }
-    }
 
     private fun inicioDelDia(timestamp: Long): Long {
         return Calendar.getInstance().apply {
@@ -917,35 +761,6 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun toStockOrderItem(db: AppDatabase, medication: Medication): NotificacionHelper.StockOrderItem? {
-        if (!medication.estaActivo || medication.origenReposicion == RestockSource.INSS) {
-            return null
-        }
-
-        val stock = medication.stockActual ?: return null
-        val unitsPerTake = medication.dosis.toIntOrNull()?.coerceAtLeast(1) ?: 1
-        val threshold = medication.stockMinimo?.coerceAtLeast(unitsPerTake) ?: unitsPerTake
-        if (stock > threshold) {
-            return null
-        }
-
-        return NotificacionHelper.StockOrderItem(
-            medicationId = medication.id,
-            medicationName = medication.nombre,
-            concentration = medication.concentracion,
-            remainingUnits = stock,
-            lowStockThreshold = threshold,
-            unitsPerTake = unitsPerTake,
-            unitPrice = medication.precioPorUnidad,
-            currencySymbol = currencySymbolFor(db, medication.patientId)
-        )
-    }
-
-    private suspend fun currencySymbolFor(db: AppDatabase, patientId: Int): String {
-        val patient = db.patientProfileDao().buscarPorId(patientId)
-        return CountryCurrencyCatalog.symbolFor(patient?.pais.orEmpty(), patient?.moneda.orEmpty())
-    }
-
     private fun formatDateTime(timestamp: Long): String {
         val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }
         return String.format(
@@ -966,18 +781,6 @@ class AlarmReceiver : BroadcastReceiver() {
             calendar.get(Calendar.MONTH) + 1,
             calendar.get(Calendar.YEAR)
         )
-    }
-
-    private fun tokenFor(medicationId: Int, slotIndex: Int, scheduledAt: Long): String {
-        return "$medicationId:$slotIndex:$scheduledAt"
-    }
-
-    private fun parseReminderToken(token: String): ReminderToken? {
-        val parts = token.split(":")
-        val medicationId = parts.getOrNull(0)?.toIntOrNull() ?: return null
-        val slotIndex = parts.getOrNull(1)?.toIntOrNull() ?: return null
-        val scheduledAt = parts.getOrNull(2)?.toLongOrNull() ?: return null
-        return ReminderToken(medicationId, slotIndex, scheduledAt)
     }
 
     private fun truncateToMinute(timestamp: Long): Long {
@@ -1007,11 +810,5 @@ class AlarmReceiver : BroadcastReceiver() {
     private data class MedicationTrigger(
         val medication: Medication,
         val slotIndex: Int
-    )
-
-    private data class ReminderToken(
-        val medicationId: Int,
-        val slotIndex: Int,
-        val scheduledAt: Long
     )
 }
