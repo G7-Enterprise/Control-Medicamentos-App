@@ -1026,6 +1026,24 @@ object NotificacionHelper {
             enableVibration(false)
         }
 
+        val sedentarismoChannel = NotificationChannel(
+            SEDENTARISMO_CHANNEL_ID,
+            "Alertas de sedentarismo",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Avisos cuando llevas demasiado tiempo sin moverte"
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 300, 200, 300)
+            setSound(
+                null,
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+        }
+
         manager.createNotificationChannel(criticalChannel)
         manager.createNotificationChannel(playbackChannel)
         manager.createNotificationChannel(appointmentChannel)
@@ -1034,6 +1052,7 @@ object NotificacionHelper {
         manager.createNotificationChannel(signosChannel)
         manager.createNotificationChannel(hidratacionChannel)
         manager.createNotificationChannel(fallDetectionChannel)
+        manager.createNotificationChannel(sedentarismoChannel)
     }
 
     fun mostrarRecordatorioSignosVitales(
@@ -1189,7 +1208,7 @@ object NotificacionHelper {
             putExtra(com.carlos.controlmedicamentos.ReminderAlertActivity.EXTRA_META_MINUTOS, metaMinutos)
         }
         val fullScreenPi = PendingIntent.getActivity(context, 76_100 + patientId, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val n = NotificationCompat.Builder(context, SIGNOS_CHANNEL_ID)
+        val n = NotificationCompat.Builder(context, SEDENTARISMO_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Llevas $minutosInactivo minutos sin moverte 🚶")
             .setContentText(recomendacion)

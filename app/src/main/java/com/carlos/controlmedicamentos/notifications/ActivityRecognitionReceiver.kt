@@ -3,15 +3,22 @@ package com.carlos.controlmedicamentos.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import com.google.android.gms.location.ActivityRecognitionResult
 import com.google.android.gms.location.DetectedActivity
 import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.ConfigSedentarismo
 import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import java.util.Calendar
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 class ActivityRecognitionReceiver : BroadcastReceiver() {
 
@@ -32,6 +39,13 @@ class ActivityRecognitionReceiver : BroadcastReceiver() {
         const val KEY_SPECIAL_START = "special_start"
         const val KEY_SPECIAL_MOVEMENT_START = "special_movement_start"
         const val KEY_LAST_SPECIAL_LEVEL = "last_special_level"
+
+        const val ACTION_NATIVE_SEDENTARISMO_CHECK = "com.carlos.controlmedicamentos.notifications.NATIVE_SEDENTARISMO_CHECK"
+        const val EXTRA_NATIVE_PATIENT_ID = "NATIVE_SED_PATIENT_ID"
+        const val EXTRA_NATIVE_START_TIME = "NATIVE_SED_START_TIME"
+        const val EXTRA_NATIVE_END_TIME = "NATIVE_SED_END_TIME"
+        private const val KEY_NATIVE_STEP_COUNT = "native_step_count"
+        private const val KEY_NATIVE_STEP_TIME = "native_step_time"
 
         private const val CONFIDENCE_THRESHOLD = 60
         private const val MOVEMENT_THRESHOLD_MS = 5 * 60 * 1000L
@@ -76,27 +90,105 @@ class ActivityRecognitionReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != ACTION) return
-        val result = ActivityRecognitionResult.extractResult(intent) ?: return
-        val activity = result.mostProbableActivity ?: return
-        val movimientoDetectado = result.probableActivities.any { candidate ->
-            candidate.confidence >= 40 && (
-                candidate.type == DetectedActivity.WALKING ||
-                    candidate.type == DetectedActivity.RUNNING ||
-                    candidate.type == DetectedActivity.ON_FOOT ||
-                    candidate.type == DetectedActivity.ON_BICYCLE
-                )
-        }
-        val quietoDetectado = activity.type == DetectedActivity.STILL && activity.confidence >= CONFIDENCE_THRESHOLD
-        if (!movimientoDetectado && !quietoDetectado) return
+        when (intent.action) {
+            ACTION -> {
+                val result = ActivityRecognitionResult.extractResult(intent) ?: return
+                val activity = result.mostProbableActivity ?: return
+                val movimientoDetectado = result.probableActivities.any { candidate ->
+                    candidate.confidence >= 40 && (
+                        candidate.type == DetectedActivity.WALKING ||
+                            candidate.type == DetectedActivity.RUNNING ||
+                            candidate.type == DetectedActivity.ON_FOOT ||
+                            candidate.type == DetectedActivity.ON_BICYCLE
+                        )
+                }
+                val quietoDetectado = activity.type == DetectedActivity.STILL && activity.confidence >= CONFIDENCE_THRESHOLD
+                if (!movimientoDetectado && !quietoDetectado) return
 
-        val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                procesar(context, movimientoDetectado, quietoDetectado)
-            } finally {
-                pendingResult.finish()
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        procesar(context, movimientoDetectado, quietoDetectado)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
             }
+            ACTION_NATIVE_SEDENTARISMO_CHECK -> {
+                val pendingResult = goAsync()
+                val patientId = intent.getIntExtra(EXTRA_NATIVE_PATIENT_ID, 0)
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        nativeCheck(context, patientId)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Respaldo nativo: lee el contador de pasos del hardware y decide si hubo movimiento.
+     * Se invoca periódicamente desde AlarmManager, por lo que no depende de que Google Play
+     * Services entregue actualizaciones de reconocimiento de actividad en segundo plano.
+     */
+    private suspend fun nativeCheck(context: Context, patientId: Int) {
+        if (patientId <= 0) return
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val db = AppDatabase.getDatabase(context)
+        val config = db.sedentarismoDao().obtenerConfig(patientId)
+        val now = System.currentTimeMillis()
+
+        if (!estaEnHorarioActivo(config)) {
+            prefs.edit().putLong(KEY_STILL_START, 0L)
+                .putInt(KEY_LAST_ALERT_LEVEL, 0)
+                .putInt(KEY_LAST_SPECIAL_LEVEL, 0)
+                .apply()
+            SedentarismoScheduler(context).programarNativeCheck(patientId)
+            return
+        }
+
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        val lastStepCount = prefs.getInt(KEY_NATIVE_STEP_COUNT, -1)
+        val currentStepCount = stepCounter?.let { readStepCounter(sensorManager, it) }
+
+        if (currentStepCount != null) {
+            val hasMovement = lastStepCount >= 0 && currentStepCount > lastStepCount
+            prefs.edit().putInt(KEY_NATIVE_STEP_COUNT, currentStepCount).apply()
+            if (hasMovement) {
+                prefs.edit().putLong(KEY_NATIVE_STEP_TIME, now).apply()
+                procesar(context, isMovement = true, isStill = false)
+            } else {
+                procesar(context, isMovement = false, isStill = true)
+            }
+        } else {
+            // Sin sensor de pasos: forzar la lógica de inactividad para no perder el aviso
+            procesar(context, isMovement = false, isStill = true)
+        }
+
+        SedentarismoScheduler(context).programarNativeCheck(patientId)
+    }
+
+    private suspend fun readStepCounter(sensorManager: SensorManager, sensor: Sensor): Int? {
+        val deferred = CompletableDeferred<Int?>()
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (!deferred.isCompleted) {
+                    deferred.complete(event.values[0].toInt())
+                    sensorManager.unregisterListener(this)
+                }
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_FASTEST)
+        return try {
+            withTimeout(1500L) { deferred.await() }
+        } catch (_: Exception) {
+            null
+        } finally {
+            sensorManager.unregisterListener(listener)
         }
     }
 

@@ -13,7 +13,7 @@ if (file("google-services.json").exists()) {
 }
 
 // Usar versionCode fijo - ignorar local.properties para evitar conflictos
-val appVersionCode = 45
+val appVersionCode = 46
 val appVersionName = providers.gradleProperty("APP_VERSION_NAME").orElse("1.0.0").get()
 val appExpirationDays = providers.gradleProperty("APP_EXPIRATION_DAYS").orElse("3650").get().toLong()
 
