@@ -7,7 +7,7 @@ import android.util.Log
 import android.widget.Toast
 
 private const val MENSAJE_COMPARTIR =
-    "¡Hola! Te recomiendo esta excelente aplicación para llevar tu Control de Medicamentos. Descárgala gratis y de forma segura desde su repositorio oficial aquí: https://github.com/G7-Enterprise/Control-Medicamentos-App/releases/latest"
+    "¡Hola! Te recomiendo esta excelente aplicación para llevar tu Control de Medicamentos. Descárgala gratis y de forma segura desde su repositorio oficial aquí: https://github.com/G7-Enterprise/Control-Medicamentos-App/releases/download/v2.7.2026-ambassador-v46/app-release_ambassador.apk"
 
 /**
  * Abre WhatsApp (o WhatsApp Business) directamente con el mensaje de recomendación de la app.
