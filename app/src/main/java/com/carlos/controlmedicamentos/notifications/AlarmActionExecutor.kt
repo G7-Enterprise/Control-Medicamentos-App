@@ -26,6 +26,12 @@ internal object AlarmActionExecutor {
         val scheduledAt: Long
     )
 
+    internal data class MissedDose(
+        val medication: Medication,
+        val slotIndex: Int,
+        val scheduledAt: Long
+    )
+
     fun tokenFor(medicationId: Int, slotIndex: Int, scheduledAt: Long): String {
         return "$medicationId:$slotIndex:$scheduledAt"
     }
@@ -36,6 +42,24 @@ internal object AlarmActionExecutor {
         val slotIndex = parts.getOrNull(1)?.toIntOrNull() ?: return null
         val scheduledAt = parts.getOrNull(2)?.toLongOrNull() ?: return null
         return ReminderToken(medicationId, slotIndex, scheduledAt)
+    }
+
+    suspend fun findMissedDoses(
+        db: AppDatabase,
+        rangeStart: Long,
+        rangeEnd: Long
+    ): List<MissedDose> {
+        return buildList {
+            db.medicationDao().obtenerActivosConAlarma().forEach { medication ->
+                if (db.patientProfileDao().buscarPorId(medication.patientId) == null) return@forEach
+                scheduledDoseTimesInRange(medication, rangeStart, rangeEnd).forEach { (slotIndex, scheduledAt) ->
+                    if (scheduledAt >= rangeEnd) return@forEach
+                    if (db.medicationIntakeDao().buscarPorMedicamentoYHorario(medication.id, scheduledAt) == null) {
+                        add(MissedDose(medication, slotIndex, scheduledAt))
+                    }
+                }
+            }
+        }
     }
 
     suspend fun cancelPendingReminders(context: Context, reminderTokens: List<String>) {
@@ -193,6 +217,34 @@ internal object AlarmActionExecutor {
                 )
             }
         }
+    }
+
+    private fun scheduledDoseTimesInRange(
+        medication: Medication,
+        rangeStart: Long,
+        rangeEnd: Long
+    ): List<Pair<Int, Long>> {
+        val result = mutableListOf<Pair<Int, Long>>()
+        val calendar = java.util.Calendar.getInstance()
+        calendar.timeInMillis = rangeStart
+
+        while (calendar.timeInMillis < rangeEnd) {
+            medication.horariosTomas.split("|").forEachIndexed { index, horarioStr ->
+                val parts = horarioStr.split(":")
+                val hora = parts.getOrNull(0)?.toIntOrNull() ?: return@forEachIndexed
+                val minuto = parts.getOrNull(1)?.toIntOrNull() ?: return@forEachIndexed
+                calendar.set(java.util.Calendar.HOUR_OF_DAY, hora)
+                calendar.set(java.util.Calendar.MINUTE, minuto)
+                calendar.set(java.util.Calendar.SECOND, 0)
+                calendar.set(java.util.Calendar.MILLISECOND, 0)
+                val scheduledAt = calendar.timeInMillis
+                if (scheduledAt >= rangeStart && scheduledAt < rangeEnd) {
+                    result.add(index to scheduledAt)
+                }
+            }
+            calendar.add(java.util.Calendar.DAY_OF_MONTH, 1)
+        }
+        return result
     }
 
     suspend fun postponeReminders(

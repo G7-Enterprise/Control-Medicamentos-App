@@ -30,8 +30,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ActivityEventType
 import com.carlos.controlmedicamentos.data.local.ConfigSedentarismo
-import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
+import com.carlos.controlmedicamentos.data.local.PhysicalActivity
+import com.carlos.controlmedicamentos.data.local.PhysicalActivityDao
 import com.carlos.controlmedicamentos.data.local.SedentarismoDao
 import com.carlos.controlmedicamentos.notifications.SedentarismoScheduler
 import com.carlos.controlmedicamentos.notifications.HorariosEspecialesScheduler
@@ -117,11 +119,11 @@ fun SedentarismoScreen(
             set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
-    val historial by db.sedentarismoDao().observarHistorial(patientId).collectAsState(initial = emptyList())
-    val mesesConHistorial by db.sedentarismoDao().observarMesesConHistorial(patientId).collectAsState(initial = emptyList())
+    val historial by db.physicalActivityDao().observarHistorialSedentarismo(patientId).collectAsState(initial = emptyList())
+    val mesesConHistorial by db.physicalActivityDao().observarMesesSedentarismo(patientId).collectAsState(initial = emptyList())
     val mesActual = remember { SimpleDateFormat("yyyy-MM", Locale.US).format(Date()) }
     val mesesExpandidos = remember { mutableStateMapOf<String, Boolean>() }
-    val alertasHoy by db.sedentarismoDao().contarAlertasHoy(patientId, inicioHoy).collectAsState(initial = 0)
+    val alertasHoy by db.physicalActivityDao().contarInactividadHoy(patientId, inicioHoy).collectAsState(initial = 0)
 
     LaunchedEffect(mesesConHistorial) {
         mesesConHistorial.forEach { mes ->
@@ -129,14 +131,14 @@ fun SedentarismoScreen(
         }
     }
 
-    var registroDetalle by remember { mutableStateOf<RegistroSedentarismo?>(null) }
-    var registroAEliminar by remember { mutableStateOf<RegistroSedentarismo?>(null) }
+    var registroDetalle by remember { mutableStateOf<PhysicalActivity?>(null) }
+    var registroAEliminar by remember { mutableStateOf<PhysicalActivity?>(null) }
     var sonidoActivado by remember { mutableStateOf(SedentarismoScheduler.loadSoundEnabled(context)) }
 
-    val movimientosHoy = historial.filter { it.timestamp >= inicioHoy && it.tipoEvento == "MOVIMIENTO_REGISTRADO" }
-    val sinMovimientoHoy = historial.filter { it.timestamp >= inicioHoy && it.tipoEvento == "SIN_MOVIMIENTO" }
-    val movimientosMes = historial.filter { it.timestamp >= inicioMes && it.tipoEvento == "MOVIMIENTO_REGISTRADO" }
-    val sinMovimientoMes = historial.filter { it.timestamp >= inicioMes && it.tipoEvento == "SIN_MOVIMIENTO" }
+    val movimientosHoy = historial.filter { it.fechaInicio >= inicioHoy && it.tipoEvento == ActivityEventType.MOVEMENT }
+    val sinMovimientoHoy = historial.filter { it.fechaInicio >= inicioHoy && it.tipoEvento == ActivityEventType.INACTIVITY }
+    val movimientosMes = historial.filter { it.fechaInicio >= inicioMes && it.tipoEvento == ActivityEventType.MOVEMENT }
+    val sinMovimientoMes = historial.filter { it.fechaInicio >= inicioMes && it.tipoEvento == ActivityEventType.INACTIVITY }
 
     Scaffold(
         topBar = {
@@ -324,7 +326,7 @@ fun SedentarismoScreen(
                             patientId = patientId,
                             mes = mes,
                             expandido = mesesExpandidos[mes] == true,
-                            sedentarismoDao = db.sedentarismoDao(),
+                            physicalActivityDao = db.physicalActivityDao(),
                             inicioHoy = inicioHoy,
                             onToggle = { mesesExpandidos[mes] = !(mesesExpandidos[mes] == true) },
                             onDetalle = { registroDetalle = it },
@@ -339,18 +341,17 @@ fun SedentarismoScreen(
     // ── Diálogo de detalle ──
     registroDetalle?.let { reg ->
         val (color, _, etiqueta) = when (reg.tipoEvento) {
-            "ALERTA_INACTIVIDAD"   -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Alerta de inactividad")
-            "MOVIMIENTO"           -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
-            "MOVIMIENTO_REGISTRADO" -> Triple(Color(0xFF43A047), Icons.Filled.DirectionsWalk, "Movimiento registrado")
-            "SIN_MOVIMIENTO"       -> Triple(Color(0xFFEF5350), Icons.Filled.DoNotDisturb, "Sin movimiento")
-            else -> Triple(Color(0xFF90A4AE), Icons.Filled.Info, reg.tipoEvento)
+            ActivityEventType.INACTIVITY -> Triple(Color(0xFFEF5350), Icons.Filled.DoNotDisturb, "Sin movimiento")
+            ActivityEventType.MOVEMENT -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
+            ActivityEventType.ALERT_RESPONSE -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Respuesta a alerta")
+            else -> Triple(Color(0xFF90A4AE), Icons.Filled.Info, reg.tipoEvento.name)
         }
         AlertDialog(
             onDismissRequest = { registroDetalle = null },
             title = { Text(etiqueta, color = color, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(reg.timestamp))}", color = Color.White)
+                    Text("Fecha: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(reg.fechaInicio))}", color = Color.White)
                     if (reg.minutosInactivo > 0) {
                         Text("Tiempo: ${reg.minutosInactivo} min", color = Color.White.copy(0.8f))
                     }
@@ -383,7 +384,7 @@ fun SedentarismoScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        scope.launch { db.sedentarismoDao().eliminarRegistro(reg.id) }
+                        scope.launch { db.physicalActivityDao().eliminar(reg.id) }
                         registroAEliminar = null
                     }
                 ) { Text("Eliminar", color = Color(0xFFEF5350)) }
@@ -397,17 +398,16 @@ fun SedentarismoScreen(
 }
 
 @Composable
-private fun RegistroSedentarismoCard(
-    reg: RegistroSedentarismo,
+private fun PhysicalActivityCard(
+    reg: PhysicalActivity,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
     val (color, icono, etiqueta) = when (reg.tipoEvento) {
-        "ALERTA_INACTIVIDAD"   -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Alerta de inactividad")
-        "MOVIMIENTO"           -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
-        "MOVIMIENTO_REGISTRADO" -> Triple(Color(0xFF43A047), Icons.Filled.DirectionsWalk, "Movimiento registrado")
-        "SIN_MOVIMIENTO"       -> Triple(Color(0xFFEF5350), Icons.Filled.DoNotDisturb, "Sin movimiento")
-        else -> Triple(Color(0xFF90A4AE), Icons.Filled.Info, reg.tipoEvento)
+        ActivityEventType.INACTIVITY -> Triple(Color(0xFFEF5350), Icons.Filled.DoNotDisturb, "Sin movimiento")
+        ActivityEventType.MOVEMENT -> Triple(Color(0xFF66BB6A), Icons.Filled.DirectionsWalk, "Movimiento detectado")
+        ActivityEventType.ALERT_RESPONSE -> Triple(Color(0xFFFFA726), Icons.Filled.Warning, "Respuesta a alerta")
+        else -> Triple(Color(0xFF90A4AE), Icons.Filled.Info, reg.tipoEvento.name)
     }
     Card(
         shape = RoundedCornerShape(10.dp),
@@ -429,9 +429,9 @@ private fun RegistroSedentarismoCard(
                 Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(etiqueta, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    if (reg.minutosInactivo > 0 && reg.tipoEvento != "MOVIMIENTO_REGISTRADO")
+                    if (reg.minutosInactivo > 0 && reg.tipoEvento == ActivityEventType.INACTIVITY)
                         Text("${reg.minutosInactivo} min sin moverte", color = color.copy(0.8f), fontSize = 11.sp)
-                    if (reg.minutosInactivo > 0 && reg.tipoEvento == "MOVIMIENTO_REGISTRADO")
+                    if (reg.minutosInactivo > 0 && reg.tipoEvento == ActivityEventType.MOVEMENT)
                         Text("${reg.minutosInactivo} min de actividad", color = color.copy(0.8f), fontSize = 11.sp)
                     if (reg.notas.isNotBlank())
                         Text(reg.notas, color = Color.White.copy(0.5f), fontSize = 10.sp)
@@ -439,7 +439,7 @@ private fun RegistroSedentarismoCard(
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(reg.timestamp)),
+                    SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(reg.fechaInicio)),
                     color = Color.White.copy(0.5f),
                     fontSize = 11.sp,
                     maxLines = 1
@@ -476,15 +476,15 @@ private fun HistorialMesSedentarismo(
     patientId: Int,
     mes: String,
     expandido: Boolean,
-    sedentarismoDao: SedentarismoDao,
+    physicalActivityDao: PhysicalActivityDao,
     inicioHoy: Long,
     onToggle: () -> Unit,
-    onDetalle: (RegistroSedentarismo) -> Unit,
-    onEliminar: (RegistroSedentarismo) -> Unit
+    onDetalle: (PhysicalActivity) -> Unit,
+    onEliminar: (PhysicalActivity) -> Unit
 ) {
     val limitesMes = remember(mes) { limitesMesSedentarismo(mes) }
-    val registrosDelMes by sedentarismoDao
-        .observarEnRango(patientId, limitesMes.first, limitesMes.second)
+    val registrosDelMes by physicalActivityDao
+        .observarSedentarismoEnRango(patientId, limitesMes.first, limitesMes.second)
         .collectAsState(initial = emptyList())
     val diasExpandidos = remember(mes) { mutableStateMapOf<Long, Boolean>() }
     val tituloMes = remember(mes) {
@@ -556,7 +556,7 @@ private fun HistorialMesSedentarismo(
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             registrosDelDia.forEach { registro ->
-                                                RegistroSedentarismoCard(
+                                                PhysicalActivityCard(
                                                     reg = registro,
                                                     onClick = { onDetalle(registro) },
                                                     onDelete = { onEliminar(registro) }
@@ -587,9 +587,9 @@ private fun limitesMesSedentarismo(mes: String): Pair<Long, Long> {
     return inicio to calendario.timeInMillis - 1
 }
 
-private fun inicioDiaSedentarismo(registro: RegistroSedentarismo): Long {
+private fun inicioDiaSedentarismo(registro: PhysicalActivity): Long {
     return Calendar.getInstance().apply {
-        timeInMillis = registro.timestamp
+        timeInMillis = registro.fechaInicio
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)

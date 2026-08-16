@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -20,10 +22,14 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.*
@@ -39,8 +45,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ActivityOrigin
 import com.carlos.controlmedicamentos.data.local.PhysicalActivity
-import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
@@ -151,6 +157,15 @@ fun PodometroScreen(
     val actividades by remember(pacienteId) {
         database.physicalActivityDao().observarPorPaciente(pacienteId)
     }.collectAsState(initial = emptyList())
+    val mesesActividad = remember(actividades) {
+        actividades.map { mesActividad(it.fechaInicio) }.distinct()
+    }
+    val mesesActividadExpandidos = remember { mutableStateMapOf<String, Boolean>() }
+    LaunchedEffect(mesesActividad) {
+        mesesActividad.forEachIndexed { index, mes ->
+            if (mes !in mesesActividadExpandidos) mesesActividadExpandidos[mes] = index == 0
+        }
+    }
 
     // ── Pending summary dialog (shown after stop) ─────────────────────────────
     var sesionGuardada by remember { mutableStateOf<TrackingState?>(null) }
@@ -396,17 +411,8 @@ fun PodometroScreen(
                                 altitudInicioMetros    = finished.altitudInicioMetros,
                                 altitudMaxMetros       = finished.altitudMaxMetros,
                                 desnivelPositivoMetros = finished.desnivelPositivoMetros,
-                                desnivelNegativoMetros = finished.desnivelNegativoMetros
-                            )
-                        )
-                        val minutos = (finished.duracionSegundos / 60).toInt()
-                        val esMovimiento = finished.duracionSegundos >= 300L && (finished.pasos > 0 || distFinal > 0)
-                        database.sedentarismoDao().insertarRegistro(
-                            RegistroSedentarismo(
-                                patientId = pacienteId,
-                                tipoEvento = if (esMovimiento) "MOVIMIENTO_REGISTRADO" else "SIN_MOVIMIENTO",
-                                minutosInactivo = minutos,
-                                notas = "Actividad ${finished.tipo}: ${finished.pasos} pasos, %.0f m, $minutos min".format(distFinal)
+                                desnivelNegativoMetros = finished.desnivelNegativoMetros,
+                                origen = ActivityOrigin.MANUAL_EXERCISE
                             )
                         )
                     }
@@ -800,10 +806,16 @@ fun PodometroScreen(
                     }
                 }
             } else {
-                actividades.forEach { actividad ->
-                    ActividadCard(
-                        actividad = actividad,
-                        onEliminar = { coroutineScope.launch { database.physicalActivityDao().eliminar(actividad.id) } }
+                Text("Historial", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                mesesActividad.forEach { mes ->
+                    ActividadMesFolder(
+                        mes = mes,
+                        actividades = actividades,
+                        expandido = mesesActividadExpandidos[mes] == true,
+                        onToggle = { mesesActividadExpandidos[mes] = !(mesesActividadExpandidos[mes] == true) },
+                        onEliminar = { actividad ->
+                            coroutineScope.launch { database.physicalActivityDao().eliminar(actividad.id) }
+                        }
                     )
                 }
             }
@@ -900,3 +912,114 @@ private fun ActividadCard(actividad: PhysicalActivity, onEliminar: () -> Unit) {
         }
     }
 }
+
+@Composable
+private fun ActividadMesFolder(
+    mes: String,
+    actividades: List<PhysicalActivity>,
+    expandido: Boolean,
+    onToggle: () -> Unit,
+    onEliminar: (PhysicalActivity) -> Unit
+) {
+    val actividadesDelMes = actividades.filter { mesActividad(it.fechaInicio) == mes }
+    val diasExpandidos = remember(mes) { mutableStateMapOf<Long, Boolean>() }
+    val tituloMes = remember(mes) { tituloMesActividad(mes) }
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F2A12)),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Folder, contentDescription = null, tint = Color(0xFF66BB6A))
+                Spacer(Modifier.width(10.dp))
+                Text(tituloMes, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("${actividadesDelMes.size}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Spacer(Modifier.width(6.dp))
+                Icon(
+                    if (expandido) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                    contentDescription = if (expandido) "Cerrar mes" else "Abrir mes",
+                    tint = Color.White.copy(alpha = 0.7f)
+                )
+            }
+            AnimatedVisibility(visible = expandido) {
+                Column(modifier = Modifier.padding(start = 10.dp, end = 10.dp, bottom = 10.dp)) {
+                    actividadesDelMes.groupBy { inicioDiaActividad(it.fechaInicio) }
+                        .toList()
+                        .sortedByDescending { it.first }
+                        .forEach { (dia, actividadesDelDia) ->
+                            val diaExpandido = diasExpandidos[dia] == true
+                            Card(
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF16351A)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp)
+                                    .clickable { diasExpandidos[dia] = !diaExpandido }
+                            ) {
+                                Column {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Filled.Folder, contentDescription = null, tint = Color(0xFFA5D6A7), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "${tituloDiaActividad(dia)} · ${actividadesDelDia.size} registros",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Icon(
+                                            if (diaExpandido) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                                            contentDescription = if (diaExpandido) "Cerrar fecha" else "Abrir fecha",
+                                            tint = Color.White.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    AnimatedVisibility(visible = diaExpandido) {
+                                        Column(
+                                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            actividadesDelDia.forEach { actividad ->
+                                                ActividadCard(
+                                                    actividad = actividad,
+                                                    onEliminar = { onEliminar(actividad) }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+        }
+    }
+}
+
+private fun mesActividad(fecha: Long): String =
+    SimpleDateFormat("yyyy-MM", Locale.US).format(Date(fecha))
+
+private fun tituloMesActividad(mes: String): String =
+    SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(
+        SimpleDateFormat("yyyy-MM", Locale.US).parse(mes) ?: Date()
+    ).replaceFirstChar { it.uppercase() }
+
+private fun inicioDiaActividad(fecha: Long): Long = Calendar.getInstance().apply {
+    timeInMillis = fecha
+    set(Calendar.HOUR_OF_DAY, 0)
+    set(Calendar.MINUTE, 0)
+    set(Calendar.SECOND, 0)
+    set(Calendar.MILLISECOND, 0)
+}.timeInMillis
+
+private fun tituloDiaActividad(dia: Long): String =
+    SimpleDateFormat("EEEE d 'de' MMMM", Locale.getDefault()).format(Date(dia))
+        .replaceFirstChar { it.uppercase() }

@@ -8,6 +8,8 @@ import androidx.room.withTransaction
 import com.carlos.controlmedicamentos.BuildConfig
 import com.carlos.controlmedicamentos.CountryCurrencyCatalog
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ActivityEventType
+import com.carlos.controlmedicamentos.data.local.ActivityOrigin
 import com.carlos.controlmedicamentos.data.local.MedicalAppointment
 import com.carlos.controlmedicamentos.data.local.MedicalPractitioner
 import com.carlos.controlmedicamentos.data.local.MedicalReport
@@ -44,7 +46,6 @@ import com.carlos.controlmedicamentos.data.local.Ortodoncia
 import com.carlos.controlmedicamentos.data.local.AjusteOrtodoncia
 import com.carlos.controlmedicamentos.data.local.IncidenciaOrtodoncia
 import com.carlos.controlmedicamentos.data.local.ElasticoOrtodoncia
-import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import com.carlos.controlmedicamentos.data.local.ConfigSedentarismo
 import com.carlos.controlmedicamentos.data.local.RegistroHidratacion
 import com.carlos.controlmedicamentos.data.local.FallAlert
@@ -342,10 +343,6 @@ object BackupManager {
         val ajustesOrtodoncia = if (selection.ajustesOrtodoncia) database.ajusteOrtodonciaDao().obtenerTodosLista() else emptyList()
         val incidenciasOrtodoncia = if (selection.incidenciasOrtodoncia) database.incidenciaOrtodonciaDao().obtenerTodosLista() else emptyList()
         val elasticosOrtodoncia = if (selection.elasticosOrtodoncia) database.elasticoOrtodonciaDao().obtenerTodosLista() else emptyList()
-        val registrosSedentarismo = if (selection.registrosSedentarismo) {
-            if (patientId != null) database.sedentarismoDao().obtenerTodosLista().filter { it.patientId == patientId }
-            else database.sedentarismoDao().obtenerTodosLista()
-        } else emptyList()
         val configsSedentarismo = if (selection.configSedentarismo) database.sedentarismoDao().obtenerTodosConfig() else emptyList()
         val registrosHidratacion = if (selection.registrosHidratacion) {
             if (patientId != null) database.hidratacionDao().obtenerTodosLista().filter { it.patientId == patientId }
@@ -411,7 +408,6 @@ object BackupManager {
             .put("ajustesOrtodoncia", JSONArray().apply { ajustesOrtodoncia.forEach { put(it.toJson()) } })
             .put("incidenciasOrtodoncia", JSONArray().apply { incidenciasOrtodoncia.forEach { put(it.toJson()) } })
             .put("elasticosOrtodoncia", JSONArray().apply { elasticosOrtodoncia.forEach { put(it.toJson()) } })
-            .put("registrosSedentarismo", JSONArray().apply { registrosSedentarismo.forEach { put(it.toJson()) } })
             .put("configSedentarismo", JSONArray().apply { configsSedentarismo.forEach { put(it.toJson()) } })
             .put("registrosHidratacion", JSONArray().apply { registrosHidratacion.forEach { put(it.toJson()) } })
             .put("fallAlerts", JSONArray().apply { fallAlerts.forEach { put(it.toJson()) } })
@@ -451,7 +447,10 @@ object BackupManager {
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val medicationOrders = json.optJSONArray("medicationOrders").toMedicationOrders()
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
-        val physicalActivities = json.optJSONArray("physicalActivities").toPhysicalActivities()
+        val physicalActivities = (
+            json.optJSONArray("physicalActivities").toPhysicalActivities() +
+                json.optJSONArray("registrosSedentarismo").toLegacyPhysicalActivities()
+            ).distinctBy { Triple(it.patientId, it.fechaInicio, it.duracionSegundos) }
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val carritoItems = json.optJSONArray("carritoPendiente").toCarritoPendienteItems()
         val ciclos = json.optJSONArray("ciclosMenstruales").toCiclosMenstruales()
@@ -492,8 +491,6 @@ object BackupManager {
         val incidenciasOrtodoncia = json.optJSONArray("incidenciasOrtodoncia").toIncidenciasOrtodoncia()
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val elasticosOrtodoncia = json.optJSONArray("elasticosOrtodoncia").toElasticosOrtodoncia()
-        val registrosSedentarismo = json.optJSONArray("registrosSedentarismo").toRegistrosSedentarismo()
-            .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val configsSedentarismo = json.optJSONArray("configSedentarismo").toConfigsSedentarismo()
             .map { if (patientId != null) it.copy(patientId = patientId) else it }
         val registrosHidratacion = (json.optJSONArray("registrosHidratacion")?.toRegistrosHidratacion()
@@ -547,7 +544,7 @@ object BackupManager {
             if (selection.ajustesOrtodoncia) database.ajusteOrtodonciaDao().eliminarTodos()
             if (selection.incidenciasOrtodoncia) database.incidenciaOrtodonciaDao().eliminarTodos()
             if (selection.elasticosOrtodoncia) database.elasticoOrtodonciaDao().eliminarTodos()
-            if (selection.registrosSedentarismo) database.sedentarismoDao().eliminarTodos()
+            if (selection.registrosSedentarismo) database.physicalActivityDao().eliminarSedentarismo()
             if (selection.configSedentarismo) database.sedentarismoDao().eliminarTodaConfig()
             if (selection.registrosHidratacion) database.hidratacionDao().eliminarTodos()
             if (selection.fallAlerts) database.fallAlertDao().eliminarTodos()
@@ -561,7 +558,13 @@ object BackupManager {
             if (selection.appointments && appointments.isNotEmpty()) database.medicalAppointmentDao().guardarTodos(appointments)
             if (selection.vaccinations && vaccinations.isNotEmpty()) database.vaccinationRecordDao().guardarTodos(vaccinations)
             if (selection.medicationOrders && medicationOrders.isNotEmpty()) database.medicationOrderDao().guardarTodos(medicationOrders)
-            if (selection.physicalActivities && physicalActivities.isNotEmpty()) database.physicalActivityDao().guardarTodos(physicalActivities)
+            if (selection.physicalActivities && physicalActivities.isNotEmpty()) {
+                database.physicalActivityDao().guardarTodos(physicalActivities)
+            } else if (selection.registrosSedentarismo && physicalActivities.isNotEmpty()) {
+                database.physicalActivityDao().guardarTodos(
+                    physicalActivities.filter { it.origen == ActivityOrigin.BACKGROUND_DETECTED }
+                )
+            }
             if (selection.carritoPendiente && carritoItems.isNotEmpty()) database.carritoPendienteDao().guardarTodos(carritoItems)
             if (selection.ciclosMenstruales && ciclos.isNotEmpty()) database.cicloMenstrualDao().guardarTodos(ciclos)
             if (selection.registrosDiarioCiclo && registrosCiclo.isNotEmpty()) database.registroDiarioCicloDao().guardarTodos(registrosCiclo)
@@ -587,7 +590,6 @@ object BackupManager {
             if (selection.ajustesOrtodoncia && ajustesOrtodoncia.isNotEmpty()) database.ajusteOrtodonciaDao().guardarTodos(ajustesOrtodoncia)
             if (selection.incidenciasOrtodoncia && incidenciasOrtodoncia.isNotEmpty()) database.incidenciaOrtodonciaDao().guardarTodos(incidenciasOrtodoncia)
             if (selection.elasticosOrtodoncia && elasticosOrtodoncia.isNotEmpty()) database.elasticoOrtodonciaDao().guardarTodos(elasticosOrtodoncia)
-            if (selection.registrosSedentarismo && registrosSedentarismo.isNotEmpty()) database.sedentarismoDao().guardarTodos(registrosSedentarismo)
             if (selection.configSedentarismo && configsSedentarismo.isNotEmpty()) database.sedentarismoDao().guardarTodosConfig(configsSedentarismo)
             if (selection.registrosHidratacion && registrosHidratacion.isNotEmpty()) database.hidratacionDao().guardarTodos(registrosHidratacion)
             if (selection.fallAlerts && fallAlerts.isNotEmpty()) database.fallAlertDao().guardarTodos(fallAlerts)
@@ -646,7 +648,7 @@ object BackupManager {
             ajustesOrtodoncia = ajustesOrtodoncia.size,
             incidenciasOrtodoncia = incidenciasOrtodoncia.size,
             elasticosOrtodoncia = elasticosOrtodoncia.size,
-            registrosSedentarismo = registrosSedentarismo.size,
+            registrosSedentarismo = physicalActivities.count { it.origen == ActivityOrigin.BACKGROUND_DETECTED },
             configSedentarismo = configsSedentarismo.size,
             registrosHidratacion = registrosHidratacion.size,
             fallAlerts = fallAlerts.size
@@ -1663,6 +1665,10 @@ private fun PhysicalActivity.toJson(): JSONObject = JSONObject()
     .put("altitudMaxMetros", altitudMaxMetros)
     .put("desnivelPositivoMetros", desnivelPositivoMetros)
     .put("desnivelNegativoMetros", desnivelNegativoMetros)
+    .put("origen", origen.name)
+    .put("tipoEvento", tipoEvento.name)
+    .put("minutosInactivo", minutosInactivo)
+    .put("notas", notas)
 
 private fun CarritoPendienteItem.toJson(): JSONObject = JSONObject()
     .put("id", id)
@@ -1852,7 +1858,13 @@ private fun JSONArray?.toPhysicalActivities(): List<PhysicalActivity> {
             altitudInicioMetros = json.optDouble("altitudInicioMetros"),
             altitudMaxMetros = json.optDouble("altitudMaxMetros"),
             desnivelPositivoMetros = json.optDouble("desnivelPositivoMetros"),
-            desnivelNegativoMetros = json.optDouble("desnivelNegativoMetros")
+            desnivelNegativoMetros = json.optDouble("desnivelNegativoMetros"),
+            origen = runCatching { ActivityOrigin.valueOf(json.optString("origen")) }
+                .getOrDefault(ActivityOrigin.MANUAL_EXERCISE),
+            tipoEvento = runCatching { ActivityEventType.valueOf(json.optString("tipoEvento")) }
+                .getOrDefault(ActivityEventType.MOVEMENT),
+            minutosInactivo = json.optInt("minutosInactivo", 0),
+            notas = json.optString("notas")
         )
     }
 }
@@ -2402,22 +2414,23 @@ private fun JSONArray?.toElasticosOrtodoncia(): List<ElasticoOrtodoncia> {
     }
 }
 
-private fun RegistroSedentarismo.toJson(): JSONObject = JSONObject()
-    .put("id", id)
-    .put("patientId", patientId)
-    .put("timestamp", timestamp)
-    .put("tipoEvento", tipoEvento)
-    .put("minutosInactivo", minutosInactivo)
-    .put("notas", notas)
-
-private fun JSONArray?.toRegistrosSedentarismo(): List<RegistroSedentarismo> {
+private fun JSONArray?.toLegacyPhysicalActivities(): List<PhysicalActivity> {
     if (this == null) return emptyList()
     return List(length()) { index -> getJSONObject(index) }.map { json ->
-        RegistroSedentarismo(
+        val tipoEvento = json.optString("tipoEvento", "MOVIMIENTO")
+        PhysicalActivity(
             id = json.optInt("id"),
             patientId = json.optInt("patientId"),
-            timestamp = json.optLong("timestamp", System.currentTimeMillis()),
-            tipoEvento = json.optString("tipoEvento", "MOVIMIENTO"),
+            tipo = "caminar",
+            fechaInicio = json.optLong("timestamp", System.currentTimeMillis()),
+            fechaFin = json.optLong("timestamp", System.currentTimeMillis()) + json.optInt("minutosInactivo", 0) * 60000L,
+            duracionSegundos = json.optInt("minutosInactivo", 0) * 60L,
+            origen = ActivityOrigin.BACKGROUND_DETECTED,
+            tipoEvento = if (tipoEvento == "SIN_MOVIMIENTO" || tipoEvento == "ALERTA_INACTIVIDAD") {
+                ActivityEventType.INACTIVITY
+            } else {
+                ActivityEventType.MOVEMENT
+            },
             minutosInactivo = json.optInt("minutosInactivo", 0),
             notas = json.optString("notas")
         )

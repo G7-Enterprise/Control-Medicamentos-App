@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.carlos.controlmedicamentos.data.local.*
 import com.carlos.controlmedicamentos.backup.BackupSelection
 import com.carlos.controlmedicamentos.data.remote.VademecumMedication
+import com.carlos.controlmedicamentos.ui.screens.StatisticsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -79,6 +80,7 @@ internal fun MedicamentoFormPanelSecundarios(
     val mostrarPanelVerificadorTomas = s.mostrarPanelVerificadorTomas
     val mostrarPanelHidratacion = s.mostrarPanelHidratacion
     val mostrarPanelSedentarismo = s.mostrarPanelSedentarismo
+    val mostrarPanelEstadisticas = s.mostrarPanelEstadisticas
     val mostrarPanelDentista = s.mostrarPanelDentista
     val mostrarPanelPedidos = s.mostrarPanelPedidos
     val mostrarPanelConfiguracionAlertas = s.mostrarPanelConfiguracionAlertas
@@ -645,6 +647,9 @@ internal fun MedicamentoFormPanelSecundarios(
         }
         if (mostrarPanelSedentarismo) {
             SedentarismoScreen(patientId = pacienteActivo?.id ?: 0, onBack = onCerrarPanelesSecundarios)
+        }
+        if (mostrarPanelEstadisticas) {
+            StatisticsScreen(onVolver = onCerrarPanelesSecundarios)
         }
         if (mostrarPanelDentista) {
             DentistaScreen(patientId = pacienteActivo?.id ?: 0, onBack = onCerrarPanelesSecundarios)

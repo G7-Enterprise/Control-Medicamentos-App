@@ -205,8 +205,8 @@ suspend fun compilarReporteClinico(
             .map { registro -> ResumenHidratacion(registro.timestamp, registro.cantidadMl, registro.tipoBebida) }
     } else emptyList()
     val sedentarismoResumen = if (patientId > 0) {
-        database.sedentarismoDao().obtenerEnRango(patientId, fechaLimite, ahora)
-            .map { registro -> ResumenSedentarismo(registro.timestamp, registro.tipoEvento, registro.minutosInactivo) }
+        database.physicalActivityDao().obtenerSedentarismoEnRango(patientId, fechaLimite, ahora)
+            .map { registro -> ResumenSedentarismo(registro.fechaInicio, registro.tipoEvento.name, registro.minutosInactivo) }
     } else emptyList()
     val configuracionSedentarismo = if (patientId > 0) database.sedentarismoDao().obtenerConfig(patientId) else null
 

@@ -1,6 +1,7 @@
 package com.carlos.controlmedicamentos
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -148,6 +149,11 @@ fun FallAlertScreen(
     }
     var contactToDelete by remember { mutableStateOf<EmergencyContact?>(null) }
     var alertToDelete by remember { mutableStateOf<FallAlert?>(null) }
+    var permissionCheckTrigger by remember { mutableStateOf(0) }
+    var hasRequestedSmsPermission by remember { mutableStateOf(prefs.getBoolean("sms_requested", false)) }
+    val smsPermissionGranted = remember(permissionCheckTrigger) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+    }
 
     val alerts by database.fallAlertDao().observeByPatient(patientId).collectAsState(initial = emptyList())
 
@@ -196,6 +202,21 @@ fun FallAlertScreen(
         }
     }
 
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        permissionCheckTrigger++
+        if (!isGranted) {
+            hasRequestedSmsPermission = true
+            prefs.edit().putBoolean("sms_requested", true).apply()
+        }
+        Toast.makeText(
+            context,
+            if (isGranted) "Permiso SMS concedido" else "Permiso SMS denegado. Actívalo desde Configuración de la app.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -209,6 +230,7 @@ fun FallAlertScreen(
             ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
         )
         android.util.Log.d("FallAlertScreen", "postGranted=$postGranted smsGranted=$smsGranted")
+        permissionCheckTrigger++
         if (postGranted) {
             val phonesString = contactPhones.map { it.phone }.joinToString(",")
             startMonitoring(context, patientId, phonesString, sensitivity, edadPaciente, alturaCmPaciente)
@@ -508,6 +530,52 @@ fun FallAlertScreen(
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 14.sp
                     )
+                }
+            }
+
+            if (isEnabled && !smsPermissionGranted) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (hasRequestedSmsPermission) {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
+                                context.startActivity(intent)
+                            } else {
+                                hasRequestedSmsPermission = true
+                                prefs.edit().putBoolean("sms_requested", true).apply()
+                                smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+                            }
+                        },
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3A2A00)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = MaterialIcons.Filled.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFFFC107)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Permiso SMS no concedido",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Las alertas automáticas por SMS están desactivadas. Toca aquí para conceder el permiso.",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
 

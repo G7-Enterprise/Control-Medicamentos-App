@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.carlos.controlmedicamentos.data.local.AppDatabase
 import com.carlos.controlmedicamentos.data.local.RegistroHidratacion
+import com.carlos.controlmedicamentos.notifications.AlarmActionExecutor
 import com.carlos.controlmedicamentos.notifications.HidratacionScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -89,6 +90,7 @@ class ReminderAlertActivity : ComponentActivity() {
         const val EXTRA_SOUND_ENABLED = "EXTRA_SOUND_ENABLED"
         const val EXTRA_TITULO_ALERTA = "EXTRA_TITULO_ALERTA"
         const val EXTRA_MENSAJE_ALERTA = "EXTRA_MENSAJE_ALERTA"
+        const val EXTRA_NOTIFICATION_ID = "EXTRA_NOTIFICATION_ID"
         const val TYPE_HIDRATACION = "HIDRATACION"
         const val TYPE_SEDENTARISMO = "SEDENTARISMO"
         const val TYPE_STOCK_BAJO = "STOCK_BAJO"
@@ -121,6 +123,8 @@ class ReminderAlertActivity : ComponentActivity() {
         val stockItemsJson = intent.getStringExtra(EXTRA_STOCK_ITEMS_JSON)
         val stockWhatsappPhone = intent.getStringExtra(EXTRA_STOCK_WHATSAPP_PHONE).orEmpty()
         val stockRestockSource = intent.getStringExtra(EXTRA_STOCK_RESTOCK_SOURCE) ?: RestockSource.WHATSAPP_NUMBER
+        val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, NotificacionHelper.NOTIFICATION_ID_MISSED_MEDS)
+        val reminderTokens = intent.getStringArrayExtra(NotificacionHelper.EXTRA_REMINDER_TOKENS)?.toList().orEmpty()
         val stockItems: List<StockOrderItem> = try {
             if (stockItemsJson != null) {
                 val type = object : TypeToken<List<StockOrderItem>>() {}.type
@@ -158,13 +162,20 @@ class ReminderAlertActivity : ComponentActivity() {
                         title = tituloAlerta.ifBlank { "Tomas pendientes" },
                         message = mensajeAlerta,
                         onAccept = {
-                            startActivity(
-                                Intent(this@ReminderAlertActivity, MainActivity::class.java).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                                    putExtra(NotificacionHelper.EXTRA_LAUNCH_CRITICAL_ALERT, true)
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                AlarmActionExecutor.cancelPendingReminders(this@ReminderAlertActivity, reminderTokens)
+                                AlarmActionExecutor.registerNotTakenTakes(this@ReminderAlertActivity, reminderTokens)
+                                NotificacionHelper.cancelar(this@ReminderAlertActivity, notificationId)
+                                runOnUiThread {
+                                    startActivity(
+                                        Intent(this@ReminderAlertActivity, MainActivity::class.java).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                            putExtra(NotificacionHelper.EXTRA_LAUNCH_CRITICAL_ALERT, true)
+                                        }
+                                    )
+                                    finish()
                                 }
-                            )
-                            finish()
+                            }
                         }
                     )
                     TYPE_STOCK_BAJO -> StockBajoAlertScreen(

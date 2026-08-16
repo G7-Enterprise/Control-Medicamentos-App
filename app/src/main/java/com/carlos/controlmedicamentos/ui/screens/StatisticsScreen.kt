@@ -25,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -47,10 +48,15 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import com.carlos.controlmedicamentos.StatisticsPdfExporter
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ActivityOrigin
 import com.carlos.controlmedicamentos.data.local.MEDICATION_INTAKE_STATUS_NOT_TAKEN
 import com.carlos.controlmedicamentos.data.local.MedicalReport
+import com.carlos.controlmedicamentos.data.local.PhysicalActivity
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -60,24 +66,61 @@ private val SpanishLocale = Locale.forLanguageTag("es-ES")
 
 data class MonthOption(val label: String, val start: Long, val end: Long)
 
+private data class ActivityQueryState(
+    val records: List<PhysicalActivity> = emptyList(),
+    val loading: Boolean = true,
+    val failed: Boolean = false,
+    val errorMessage: String? = null
+)
+
 @Composable
 fun StatisticsScreen(
     onVolver: () -> Unit
 ) {
     val context = LocalContext.current
-    val database = remember(context) { AppDatabase.getDatabase(context) }
-    val pacienteActivoState = database.patientProfileDao().observarPerfilActivo().collectAsState(initial = null)
+    val databaseResult = remember(context) {
+        runCatching { AppDatabase.getDatabase(context) }
+    }
+    val database = databaseResult.getOrNull()
+    if (database == null) {
+        Dialog(onDismissRequest = onVolver, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color(0xFF090B1A).copy(alpha = 0.94f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2150))
+                ) {
+                    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Estadísticas de uso", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text(
+                            "Error al cargar estadísticas: ${databaseResult.exceptionOrNull()?.message ?: "No se pudo abrir la base de datos"}",
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                        Button(onClick = onVolver) { Text("Cerrar") }
+                    }
+                }
+            }
+        }
+        return
+    }
+    val pacienteActivoState = remember {
+        runCatching { database.patientProfileDao().observarPerfilActivo() }
+            .getOrElse { flowOf(null) }
+    }.catch { emit(null) }.collectAsState(initial = null)
     val pacienteActivo by pacienteActivoState
     val paciente = pacienteActivo
     val esMujer = paciente?.sexo?.equals("Femenino", ignoreCase = true) == true || paciente?.sexo?.equals("Mujer", ignoreCase = true) == true
     val medicationIntakes by remember(paciente?.id) {
         if (paciente == null) flowOf(emptyList())
         else database.medicationIntakeDao().observarPorPaciente(paciente.id)
-    }.collectAsState(initial = emptyList())
+    }.catch { emit(emptyList()) }.collectAsState(initial = emptyList())
     val patientMedications by remember(paciente?.id) {
         if (paciente == null) flowOf(emptyList())
         else database.medicationDao().observarTodosPorPaciente(paciente.id)
-    }.collectAsState(initial = emptyList())
+    }.catch { emit(emptyList()) }.collectAsState(initial = emptyList())
     val medicationUsageByInsumo = remember(medicationIntakes, patientMedications) {
         val activeMedIds = patientMedications.map { it.id }.toSet()
         val fromActive = patientMedications.map { medication ->
@@ -92,12 +135,31 @@ fun StatisticsScreen(
     val metodoAnticonceptivoActivo by remember(paciente?.id) {
         if (paciente == null) flowOf(null)
         else database.metodoAnticonceptivoDao().observarActivo(paciente.id)
-    }.collectAsState(initial = null)
+    }.catch { emit(null) }.collectAsState(initial = null)
     val metodoActivo = metodoAnticonceptivoActivo
     val anticonceptivoIntakes by remember(metodoActivo?.id) {
         if (metodoActivo == null) flowOf(emptyList())
         else database.anticonceptivoIntakeDao().observarPorMetodo(metodoActivo.id)
-    }.collectAsState(initial = emptyList())
+    }.catch { emit(emptyList()) }.collectAsState(initial = emptyList())
+    val activityQueryState by remember(paciente?.id) {
+        if (paciente == null) {
+            flowOf(ActivityQueryState(loading = false))
+        } else {
+            database.physicalActivityDao().observarPorPaciente(paciente.id)
+                .map { records -> ActivityQueryState(records = records, loading = false) }
+                .onStart { emit(ActivityQueryState()) }
+                .catch { error ->
+                    emit(
+                        ActivityQueryState(
+                            loading = false,
+                            failed = true,
+                            errorMessage = error.message ?: error::class.simpleName
+                        )
+                    )
+                }
+        }
+    }.collectAsState(initial = ActivityQueryState())
+    val physicalActivities = activityQueryState.records
 
     val ahora = remember { System.currentTimeMillis() }
     val monthOptions = remember(ahora) {
@@ -157,32 +219,30 @@ fun StatisticsScreen(
     val pacienteTexto = pacienteActivo?.let { "${it.nombre} ${it.apellidos}" } ?: "Sin paciente activo"
     val metodoActivoTexto = metodoActivo?.tipo ?: "Sin método anticonceptivo activo"
     val tomasAnticonceptivo = anticonceptivoIntakes.size
+    val manualExercises = physicalActivities.filter { it.origen == ActivityOrigin.MANUAL_EXERCISE }
+    val backgroundActivities = physicalActivities.filter { it.origen == ActivityOrigin.BACKGROUND_DETECTED }
+    val monthlyActivities = physicalActivities.filter {
+        it.fechaInicio in selectedMonth.start..selectedMonth.end
+    }
+    val monthlyManualExercises = monthlyActivities.count { it.origen == ActivityOrigin.MANUAL_EXERCISE }
+    val monthlyBackgroundActivities = monthlyActivities.count { it.origen == ActivityOrigin.BACKGROUND_DETECTED }
+    val monthlySteps = monthlyActivities.sumOf { it.pasos }
+    val monthlyDistance = monthlyActivities.sumOf { it.distanciaMetros }
+    val monthlyDuration = monthlyActivities.sumOf { it.duracionSegundos }
 
-    Dialog(
-        onDismissRequest = onVolver,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFF1C2150)
     ) {
-        Box(
+        val scrollState = rememberScrollState()
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF090B1A).copy(alpha = 0.94f)),
-            contentAlignment = Alignment.TopCenter
+                .padding(top = 24.dp, start = 24.dp, end = 24.dp)
+                .verticalScroll(scrollState)
+                .padding(bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 56.dp, start = 0.dp, end = 0.dp, bottom = 0.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2150)),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .verticalScroll(scrollState)
-                        .padding(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -208,6 +268,14 @@ fun StatisticsScreen(
                         StatLine(label = "Método anticonceptivo activo", value = metodoActivoTexto)
                         StatLine(label = "Tomas anticonceptivo", value = tomasAnticonceptivo.toString())
                     }
+                    Text(
+                        text = "Actividad física",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    StatLine(label = "Ejercicios manuales", value = manualExercises.size.toString())
+                    StatLine(label = "Movimientos detectados", value = backgroundActivities.size.toString())
 
                     Text(
                         text = "Mes seleccionado",
@@ -236,6 +304,29 @@ fun StatisticsScreen(
                     StatLine(label = "Mes", value = mesSeleccionadoTexto)
                     StatLine(label = "Tomas en el mes", value = tomasMes.toString())
                     StatLine(label = "Medicamentos consumidos", value = monthlyUsageByInsumo.count { it.second > 0 }.toString())
+                    StatLine(label = "Ejercicios manuales en el mes", value = monthlyManualExercises.toString())
+                    StatLine(label = "Movimientos detectados en el mes", value = monthlyBackgroundActivities.toString())
+                    StatLine(label = "Pasos en el mes", value = monthlySteps.toString())
+                    StatLine(label = "Distancia en el mes", value = "%.2f km".format(monthlyDistance / 1000.0))
+                    StatLine(label = "Duración de actividad en el mes", value = formatActivityDuration(monthlyDuration))
+                    if (activityQueryState.loading) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Cargando actividad física...", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                        }
+                    }
+                    if (activityQueryState.failed) {
+                        Text(
+                            "Error al cargar estadísticas: ${activityQueryState.errorMessage ?: "no se pudieron consultar los datos de actividad"}",
+                            color = Color(0xFFFFCDD2),
+                            fontSize = 13.sp
+                        )
+                    }
 
                     Button(
                         onClick = {
@@ -311,8 +402,6 @@ fun StatisticsScreen(
                         color = Color.White.copy(alpha = 0.72f),
                         fontSize = 12.sp
                     )
-                }
-            }
         }
     }
 }
@@ -369,6 +458,12 @@ private fun Long.formatDate(): String {
 
 private fun Long.formatHour(): String {
     return SimpleDateFormat("HH:mm", SpanishLocale).format(Date(this))
+}
+
+private fun formatActivityDuration(seconds: Long): String {
+    val hours = seconds / 3600
+    val minutes = (seconds % 3600) / 60
+    return if (hours > 0) "$hours h $minutes min" else "$minutes min"
 }
 
 

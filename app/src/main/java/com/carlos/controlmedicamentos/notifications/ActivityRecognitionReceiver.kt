@@ -10,8 +10,10 @@ import android.hardware.SensorManager
 import com.google.android.gms.location.ActivityRecognitionResult
 import com.google.android.gms.location.DetectedActivity
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ActivityEventType
+import com.carlos.controlmedicamentos.data.local.ActivityOrigin
 import com.carlos.controlmedicamentos.data.local.ConfigSedentarismo
-import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
+import com.carlos.controlmedicamentos.data.local.PhysicalActivity
 import java.util.Calendar
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -367,10 +369,15 @@ class ActivityRecognitionReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = AppDatabase.getDatabase(context)
-                db.sedentarismoDao().insertarRegistro(
-                    RegistroSedentarismo(
+                db.physicalActivityDao().insertar(
+                    PhysicalActivity(
                         patientId = patientId,
-                        tipoEvento = tipo,
+                        tipo = "caminar",
+                        fechaInicio = System.currentTimeMillis() - minutos * 60_000L,
+                        fechaFin = System.currentTimeMillis(),
+                        duracionSegundos = minutos * 60L,
+                        origen = ActivityOrigin.BACKGROUND_DETECTED,
+                        tipoEvento = if (tipo == "SIN_MOVIMIENTO") ActivityEventType.INACTIVITY else ActivityEventType.MOVEMENT,
                         minutosInactivo = minutos,
                         notas = notas
                     )

@@ -21,6 +21,7 @@ import com.carlos.controlmedicamentos.backup.BackupSelection
 import com.carlos.controlmedicamentos.notifications.AnticonceptivoScheduler
 import com.carlos.controlmedicamentos.notifications.MedicalAppointmentScheduler
 import com.carlos.controlmedicamentos.notifications.MedicationScheduler
+import com.carlos.controlmedicamentos.notifications.NotificacionHelper
 import com.carlos.controlmedicamentos.notifications.VaccinationScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -133,6 +134,7 @@ internal fun DialogosPrincipalesPanel(
                             database.diarioEntryDao().eliminarPorPaciente(perfilAEliminar.id)
                             database.patientProfileDao().eliminarPorId(perfilAEliminar.id)
                             clearPersistedBirthday(context, perfilAEliminar.id)
+                            NotificacionHelper.cancelarTomasPerdidas(context)
 
                             val perfilesRestantes = database.patientProfileDao().obtenerTodosLista()
                             if (perfilesRestantes.isNotEmpty()) {

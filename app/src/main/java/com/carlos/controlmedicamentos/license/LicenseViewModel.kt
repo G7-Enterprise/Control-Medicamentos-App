@@ -20,6 +20,7 @@ class LicenseViewModel(application: Application) : AndroidViewModel(application)
 
     private val _status = MutableStateFlow<LicenseStatus>(LicenseStatus.Loading)
     val status: StateFlow<LicenseStatus> = _status
+    val syncDebug: StateFlow<LicenseSyncDebug> = repository.syncDebug
 
     private val _activationState = MutableStateFlow<ActivationUiState>(ActivationUiState.Idle)
     val activationState: StateFlow<ActivationUiState> = _activationState
@@ -31,7 +32,13 @@ class LicenseViewModel(application: Application) : AndroidViewModel(application)
     fun verifyLicense() {
         _status.value = LicenseStatus.Loading
         viewModelScope.launch {
-            _status.value = repository.verifyLicense()
+            _status.value = runCatching { repository.verifyLicense() }
+                .getOrElse { error ->
+                    LicenseStatus.Error(
+                        message = error.message ?: "No se pudo verificar la licencia.",
+                        canRetry = true
+                    )
+                }
         }
     }
 

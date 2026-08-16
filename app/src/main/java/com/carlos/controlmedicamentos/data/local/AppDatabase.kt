@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
+import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
@@ -39,7 +40,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         DiagnosticoDental::class,
         ProcedimientoDental::class,
         PrescripcionDental::class,
-        RegistroSedentarismo::class,
         ConfigSedentarismo::class,
         DienteEstado::class,
         ImagenDental::class,
@@ -49,9 +49,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         IncidenciaOrtodoncia::class,
         ElasticoOrtodoncia::class
     ],
-    version = 60,
+    version = 63,
     exportSchema = false
 )
+@TypeConverters(ActivityConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
     abstract fun medicationIntakeDao(): MedicationIntakeDao
@@ -799,6 +800,132 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_60_61 = object : Migration(60, 61) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE physical_activities ADD COLUMN origen TEXT NOT NULL DEFAULT 'MANUAL_EXERCISE'")
+                db.execSQL("ALTER TABLE physical_activities ADD COLUMN tipoEvento TEXT NOT NULL DEFAULT 'MOVEMENT'")
+                db.execSQL("ALTER TABLE physical_activities ADD COLUMN minutosInactivo INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE physical_activities ADD COLUMN notas TEXT NOT NULL DEFAULT ''")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_physical_activities_patientId ON physical_activities(patientId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_physical_activities_fechaInicio ON physical_activities(fechaInicio)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_physical_activities_origen ON physical_activities(origen)")
+
+                db.execSQL(
+                    """
+                    INSERT INTO physical_activities (
+                        patientId, tipo, fechaInicio, fechaFin, pasos, distanciaMetros,
+                        duracionSegundos, calorias, rutaJson, altitudInicioMetros,
+                        altitudMaxMetros, desnivelPositivoMetros, desnivelNegativoMetros,
+                        origen, tipoEvento, minutosInactivo, notas
+                    )
+                    SELECT
+                        s.patientId,
+                        'caminar',
+                        s.timestamp,
+                        s.timestamp + (s.minutosInactivo * 60000),
+                        0,
+                        0.0,
+                        s.minutosInactivo * 60,
+                        0,
+                        '',
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        'BACKGROUND_DETECTED',
+                        CASE
+                            WHEN s.tipoEvento IN ('SIN_MOVIMIENTO', 'ALERTA_INACTIVIDAD') THEN 'INACTIVITY'
+                            ELSE 'MOVEMENT'
+                        END,
+                        s.minutosInactivo,
+                        s.notas
+                    FROM registros_sedentarismo s
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM physical_activities p
+                        WHERE p.patientId = s.patientId
+                          AND ABS(p.fechaInicio - s.timestamp) <= 60000
+                          AND ABS(p.duracionSegundos - (s.minutosInactivo * 60)) <= 60
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE registros_sedentarismo")
+            }
+        }
+
+        private val MIGRATION_61_62 = object : Migration(61, 62) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """CREATE TABLE fall_alerts_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        patientId INTEGER NOT NULL,
+                        detectedAt INTEGER NOT NULL,
+                        confirmedAt INTEGER,
+                        latitude REAL,
+                        longitude REAL,
+                        impactMagnitude REAL,
+                        status TEXT NOT NULL,
+                        notes TEXT NOT NULL
+                    )"""
+                )
+                db.execSQL(
+                    """INSERT INTO fall_alerts_new (
+                        id, patientId, detectedAt, confirmedAt, latitude,
+                        longitude, impactMagnitude, status, notes
+                    )
+                    SELECT
+                        id, patientId, detectedAt, confirmedAt, latitude,
+                        longitude, impactMagnitude, status, notes
+                    FROM fall_alerts"""
+                )
+                db.execSQL("DROP TABLE fall_alerts")
+                db.execSQL("ALTER TABLE fall_alerts_new RENAME TO fall_alerts")
+            }
+        }
+
+        private val MIGRATION_62_63 = object : Migration(62, 63) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """CREATE TABLE physical_activities_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        patientId INTEGER NOT NULL,
+                        tipo TEXT NOT NULL,
+                        fechaInicio INTEGER NOT NULL,
+                        fechaFin INTEGER NOT NULL,
+                        pasos INTEGER NOT NULL,
+                        distanciaMetros REAL NOT NULL,
+                        duracionSegundos INTEGER NOT NULL,
+                        calorias INTEGER NOT NULL,
+                        rutaJson TEXT NOT NULL,
+                        altitudInicioMetros REAL NOT NULL,
+                        altitudMaxMetros REAL NOT NULL,
+                        desnivelPositivoMetros REAL NOT NULL,
+                        desnivelNegativoMetros REAL NOT NULL,
+                        origen TEXT NOT NULL,
+                        tipoEvento TEXT NOT NULL,
+                        minutosInactivo INTEGER NOT NULL,
+                        notas TEXT NOT NULL
+                    )"""
+                )
+                db.execSQL(
+                    """INSERT INTO physical_activities_new (
+                        id, patientId, tipo, fechaInicio, fechaFin, pasos,
+                        distanciaMetros, duracionSegundos, calorias, rutaJson,
+                        altitudInicioMetros, altitudMaxMetros, desnivelPositivoMetros,
+                        desnivelNegativoMetros, origen, tipoEvento, minutosInactivo, notas
+                    )
+                    SELECT
+                        id, patientId, tipo, fechaInicio, fechaFin, pasos,
+                        distanciaMetros, duracionSegundos, calorias, rutaJson,
+                        altitudInicioMetros, altitudMaxMetros, desnivelPositivoMetros,
+                        desnivelNegativoMetros, origen, tipoEvento, minutosInactivo, notas
+                    FROM physical_activities"""
+                )
+                db.execSQL("DROP TABLE physical_activities")
+                db.execSQL("ALTER TABLE physical_activities_new RENAME TO physical_activities")
+            }
+        }
+
         private val MIGRATION_51_52 = object : Migration(51, 52) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 try { db.execSQL("DROP INDEX IF EXISTS index_registro_hidratacion_patientId") } catch (_: Exception) { }
@@ -903,7 +1030,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "control_insumos_db_v2"
                 )
-                .addMigrations(MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_38_39, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49, MIGRATION_49_50, MIGRATION_50_51, MIGRATION_51_52, MIGRATION_52_53, MIGRATION_53_54, MIGRATION_54_55, MIGRATION_55_56, MIGRATION_56_57, MIGRATION_57_58, MIGRATION_58_59, MIGRATION_59_60)
+                .addMigrations(MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_38_39, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49, MIGRATION_49_50, MIGRATION_50_51, MIGRATION_51_52, MIGRATION_52_53, MIGRATION_53_54, MIGRATION_54_55, MIGRATION_55_56, MIGRATION_56_57, MIGRATION_57_58, MIGRATION_58_59, MIGRATION_59_60, MIGRATION_60_61, MIGRATION_61_62, MIGRATION_62_63)
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigration()
                 .build()

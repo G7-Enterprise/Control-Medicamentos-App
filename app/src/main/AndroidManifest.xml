@@ -51,6 +51,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ControlMedicamentos">
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification_campaign" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="campaign_updates" />
+
+        <service
+            android:name=".notifications.CampaignFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <receiver android:name=".notifications.AlarmReceiver" android:enabled="true" android:exported="false" />
         <receiver android:name=".notifications.ActivityRecognitionReceiver" android:enabled="true" android:exported="false" />
         <service
@@ -75,6 +90,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".AppUpdateDownloadReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
         <activity

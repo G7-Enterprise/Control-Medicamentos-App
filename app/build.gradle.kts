@@ -12,8 +12,8 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
-// Usar versionCode fijo - ignorar local.properties para evitar conflictos
-val appVersionCode = 46
+// La versión se controla desde gradle.properties para cada despliegue.
+val appVersionCode = providers.gradleProperty("APP_VERSION_CODE").orElse("47").get().toInt()
 val appVersionName = providers.gradleProperty("APP_VERSION_NAME").orElse("1.0.0").get()
 val appExpirationDays = providers.gradleProperty("APP_EXPIRATION_DAYS").orElse("3650").get().toLong()
 
@@ -137,7 +137,9 @@ dependencies {
     // Almacenamiento cifrado
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
-    // Firebase BOM y Firestore
+    // Firebase BOM, Firestore, Remote Config y Cloud Messaging
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
+    implementation("com.google.firebase:firebase-config")
+    implementation("com.google.firebase:firebase-messaging")
 }

@@ -92,6 +92,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.carlos.controlmedicamentos.notifications.MedicationScheduler
 import com.carlos.controlmedicamentos.notifications.NotificacionHelper
+import com.carlos.controlmedicamentos.notifications.AlarmActionExecutor
 import com.carlos.controlmedicamentos.notifications.SignosVitalesScheduler
 import com.carlos.controlmedicamentos.ui.theme.ControlMedicamentosTheme
 import com.carlos.controlmedicamentos.backup.AutoBackupScheduler
@@ -5362,19 +5363,11 @@ internal fun VerificadorTomasPasadasScreen(
             try {
                 val meds = database.medicationDao().obtenerActivosConAlarma()
                 medicamentos = meds
-                val medById = meds.associateBy { it.id }
 
-                // Fuente de verdad: intakes ya registrados como NOT_TAKEN en los últimos 30 días
                 val now = System.currentTimeMillis()
                 val lookbackStart = now - (30L * 24L * 60L * 60L * 1000L)
-                val intakesRegistrados = database.medicationIntakeDao().obtenerEnRango(lookbackStart, now)
-
-                val pendientes = intakesRegistrados
-                    .filter { it.status == MEDICATION_INTAKE_STATUS_NOT_TAKEN }
-                    .mapNotNull { intake ->
-                        val med = medById[intake.medicationId] ?: return@mapNotNull null
-                        TomaPendiente(medication = med, scheduledAt = intake.scheduledAt)
-                    }
+                val pendientes = AlarmActionExecutor.findMissedDoses(database, lookbackStart, now)
+                    .map { TomaPendiente(medication = it.medication, scheduledAt = it.scheduledAt) }
 
                 tomasPendientes = pendientes.sortedByDescending { it.scheduledAt }
             } catch (e: Exception) {
@@ -5433,14 +5426,8 @@ internal fun VerificadorTomasPasadasScreen(
                             coroutineScope.launch(Dispatchers.IO) {
                                 val now = System.currentTimeMillis()
                                 val lookbackStart = now - (30L * 24L * 60L * 60L * 1000L)
-                                val medById = medicamentos.associateBy { it.id }
-                                val intakesRegistrados = database.medicationIntakeDao().obtenerEnRango(lookbackStart, now)
-                                tomasPendientes = intakesRegistrados
-                                    .filter { it.status == MEDICATION_INTAKE_STATUS_NOT_TAKEN }
-                                    .mapNotNull { intake ->
-                                        val med = medById[intake.medicationId] ?: return@mapNotNull null
-                                        TomaPendiente(medication = med, scheduledAt = intake.scheduledAt)
-                                    }
+                                tomasPendientes = AlarmActionExecutor.findMissedDoses(database, lookbackStart, now)
+                                    .map { TomaPendiente(medication = it.medication, scheduledAt = it.scheduledAt) }
                                     .sortedByDescending { it.scheduledAt }
                             }
                         },
@@ -5460,14 +5447,8 @@ internal fun VerificadorTomasPasadasScreen(
                             coroutineScope.launch(Dispatchers.IO) {
                                 val now = System.currentTimeMillis()
                                 val lookbackStart = now - (30L * 24L * 60L * 60L * 1000L)
-                                val medById = medicamentos.associateBy { it.id }
-                                val intakesRegistrados = database.medicationIntakeDao().obtenerEnRango(lookbackStart, now)
-                                tomasPendientes = intakesRegistrados
-                                    .filter { it.status == MEDICATION_INTAKE_STATUS_NOT_TAKEN }
-                                    .mapNotNull { intake ->
-                                        val med = medById[intake.medicationId] ?: return@mapNotNull null
-                                        TomaPendiente(medication = med, scheduledAt = intake.scheduledAt)
-                                    }
+                                tomasPendientes = AlarmActionExecutor.findMissedDoses(database, lookbackStart, now)
+                                    .map { TomaPendiente(medication = it.medication, scheduledAt = it.scheduledAt) }
                                     .sortedByDescending { it.scheduledAt }
                             }
                         },

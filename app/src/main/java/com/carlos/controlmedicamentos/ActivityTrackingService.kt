@@ -23,8 +23,9 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.NotificationCompat
 import com.carlos.controlmedicamentos.data.local.AppDatabase
+import com.carlos.controlmedicamentos.data.local.ActivityEventType
+import com.carlos.controlmedicamentos.data.local.ActivityOrigin
 import com.carlos.controlmedicamentos.data.local.PhysicalActivity
-import com.carlos.controlmedicamentos.data.local.RegistroSedentarismo
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -235,7 +236,7 @@ class ActivityTrackingService : Service() {
         val s = _state.value
         val duracionSeg = s.duracionSegundos
         val esMovimiento = !forzarSinMovimiento && duracionSeg >= (metaMinutos * 60L) && s.pasos > 0
-        val tipoEvento = if (esMovimiento) "MOVIMIENTO_REGISTRADO" else "SIN_MOVIMIENTO"
+        val tipoEvento = if (esMovimiento) ActivityEventType.MOVEMENT else ActivityEventType.INACTIVITY
         val minutos = (duracionSeg / 60).toInt()
         val notas = if (esMovimiento) {
             "Pasos: ${s.pasos}, distancia: %.0f m, tiempo: ${minutos} min".format(s.distanciaMetros)
@@ -245,29 +246,23 @@ class ActivityTrackingService : Service() {
 
         ioScope.launch {
             val db = AppDatabase.getDatabase(applicationContext)
-            db.sedentarismoDao().insertarRegistro(
-                RegistroSedentarismo(
-                    patientId = patientId,
-                    tipoEvento = tipoEvento,
+            db.physicalActivityDao().insertar(
+                PhysicalActivity(
+                    patientId       = patientId,
+                    tipo            = "caminar",
+                    fechaInicio     = s.fechaInicio,
+                    fechaFin        = System.currentTimeMillis(),
+                    pasos           = s.pasos,
+                    distanciaMetros = s.distanciaMetros,
+                    duracionSegundos= s.duracionSegundos,
+                    calorias        = s.calorias,
+                    rutaJson        = s.rutaGps.joinToString(",") { "${it.latitude}:${it.longitude}" },
+                    origen          = ActivityOrigin.BACKGROUND_DETECTED,
+                    tipoEvento      = tipoEvento,
                     minutosInactivo = minutos,
-                    notas = notas
+                    notas           = notas
                 )
             )
-            if (esMovimiento) {
-                db.physicalActivityDao().insertar(
-                    PhysicalActivity(
-                        patientId       = patientId,
-                        tipo            = "caminar",
-                        fechaInicio     = s.fechaInicio,
-                        fechaFin        = System.currentTimeMillis(),
-                        pasos           = s.pasos,
-                        distanciaMetros = s.distanciaMetros,
-                        duracionSegundos= s.duracionSegundos,
-                        calorias        = s.calorias,
-                        rutaJson        = s.rutaGps.joinToString(",") { "${it.latitude}:${it.longitude}" }
-                    )
-                )
-            }
         }
     }
 

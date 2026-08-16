@@ -45,6 +45,11 @@ object NotificacionHelper {
     const val EXTRA_PEDIR_MEDICATION_ID = "EXTRA_PEDIR_MEDICATION_ID"
     const val CRITICAL_PLAYBACK_NOTIFICATION_ID = 91_001
 
+    fun cancelarTomasPerdidas(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.cancel(NOTIFICATION_ID_MISSED_MEDS)
+    }
+
     data class StockOrderItem(
         val medicationId: Int,
         val medicationName: String,
@@ -760,36 +765,25 @@ object NotificacionHelper {
         rangeEnd: Long,
         isStartupCheck: Boolean = false
     ) {
-        val missedDoses = mutableListOf<Pair<Medication, Long>>()
+        val missedDoses = AlarmActionExecutor.findMissedDoses(db, rangeStart, rangeEnd)
 
-        db.medicationDao().obtenerActivosConAlarma().forEach { medication ->
-            val scheduled = scheduledDoseTimesInRange(medication, rangeStart, rangeEnd)
-            scheduled.forEach { (slotIndex, scheduledAt) ->
-                if (scheduledAt >= rangeEnd) return@forEach
-                val intake = db.medicationIntakeDao().buscarPorMedicamentoYHorario(
-                    medication.id,
-                    scheduledAt
-                )
-                if (intake == null) {
-                    missedDoses.add(medication to scheduledAt)
-                }
-            }
+        if (missedDoses.isEmpty()) {
+            cancelarTomasPerdidas(context)
+            return
         }
 
-        if (missedDoses.isEmpty()) return
-
         val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
-        val patientNamesById = missedDoses.map { it.first.patientId }.distinct().associateWith { patientId ->
+        val patientNamesById = missedDoses.map { it.medication.patientId }.distinct().associateWith { patientId ->
             db.patientProfileDao().buscarPorId(patientId)?.let { p ->
                 listOfNotNull(p.nombre, p.apellidos).joinToString(" ")
             } ?: "Usuario $patientId"
         }
 
-        val groupedByPatient = missedDoses.groupBy { it.first.patientId }
+        val groupedByPatient = missedDoses.groupBy { it.medication.patientId }
         val lineasDetalle = groupedByPatient.flatMap { (patientId, doses) ->
             val patientName = patientNamesById[patientId] ?: "Usuario $patientId"
-            doses.map { (medication, scheduledAt) ->
-                "$patientName · ${medication.nombre} · ${sdf.format(scheduledAt)}"
+            doses.map { dose ->
+                "$patientName · ${dose.medication.nombre} · ${sdf.format(dose.scheduledAt)}"
             }
         }
 
@@ -809,35 +803,11 @@ object NotificacionHelper {
             titulo = title,
             mensaje = message,
             lineasDetalle = lineasDetalle,
+            reminderTokens = missedDoses.map { dose ->
+                AlarmActionExecutor.tokenFor(dose.medication.id, dose.slotIndex, dose.scheduledAt)
+            },
             notificationId = NOTIFICATION_ID_MISSED_MEDS
         )
-    }
-
-    private fun scheduledDoseTimesInRange(medication: Medication, rangeStart: Long, rangeEnd: Long): List<Pair<Int, Long>> {
-        val result = mutableListOf<Pair<Int, Long>>()
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = rangeStart
-
-        while (calendar.timeInMillis < rangeEnd) {
-            val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-            medication.horariosTomas.split("|").forEachIndexed { index, horarioStr ->
-                val parts = horarioStr.split(":")
-                if (parts.size >= 2) {
-                    val hora = parts[0].toIntOrNull() ?: continue
-                    val minuto = parts[1].toIntOrNull() ?: continue
-                    calendar.set(Calendar.HOUR_OF_DAY, hora)
-                    calendar.set(Calendar.MINUTE, minuto)
-                    calendar.set(Calendar.SECOND, 0)
-                    calendar.set(Calendar.MILLISECOND, 0)
-                    val scheduledTime = calendar.timeInMillis
-                    if (scheduledTime >= rangeStart && scheduledTime < rangeEnd) {
-                        result.add(index to scheduledTime)
-                    }
-                }
-            }
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-        }
-        return result
     }
 
     private suspend fun toStockOrderItem(db: AppDatabase, medication: Medication): StockOrderItem? {
@@ -1119,6 +1089,7 @@ object NotificacionHelper {
         titulo: String,
         mensaje: String,
         lineasDetalle: List<String>,
+        reminderTokens: List<String> = emptyList(),
         notificationId: Int
     ) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -1129,6 +1100,8 @@ object NotificacionHelper {
             putExtra(ReminderAlertActivity.EXTRA_TYPE, ReminderAlertActivity.TYPE_TOMAS_PENDIENTES)
             putExtra(ReminderAlertActivity.EXTRA_TITULO_ALERTA, titulo)
             putExtra(ReminderAlertActivity.EXTRA_MENSAJE_ALERTA, mensaje)
+            putExtra(ReminderAlertActivity.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(EXTRA_REMINDER_TOKENS, reminderTokens.toTypedArray())
         }
         val fullScreenPendingIntent = PendingIntent.getActivity(
             context,

@@ -229,6 +229,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.lifecycleScope
 import com.carlos.controlmedicamentos.backup.BackupManager
 import com.carlos.controlmedicamentos.backup.AutoBackupScheduler
 import com.carlos.controlmedicamentos.data.local.AppDatabase
@@ -265,6 +266,8 @@ import com.carlos.controlmedicamentos.notifications.AnticonceptivoScheduler
 import com.carlos.controlmedicamentos.notifications.MedicalAppointmentScheduler
 import com.carlos.controlmedicamentos.notifications.MedicationScheduler
 import com.carlos.controlmedicamentos.notifications.NotificacionHelper
+import com.carlos.controlmedicamentos.notifications.CampaignNotifications
+import com.carlos.controlmedicamentos.notifications.FcmTokenRepository
 import com.carlos.controlmedicamentos.notifications.SignosVitalesScheduler
 import com.carlos.controlmedicamentos.notifications.HidratacionScheduler
 import com.carlos.controlmedicamentos.notifications.SedentarismoScheduler
@@ -308,6 +311,34 @@ import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
+    private var securityThreat by mutableStateOf<SecurityManager.ThreatLevel?>(
+        if (BuildConfig.DEBUG) SecurityManager.ThreatLevel.SAFE else null
+    )
+    private var appUpdateCheck by mutableStateOf<AppUpdateCheck?>(null)
+    private var updateDialogDismissed by mutableStateOf(false)
+
+    // Solicitud centralizada de múltiples permisos al inicio
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        // Aquí puedes verificar si el usuario aceptó o denegó cada uno
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
+            // Todos los permisos fueron concedidos
+            if (BuildConfig.DEBUG) {
+                Log.d("MainActivity", "Todos los permisos han sido concedidos")
+            }
+        } else {
+            // Algunos permisos fueron denegados
+            if (BuildConfig.DEBUG) {
+                val deniedPermissions = permissions.entries
+                    .filter { !it.value }
+                    .map { it.key }
+                Log.w("MainActivity", "Permisos denegados: $deniedPermissions")
+            }
+        }
+    }
+
     private fun applyCriticalAlertWindowState(intent: Intent?) {
         val shouldWakeForCriticalAlert = intent?.getBooleanExtra(
             NotificacionHelper.EXTRA_LAUNCH_CRITICAL_ALERT,
@@ -336,83 +367,202 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun checkAndRequestPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
+
+        // Permisos que requieren solicitud en tiempo de ejecución (Android 6+)
+        // Notificaciones (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        // Ubicación (Android 6+)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+
+        // Cámara (Android 6+)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.CAMERA)
+        }
+
+        // Reconocimiento de actividad (Android 10+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.ACTIVITY_RECOGNITION)
+            }
+        }
+
+        // Sensores del cuerpo (Android 6+)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.BODY_SENSORS)
+        }
+
+        // SMS (Android 6+)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.SEND_SMS)
+        }
+
+        // Contactos (Android 6+)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.READ_CONTACTS)
+        }
+
+        // Bluetooth (Android 12+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+        }
+
+        // Si hay permisos que solicitar, lanza la solicitud
+        if (permissionsToRequest.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CampaignNotifications.ensureChannel(this)
+        
+        // Solicitar todos los permisos necesarios al inicio
+        checkAndRequestPermissions()
+        lifecycleScope.launch { FcmTokenRepository.syncCurrentToken(this@MainActivity) }
 
-        // ── Comprobaciones de seguridad (solo en builds release/distribución) ──
-        if (!BuildConfig.DEBUG) {
-            val threat = SecurityManager.assess(this, skipRootEmulator = true, skipAllChecks = false)
-            if (threat != SecurityManager.ThreatLevel.SAFE) {
-                val (title, message) = when (threat) {
-                    SecurityManager.ThreatLevel.DEBUGGER_DETECTED ->
-                        "Aplicacion bloqueada" to "Se detecto un depurador adjunto. La aplicacion no puede ejecutarse en este entorno."
-                    SecurityManager.ThreatLevel.TAMPERED ->
-                        "Aplicacion comprometida" to "Esta aplicacion parece haber sido modificada. Por favor, reinstala desde una fuente oficial."
-                    else ->
-                        "Error de seguridad" to "Se detecto un problema de seguridad. La aplicacion se cerrara."
-                }
-                android.app.AlertDialog.Builder(this)
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setCancelable(false)
-                    .setPositiveButton("Aceptar") { _, _ -> finish() }
-                    .show()
-                return
+        lifecycleScope.launch {
+            val updateCheck = AppUpdateRemoteConfig.fetchAndCheck()
+            appUpdateCheck = updateCheck
+            updateDialogDismissed = false
+            if (BuildConfig.DEBUG) {
+                Log.d(
+                    "MainActivity",
+                    "Remote Config: instalada=${BuildConfig.VERSION_NAME}, " +
+                        "disponible=${updateCheck.config.latestVersion}, " +
+                        "hayActualizacion=${updateCheck.updateAvailable}, " +
+                        "forzar=${updateCheck.forceUpdate}"
+                )
             }
+            // Fase 2: usar updateCheck para mostrar el aviso o bloqueo de actualizaciÃ³n.
+        }
 
+        if (!BuildConfig.DEBUG) {
+            lifecycleScope.launch(Dispatchers.Default) {
+                val threat = SecurityManager.assess(
+                    this@MainActivity,
+                    skipRootEmulator = true,
+                    skipAllChecks = false
+                )
+                withContext(Dispatchers.Main.immediate) {
+                    securityThreat = threat
+                }
+            }
         }
 
         applyCriticalAlertWindowState(intent)
         enableEdgeToEdge()
         setContent {
             ControlMedicamentosTheme {
-                val licenseViewModel: LicenseViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-
-                LicenseGate(
-                    viewModel = licenseViewModel,
-                    lemonSqueezyUrl = LicenseManager.URL_LICENCIA
-                ) {
-                    // ── Contenido principal de la app ────────────────────────
-                    var mostrarPortadaInicial by remember { mutableStateOf(true) }
-                var birthdayPreviewRequest by remember { mutableStateOf<BirthdayCelebrationRequest?>(null) }
-
-                val context = LocalContext.current
-                val database = remember(context) { AppDatabase.getDatabase(context) }
-                val pacienteActivo by database.patientProfileDao().observarPerfilActivo().collectAsState(initial = null)
-                val mostrarPanelAlertaCaidas = remember { mutableStateOf(false) }
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    MedicamentoForm(
-                        modifier = Modifier.fillMaxSize(),
-                        onRequestBirthdayPreview = { birthdayPreviewRequest = it },
-                        launchIntent = intent,
-                        fallAlertPanelState = mostrarPanelAlertaCaidas
-                    )
-
-                    FallAlertPanelManager(
-                        mostrar = mostrarPanelAlertaCaidas,
-                        patientId = pacienteActivo?.id ?: 0,
-                        database = database,
-                        onVolver = { mostrarPanelAlertaCaidas.value = false }
-                    )
-
-                    BirthdayCelebrationHost(
-                        modifier = Modifier.fillMaxSize(),
-                        enabled = !mostrarPortadaInicial,
-                        previewRequest = birthdayPreviewRequest,
-                        onPreviewConsumed = { birthdayPreviewRequest = null }
-                    )
-
-                    if (mostrarPortadaInicial) {
-                        StartupOverlay(
-                            modifier = Modifier.fillMaxSize(),
-                            onDismiss = { mostrarPortadaInicial = false }
-                        )
+                when (val threat = securityThreat) {
+                    null -> SecurityCheckLoadingScreen()
+                    SecurityManager.ThreatLevel.SAFE -> {
+                        MainActivityContent(intent)
+                        appUpdateCheck
+                            ?.takeIf { it.updateAvailable && !updateDialogDismissed }
+                            ?.let { update ->
+                                AppUpdateDialog(
+                                    update = update,
+                                    onDismiss = { updateDialogDismissed = true }
+                                )
+                            }
                     }
-                }
+                    else -> SecurityBlockedScreen(threat, onClose = ::finish)
             }
         }
     }
+}
+
+@Composable
+private fun MainActivityContent(intent: Intent?) {
+    val licenseViewModel: LicenseViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+    LicenseGate(
+        viewModel = licenseViewModel,
+        lemonSqueezyUrl = LicenseManager.URL_LICENCIA
+    ) {
+        var mostrarPortadaInicial by remember { mutableStateOf(true) }
+        var birthdayPreviewRequest by remember { mutableStateOf<BirthdayCelebrationRequest?>(null) }
+
+        val context = LocalContext.current
+        val database = remember(context) { AppDatabase.getDatabase(context) }
+        val pacienteActivo by database.patientProfileDao().observarPerfilActivo().collectAsState(initial = null)
+        val mostrarPanelAlertaCaidas = remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            MedicamentoForm(
+                modifier = Modifier.fillMaxSize(),
+                onRequestBirthdayPreview = { birthdayPreviewRequest = it },
+                launchIntent = intent,
+                fallAlertPanelState = mostrarPanelAlertaCaidas
+            )
+
+            FallAlertPanelManager(
+                mostrar = mostrarPanelAlertaCaidas,
+                patientId = pacienteActivo?.id ?: 0,
+                database = database,
+                onVolver = { mostrarPanelAlertaCaidas.value = false }
+            )
+
+            BirthdayCelebrationHost(
+                modifier = Modifier.fillMaxSize(),
+                enabled = !mostrarPortadaInicial,
+                previewRequest = birthdayPreviewRequest,
+                onPreviewConsumed = { birthdayPreviewRequest = null }
+            )
+
+            if (mostrarPortadaInicial) {
+                StartupOverlay(
+                    modifier = Modifier.fillMaxSize(),
+                    onDismiss = { mostrarPortadaInicial = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecurityCheckLoadingScreen() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun SecurityBlockedScreen(
+    threat: SecurityManager.ThreatLevel,
+    onClose: () -> Unit
+) {
+    val (title, message) = when (threat) {
+        SecurityManager.ThreatLevel.DEBUGGER_DETECTED ->
+            "Aplicacion bloqueada" to "Se detecto un depurador adjunto. La aplicacion no puede ejecutarse en este entorno."
+        SecurityManager.ThreatLevel.TAMPERED ->
+            "Aplicacion comprometida" to "Esta aplicacion parece haber sido modificada. Por favor, reinstala desde una fuente oficial."
+        else -> "Error de seguridad" to "Se detecto un problema de seguridad. La aplicacion se cerrara."
+    }
+
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = { Button(onClick = onClose) { Text("Aceptar") } }
+    )
 }
 
     override fun onNewIntent(intent: Intent) {
